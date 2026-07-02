@@ -1,0 +1,216 @@
+// BuilderForm — the presentational input surface for the builder. Takes the form state + errors +
+// typed setters (owned by useBuilder) and renders labelled, accessible controls: recipient, asset
+// (radio: XCH / $DIG / other CAT + a CAT-id field), scheme (radio: green / purple / custom + a color
+// picker), presets, label, and the two one-click presets. No data fetching, no derivation here.
+
+import type { BuilderForm as Form, AssetChoice } from "./useBuilder";
+import type { ValidationErrors } from "@/lib/embed";
+import { S } from "@/lib/strings";
+
+export interface BuilderFormProps {
+  form: Form;
+  errors: ValidationErrors;
+  setField: <K extends keyof Form>(key: K, value: Form[K]) => void;
+  applyXchPreset: () => void;
+  applyDigPreset: () => void;
+}
+
+export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPreset }: BuilderFormProps) {
+  return (
+    <form className="builder-form" onSubmit={(e) => e.preventDefault()} noValidate aria-label="Tip widget builder">
+      {/* One-click presets */}
+      <div className="preset-row" role="group" aria-label="Quick presets">
+        <button type="button" className="preset-btn preset-xch" onClick={applyXchPreset} data-testid="preset-xch">
+          {S.presetXchButton}
+        </button>
+        <button type="button" className="preset-btn preset-dig" onClick={applyDigPreset} data-testid="preset-dig">
+          {S.presetDigButton}
+        </button>
+      </div>
+
+      {/* Recipient */}
+      <div className="field">
+        <label htmlFor="recipient" className="field-label">
+          {S.recipientLabel}
+        </label>
+        <p id="recipient-help" className="field-help">
+          {S.recipientHelp}
+        </p>
+        <input
+          id="recipient"
+          type="text"
+          className="field-input"
+          data-testid="input-recipient"
+          value={form.recipient}
+          placeholder={S.recipientPlaceholder}
+          onChange={(e) => setField("recipient", e.target.value)}
+          aria-describedby={errors.recipient ? "recipient-help recipient-error" : "recipient-help"}
+          aria-invalid={errors.recipient ? true : undefined}
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {errors.recipient && (
+          <p id="recipient-error" className="field-error" role="alert" data-testid="error-recipient">
+            {errors.recipient}
+          </p>
+        )}
+      </div>
+
+      {/* Asset */}
+      <fieldset className="field">
+        <legend className="field-label">{S.assetLabel}</legend>
+        <div className="radio-row" role="radiogroup" aria-label={S.assetLabel}>
+          {(
+            [
+              ["xch", S.assetXch],
+              ["dig", S.assetDig],
+              ["cat", S.assetCustomCat],
+            ] as [AssetChoice, string][]
+          ).map(([value, text]) => (
+            <label key={value} className="radio-chip">
+              <input
+                type="radio"
+                name="asset"
+                value={value}
+                checked={form.assetChoice === value}
+                onChange={() => setField("assetChoice", value)}
+                data-testid={`asset-${value}`}
+              />
+              <span>{text}</span>
+            </label>
+          ))}
+        </div>
+        {form.assetChoice === "cat" && (
+          <div className="subfield">
+            <label htmlFor="catId" className="field-label">
+              {S.catIdLabel}
+            </label>
+            <p id="catId-help" className="field-help">
+              {S.catIdHelp}
+            </p>
+            <input
+              id="catId"
+              type="text"
+              className="field-input"
+              data-testid="input-catid"
+              value={form.catId}
+              placeholder={S.catIdPlaceholder}
+              onChange={(e) => setField("catId", e.target.value)}
+              aria-describedby="catId-help"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+        )}
+        {errors.asset && (
+          <p className="field-error" role="alert" data-testid="error-asset">
+            {errors.asset}
+          </p>
+        )}
+      </fieldset>
+
+      {/* Scheme */}
+      <fieldset className="field">
+        <legend className="field-label">{S.schemeLabel}</legend>
+        <div className="radio-row" role="radiogroup" aria-label={S.schemeLabel}>
+          {(
+            [
+              ["green", S.schemeGreen],
+              ["purple", S.schemePurple],
+              ["custom", S.schemeCustom],
+            ] as [Form["scheme"], string][]
+          ).map(([value, text]) => (
+            <label key={value} className="radio-chip">
+              <input
+                type="radio"
+                name="scheme"
+                value={value}
+                checked={form.scheme === value}
+                onChange={() => setField("scheme", value)}
+                data-testid={`scheme-${value}`}
+              />
+              <span>{text}</span>
+            </label>
+          ))}
+        </div>
+        {form.scheme === "custom" && (
+          <div className="subfield">
+            <label htmlFor="color" className="field-label">
+              {S.colorLabel}
+            </label>
+            <p id="color-help" className="field-help">
+              {S.colorHelp}
+            </p>
+            <div className="color-row">
+              <input
+                id="color"
+                type="color"
+                className="color-swatch"
+                data-testid="input-color-swatch"
+                value={/^#[0-9a-f]{6}$/i.test(form.color) ? form.color : "#7a3dff"}
+                onChange={(e) => setField("color", e.target.value)}
+                aria-label={`${S.colorLabel} (swatch)`}
+              />
+              <input
+                type="text"
+                className="field-input color-text"
+                data-testid="input-color-text"
+                value={form.color}
+                onChange={(e) => setField("color", e.target.value)}
+                aria-label={`${S.colorLabel} (hex)`}
+                aria-describedby={errors.color ? "color-help color-error" : "color-help"}
+                aria-invalid={errors.color ? true : undefined}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            {errors.color && (
+              <p id="color-error" className="field-error" role="alert" data-testid="error-color">
+                {errors.color}
+              </p>
+            )}
+          </div>
+        )}
+      </fieldset>
+
+      {/* Presets */}
+      <div className="field">
+        <label htmlFor="presets" className="field-label">
+          {S.presetsLabel}
+        </label>
+        <p id="presets-help" className="field-help">
+          {S.presetsHelp}
+        </p>
+        <input
+          id="presets"
+          type="text"
+          className="field-input"
+          data-testid="input-presets"
+          value={form.presets}
+          placeholder="1,5,25"
+          onChange={(e) => setField("presets", e.target.value)}
+          aria-describedby="presets-help"
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
+
+      {/* Label */}
+      <div className="field">
+        <label htmlFor="label" className="field-label">
+          {S.labelLabel}
+        </label>
+        <input
+          id="label"
+          type="text"
+          className="field-input"
+          data-testid="input-label"
+          value={form.label}
+          placeholder={S.labelPlaceholder}
+          onChange={(e) => setField("label", e.target.value)}
+          autoComplete="off"
+        />
+      </div>
+    </form>
+  );
+}

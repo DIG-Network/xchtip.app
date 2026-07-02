@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+coverage/
+*.tsbuildinfo
+
+# test artifacts
+playwright-report/
+test-results/
+.playwright/
+
+# terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfplan
+terraform/.terraform.lock.hcl.bak
+
+# env / secrets (WalletConnect projectId is build-time injected — NEVER commit)
+.env
+.env.local
+.env.*.local
+
+# editor / OS
+.DS_Store
+*.log
+.vscode/
+.idea/
