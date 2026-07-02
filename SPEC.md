@@ -1,0 +1,190 @@
+# xchtip.app — normative specification
+
+This is the authoritative contract for xchtip.app: a static single-page web app that BUILDS an
+embeddable Chia tip button, and the self-contained widget the builder emits. An independent
+reimplementation could be built against this document. Normative keywords MUST / SHOULD / MAY are
+used in the RFC 2119 sense.
+
+## 1. Overview
+
+xchtip.app produces a one-line `<script>` embed snippet that renders a "tip" button on any web page.
+A visitor clicks the button, connects a Chia wallet over WalletConnect, picks an amount, and the
+widget builds + signs + broadcasts an on-chain payment (XCH or a CAT) directly to the recipient —
+wallet to wallet, non-custodial. The builder itself holds no keys and touches no chain.
+
+## 2. Assets
+
+An asset is one of:
+
+- **XCH** — native Chia. Wire form: the literal string `xch` (case-insensitive).
+- **CAT** — a Chia Asset Token identified by its 64-hex asset id (tail hash). Wire form: the bare
+  64-character lowercase hex id. An optional `0x` prefix MUST be stripped; the id MUST be lowercased.
+
+The canonical **$DIG** CAT asset id is
+`a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81` (Chia mainnet). Implementations
+MUST use this exact value for the $DIG preset and MUST NOT invent it.
+
+Decimals (for amount → base-unit conversion): XCH = 12 (1 XCH = 10¹² mojos); ecosystem CATs = 3
+(1 unit = 1000 base units). The widget converts a display amount to base units accordingly.
+
+## 3. Recipient address
+
+A recipient MUST be a valid bech32m Chia address:
+
+- a correct bech32m checksum (final XOR constant `0x2bc830a3`);
+- an HRP of `xch` (mainnet) or `txch` (testnet);
+- a decoded payload of exactly 32 bytes (the puzzle hash).
+
+Mixed-case input MUST be rejected. The builder MUST NOT emit a snippet for an invalid recipient. The
+widget spends TO the decoded 32-byte puzzle hash.
+
+## 4. Color schemes
+
+A scheme drives the button + modal accent:
+
+- `green` — the default XCH scheme. Gradient `#3ab54a` → `#1f8f3a`, white text.
+- `purple` — the $DIG brand scheme. Gradient `#7a3dff` → `#ff00de`, white text.
+- `custom` — any 6-hex accent color. The gradient end is the accent darkened ~22%; the button glow is
+  the accent at α = 0.34.
+
+An invalid/absent scheme selector MUST fall back to `green` (the button always renders).
+
+## 5. Embed data-attribute contract (the widget wire)
+
+The generated snippet is a single self-contained script tag:
+
+```
+<script src="https://xchtip.app/embed/xch-tip.js"
+        data-recipient="<bech32m Chia address>"     REQUIRED
+        data-asset="xch" | "<64-hex CAT id>"          REQUIRED
+        data-scheme="green" | "purple"                OPTIONAL (default green)
+        data-color="#rrggbb"                           OPTIONAL (custom accent; overrides data-scheme)
+        data-amount-presets="1,5,25"                   OPTIONAL (whole units of the asset)
+        data-label="Tip"                               OPTIONAL (button label)
+        data-align="center" | "left" | "right"         OPTIONAL (default center)
+        data-wc-project-id="<projectId>"               OPTIONAL (defaults to xchtip.app's, build-injected)
+        data-target="<css selector>"                   OPTIONAL (mount container; default: inline)
+        async></script>
+```
+
+Attribute semantics:
+
+- `data-recipient` (REQUIRED) — the recipient bech32m address (§3). Missing/invalid → the widget
+  renders an inert, honest error in place of the button (never a tip to nowhere).
+- `data-asset` (REQUIRED) — `xch` or a 64-hex CAT id (§2). Missing/invalid → inert error.
+- `data-scheme` — `green` (default) or `purple`. Any other value → `green`.
+- `data-color` — a 6-hex accent (custom scheme). When present it takes precedence over `data-scheme`.
+- `data-amount-presets` — comma-separated positive amounts in whole units of the asset. Invalid
+  entries are dropped; an empty/all-invalid list falls back to the asset defaults (XCH: `0.1,0.5,1`;
+  CAT: `1,5,25`).
+- `data-label` — a custom button label. Default: `Tip in XCH` for XCH, `Send a tip` for a CAT.
+- `data-align` — button alignment within its block wrapper. Default `center`.
+- `data-wc-project-id` — a WalletConnect (Reown) projectId. Absent → the widget uses xchtip.app's own
+  projectId, baked into the deployed asset at build time. If NO projectId is available at all, the
+  button explains the missing id on click.
+- `data-target` — a CSS selector to mount into; default is inline right after the `<script>`.
+
+The builder emits `data-color` when the scheme is custom, otherwise `data-scheme`. Attribute values
+MUST be HTML-attribute-escaped.
+
+## 6. Builder query-param API
+
+The builder page (`/`) accepts these query parameters:
+
+| Param       | Meaning                                                                  |
+|-------------|--------------------------------------------------------------------------|
+| `recipient` | recipient bech32m Chia address (§3)                                      |
+| `asset`     | `xch` or a 64-hex CAT id (§2)                                            |
+| `scheme`    | `green` \| `purple` \| a 6-hex color (treated as custom)                  |
+| `color`     | a 6-hex custom accent; overrides `scheme`                                |
+| `presets`   | comma-separated amounts                                                  |
+| `label`     | custom button label                                                     |
+| `raw`       | `1` / `true` → raw (machine-readable) mode                               |
+| `format`    | `raw` → equivalent to `raw=1`                                            |
+
+Behavior:
+
+- WITHOUT a raw flag: the params PRE-FILL the builder UI (the user can edit + copy).
+- WITH `raw=1` / `format=raw`: the page renders ONLY the embed snippet as plain text inside a single
+  `<pre data-testid="raw-snippet">` element (no chrome), so a JS-executing client can read it without
+  scraping. Invalid params render `ERROR: invalid parameters — <field>: <message>; …` in the same
+  `<pre>` (with `data-ok="false"`).
+
+## 7. Raw plain-text endpoint (`/embed.txt`)
+
+`GET /embed.txt?<same params as §6>` MUST return the embed snippet with
+`Content-Type: text/plain; charset=utf-8` and `Access-Control-Allow-Origin: *`. This is served at the
+edge (a CloudFront viewer-request function) and is byte-equivalent to the snippet the SPA raw mode
+renders. Invalid params return HTTP 400 with an `ERROR: …` body. This lets a non-JS client (curl, an
+agent) obtain a snippet with a single GET.
+
+## 8. Widget runtime behavior (the wire)
+
+On button click the widget:
+
+1. Opens its OWN WalletConnect session (`customStoragePrefix: "xch-tip"`), namespace `chia`, chain
+   `chia:mainnet`, methods `chia_getAddress`, `chip0002_getAssetCoins`, `chip0002_signCoinSpends`. It
+   reuses a persisted session on the same origin across page loads (WC localStorage is origin-scoped;
+   cross-domain reuse is not possible). The connect prompt shows the xchtip.app brand.
+2. Lets the visitor pick a preset or custom amount.
+3. Builds the unsigned coin spends CLIENT-SIDE via `chia_wallet_sdk_wasm`:
+   - **XCH**: source the wallet's XCH coins (`chip0002_getAssetCoins`, assetId null), select enough
+     to cover the amount, and build a standard spend creating a coin to the recipient puzzle hash
+     (plus change back to the sender). No coinset round-trip is required beyond broadcast.
+   - **CAT**: source the wallet's CAT coins for the asset id, and build a CAT ring spend with lineage
+     proofs (parent puzzle+solution fetched from coinset), creating a CAT coin to the recipient
+     puzzle hash (plus change). This is the proven hub $DIG-tip path, generalized to any asset id.
+4. Requests a signature via `chip0002_signCoinSpends` (partialSign) and broadcasts the assembled
+   spend bundle to Chia mainnet via `https://api.coinset.org/push_tx`.
+
+The `chia_wallet_sdk_wasm` glue + `_bg.wasm` are SELF-HOSTED on the xchtip.app origin under
+`/embed/vendor/` and instantiated by hand (the wasm-bindgen bundler step performed at runtime:
+compile → map every wasm import module to the glue → instantiate → `__wbg_set_wasm`). The widget MUST
+NOT rely on a CDN wrapper that drops `__wbg_set_wasm`.
+
+## 9. WalletConnect projectId injection
+
+The committed widget source contains the literal placeholder `__XCHTIP_WC_PROJECT_ID__`. The deploy
+build substitutes it with the value of `$XCHTIP_WC_PROJECT_ID` (or `$NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`)
+in the BUILT copy only. The real projectId MUST NEVER be committed. A build without the env var leaves
+the placeholder; the widget then requires `data-wc-project-id` or shows its honest error.
+
+## 10. Openness — no WAF, embeddable-anywhere, CORS `*` (normative)
+
+xchtip.app EXISTS to be embedded on arbitrary third-party sites. The deployment MUST be as open as
+possible:
+
+- **No WAF.** The CloudFront distribution MUST NOT attach any web ACL (`web_acl_id`). No rate-limit
+  rules, no managed rule groups.
+- **No frame restrictions.** The site and the widget MUST be frameable/embeddable from ANY origin:
+  no `X-Frame-Options`, no `Content-Security-Policy: frame-ancestors`. Any CSP present MUST NOT
+  restrict embedding or the widget's operation (only zero-cost guards like `X-Content-Type-Options:
+  nosniff` are permitted).
+- **Permissive CORS.** The embed assets (`/embed/xch-tip.js`, the vendored wasm + glue), the machine
+  files (`llms.txt`, `/embed.txt`, snippets), and the site generally MUST be served with
+  `Access-Control-Allow-Origin: *` so any page on any domain can load them. Configured via a
+  CloudFront response-headers policy.
+- **No gating.** No referrer/origin gating, no geo restriction.
+- **Caching.** Content-hashed build assets and the embed assets are served with a long/immutable
+  `Cache-Control`. The HTML + machine text files refresh on deploy (not immutable-cached).
+
+## 11. Deployment
+
+Static SPA built by Vite to `dist/`, synced to a private S3 bucket, served via CloudFront (Origin
+Access Control) with a DNS-validated ACM cert (us-east-1) for `xchtip.app` (+ `www`). Route53 records
+live in the existing hosted zone `Z05614961P7OR8IWYYF3` (read as a data source; never created here).
+The CloudFront distribution is dualstack (A + AAAA), `http2and3`, `PriceClass_All`. See
+`runbooks/deploy.md`.
+
+## 12. Accessibility + machine-friendliness
+
+The site MUST meet WCAG 2.2 AA (semantic landmarks, skip link, labelled controls, keyboard
+operability, visible focus, sufficient contrast, `axe` 0 violations desktop + mobile) and ship
+`llms.txt`, `robots.txt`, `sitemap.xml`, and full SEO meta (title/description/canonical/OG/Twitter +
+schema.org JSON-LD). Interactive elements expose stable `data-testid`s.
+
+## 13. Internationalization (follow-up)
+
+All user-facing copy is centralized in `src/lib/strings.ts` with stable keys. i18n (react-intl + the
+ecosystem's standard locale set) is a planned follow-up; the centralization is the seam for it. Brand
+and scheme literals ($DIG, XCH, `xch://`, hex colors) are preserved verbatim.

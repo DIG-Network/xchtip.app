@@ -1,0 +1,72 @@
+name: deploy
+
+# Build the static SPA and replace the S3 site bucket contents, then invalidate CloudFront.
+# GATED so it stays green before infra is provisioned: without the infra repo vars the build is
+# verified and the sync is skipped (a clean no-op).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Serialize deploys so two runs never race on `s3 sync --delete`.
+concurrency:
+  group: xchtip-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC (assume the deploy role; no stored keys)
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    name: build + sync + invalidate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: build (SPA + SEO gate + WC projectId injection)
+        env:
+          # The WalletConnect projectId is baked into dist/embed/xch-tip.js at build (never committed).
+          XCHTIP_WC_PROJECT_ID: ${{ secrets.XCHTIP_WC_PROJECT_ID }}
+        run: npm run build
+
+      - name: check deploy gates
+        id: gate
+        env:
+          BUCKET: ${{ vars.XCHTIP_S3_BUCKET }}
+          DIST_ID: ${{ vars.XCHTIP_CLOUDFRONT_DISTRIBUTION_ID }}
+          ROLE: ${{ vars.CI_DEPLOY_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${BUCKET:-}" ] && [ -n "${DIST_ID:-}" ] && [ -n "${ROLE:-}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=xchtip.app deploy::Infra vars not set (XCHTIP_S3_BUCKET / XCHTIP_CLOUDFRONT_DISTRIBUTION_ID / CI_DEPLOY_ROLE_ARN) — built + verified, sync skipped."
+          fi
+
+      - name: configure aws (oidc)
+        if: steps.gate.outputs.ready == 'true'
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: ${{ vars.CI_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: sync to S3 + invalidate CloudFront
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          BUCKET: ${{ vars.XCHTIP_S3_BUCKET }}
+          DIST_ID: ${{ vars.XCHTIP_CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          set -euo pipefail
+          aws s3 sync dist "s3://${BUCKET}" --delete
+          aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths '/*'
