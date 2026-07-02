@@ -1,0 +1,76 @@
+# xchtip.app
+
+> xchtip.app is a free builder for an embeddable Chia tip button. A creator picks a recipient
+> Chia address, an asset (XCH or any CAT, including $DIG), and a color scheme, then copies a
+> one-line `<script>` snippet onto any website. Visitors connect a Chia wallet (WalletConnect →
+> Sage) and send a tip on-chain, wallet to wallet — no account, no middleman, nothing custodial.
+
+## What you can do here
+
+- Build a tip-button embed snippet from a recipient + asset + color, via the UI or the URL API.
+- Get the RAW embed snippet as plain text (no UI) so a tool/agent can generate embed codes.
+
+## URL query-param API
+
+The builder page (`https://xchtip.app/`) accepts query parameters. With no `raw` flag they PRE-FILL
+the builder UI. With `raw=1` (or `format=raw`) the page returns ONLY the machine-readable embed
+snippet as plain text — nothing else to scrape.
+
+Parameters:
+
+- `recipient` (required) — the recipient's Chia bech32m address, e.g. `xch1...` (mainnet). Validated:
+  a correct bech32m checksum, an `xch`/`txch` HRP, and a 32-byte puzzle hash.
+- `asset` (required) — `xch` for native XCH, OR a 64-character hex CAT asset id for a CAT tip
+  (case-insensitive, an optional `0x` prefix is stripped).
+- `scheme` (optional) — `green` (default; the XCH scheme) or `purple` (the $DIG brand scheme). A
+  6-hex color value here is also accepted and treated as a custom accent.
+- `color` (optional) — a custom 6-hex accent color, e.g. `#7a3dff`. Overrides `scheme` (sets custom).
+- `presets` (optional) — comma-separated preset amounts in whole units of the asset, e.g. `1,5,25`.
+- `label` (optional) — a custom button label.
+- `raw` (optional) — `1`/`true` → return the snippet as plain text only (raw mode).
+- `format` (optional) — `raw` is equivalent to `raw=1`.
+
+The canonical `$DIG` CAT asset id is
+`a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81` (Chia mainnet).
+
+### Examples
+
+- Pre-fill the builder for an XCH tip:
+  `https://xchtip.app/?recipient=xch1...&asset=xch&scheme=green`
+- Raw snippet for a $DIG tip (plain text):
+  `https://xchtip.app/?recipient=xch1...&asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&raw=1`
+- Raw snippet for a custom-color XCH tip:
+  `https://xchtip.app/?recipient=xch1...&asset=xch&color=%2300aabb&presets=1,5&raw=1`
+
+### Raw plain-text endpoint
+
+`https://xchtip.app/embed.txt?<same params>` returns the snippet with `Content-Type: text/plain`
+(served at the edge). The SPA raw mode (`?...&raw=1`) renders the identical snippet inside a single
+`<pre data-testid="raw-snippet">` element for clients that execute JavaScript.
+
+## The embed snippet (data-attribute contract)
+
+The generated snippet is a single self-contained script tag served from `https://xchtip.app/embed/xch-tip.js`:
+
+```
+<script src="https://xchtip.app/embed/xch-tip.js"
+        data-recipient="xch1..."
+        data-asset="xch"                 (or a 64-hex CAT asset id)
+        data-scheme="green"              (green | purple)
+        data-color="#7a3dff"             (optional custom accent; overrides data-scheme)
+        data-amount-presets="1,5,25"     (optional)
+        data-label="Tip"                 (optional)
+        async></script>
+```
+
+The widget is fully self-contained: on click it opens its own WalletConnect session, lets the visitor
+pick an amount, builds the spend client-side (XCH = a plain standard spend; a CAT = a CAT spend for
+that asset id), signs via the wallet, and broadcasts to Chia mainnet. The embed asset and its wasm
+are served with permissive CORS (`Access-Control-Allow-Origin: *`) so it loads from any page on any
+domain, and the site imposes no frame/embedding restrictions.
+
+## Links
+
+- Builder: https://xchtip.app/
+- Embed script: https://xchtip.app/embed/xch-tip.js
+- Sitemap: https://xchtip.app/sitemap.xml

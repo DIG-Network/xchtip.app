@@ -1,0 +1,5 @@
+# xchtip.app — allow all indexing; point crawlers to the sitemap.
+User-agent: *
+Allow: /
+
+Sitemap: https://xchtip.app/sitemap.xml
