@@ -28,6 +28,47 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
 - [ ] Ship: commit logical units, push origin/main, watch CI green.
 - [ ] Deploy: terraform init/apply locally (S3+CF+cert apply now; cert validation pends on NS).
 
+## FLAG TO ORCHESTRATOR (out of xchtip single-writer scope)
+
+- CLAUDE.md §6.4 loading/error rule → generalize to ALL UI across the ecosystem (user request).
+- hub.dig.net dig-tip.js has the SAME readSenderKey bug (parseP2Standard etc. don't exist) → fix hub.
+- Extract modules/services/hub.dig.net/apps/web/tests/integration/wallet-emulator/ into its OWN git
+  submodule (e.g. @dignetwork/wallet-emulator) for reuse across every frontend submodule (user
+  request). Superproject + hub change — orchestrator owns .gitmodules + the extraction.
+
+## New user requests (2026-07-02) — in priority order
+
+- [ ] **BUG (P0): widget tip fails** — "Could not read your wallet's signing key from its coins."
+      In `public/embed/xch-tip.js` `readSenderKey()` — the standard-puzzle synthetic-pk parse path
+      doesn't match what the wallet returns. Reproduce, fix the parse (regression), reinstall/redeploy.
+- [ ] **Live preview = the REAL working widget** — the builder's preview should be the actual
+      embed widget (real tip flow), GRAYED OUT + disabled until a valid recipient is entered.
+      Replaces the static `TipButtonPreview`. Loading/error/disabled states hooked up.
+- [ ] **Brand logo on the button** — XCH preset → Chia logo in the button; $DIG preset → DIG logo
+      (instead of the generic ♥). Custom scheme keeps the heart. Needs inline SVGs in the widget +
+      the builder preview. DIG mark: modules/services/dig.net/public/brand-assets/token-svg.svg.
+- [ ] **All loading + error states hooked up (UI rule)** — audit every async/stateful surface in
+      xchtip.app for explicit loading + error + empty + disabled states; encode the rule in xchtip's
+      own conventions (SPEC / component docs). NOTE: user also asked to add this as a GLOBAL rule in
+      the superproject CLAUDE.md — that file is OUT of my single-writer scope (xchtip.app only), so
+      FLAG to the orchestrator to add it to CLAUDE.md; I apply it concretely within xchtip here.
+- [ ] **CAT symbol auto-detect** — for an "Other CAT" asset, auto-detect the ticker/symbol via
+      Spacescan or Dexie API (by asset id), shown on the button + jar page + suggested amounts, with
+      a manual OVERRIDE field. Graceful fallback to "CAT" on lookup failure. Loading/error states.
+- [ ] **Tip page URL actions** — the builder's "Tip page URL" row gets a "Visit" action (opens the
+      jar page in a new tab) IN ADDITION to a "Copy" button; rename the copy label to just "Copy".
+
+TEST HARNESS (user-provided): use the WalletConnect emulator + test credentials in
+modules/services/hub.dig.net (apps/web/tests/integration/) against LIVE mainnet to E2E-verify the
+widget tip flow (connect → pick amount → sign → broadcast) — the real regression test for the P0 bug.
+Never print/commit /.test-credentials or the projectId.
+
+ROOT CAUSE FOUND (P0 bug): `readSenderKey` in xch-tip.js calls `parseP2Standard` /
+`parseInnerStandardInfo` / `parseStandardPuzzle` — NONE exist on the vendored wasm `Puzzle` class,
+so it ALWAYS throws. Correct API-verified path: `clvm.deserialize(reveal).uncurry().args[0].toAtom()`
+= the 48-byte synthetic pk → `chia.PublicKey.fromBytes(...)`. (The hub dig-tip.js has the same latent
+bug — flag for the orchestrator to fix hub too.)
+
 ## Done
 
 - [x] UX/UI overhaul (Fable, world-class direction): "workbench after dark". Deep teal-ink surface

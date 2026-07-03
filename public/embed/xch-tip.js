@@ -416,18 +416,38 @@
     };
   }
 
-  // Read the sender synthetic pk + inner ph from a standard-puzzle reveal (shared by XCH + CAT paths).
+  // Read the sender's synthetic public key + inner puzzle hash from a standard-puzzle reveal (shared
+  // by the XCH + CAT paths). The wallet's coins are p2_delegated_puzzle_or_hidden_puzzle (the Chia
+  // "standard" puzzle) curried with ONE argument: the 48-byte synthetic public key. We recover it by
+  // uncurrying the reveal and reading that first curried argument as an atom — the only API the
+  // vendored chia-wallet-sdk-wasm actually exposes (there is no puzzle.parseStandard* helper).
   function readSenderKey(chia, clvm, puzzleRevealHex) {
-    var puzzleBytes = chia.fromHex(strip0x(puzzleRevealHex));
-    var prog = clvm.deserialize(puzzleBytes);
-    var parsed = prog.puzzle();
-    var syntheticPk = parsed.parseP2Standard ? parsed.parseP2Standard().syntheticKey
-      : (parsed.parseInnerStandardInfo ? parsed.parseInnerStandardInfo().syntheticKey : null);
-    if (!syntheticPk && parsed.parseStandardPuzzle) { var info = parsed.parseStandardPuzzle(); syntheticPk = info && info.syntheticKey; }
-    if (!syntheticPk) throw new Error("Could not read your wallet's signing key from its coins.");
-    var pk = chia.PublicKey.fromBytes(syntheticPk.toBytes ? syntheticPk.toBytes() : syntheticPk);
+    var syntheticPkBytes = recoverSyntheticPk(chia, clvm, puzzleRevealHex);
+    if (!syntheticPkBytes || syntheticPkBytes.length !== 48) {
+      throw new Error("Could not read your wallet's signing key from its coins.");
+    }
+    var pk = chia.PublicKey.fromBytes(syntheticPkBytes);
     var innerPhBytes = chia.standardPuzzleHash ? chia.standardPuzzleHash(pk) : clvm.standardPuzzle(pk).puzzleHash();
     return { pk: pk, innerPh: strip0x(chia.toHex(innerPhBytes)) };
+  }
+
+  // Recover the 48-byte synthetic pk (Uint8Array) from a standard-puzzle reveal by uncurrying. Tries
+  // the CurriedProgram.args accessor first (getter or method), then falls back to toArgList() on the
+  // uncurried program's rest — tolerant of minor wasm-binding shape differences across versions.
+  function recoverSyntheticPk(chia, clvm, puzzleRevealHex) {
+    var prog = clvm.deserialize(chia.fromHex(strip0x(puzzleRevealHex)));
+    var curried = prog.uncurry ? prog.uncurry() : null;
+    if (!curried) return null;
+    var args = null;
+    try { args = typeof curried.args === "function" ? curried.args() : curried.args; } catch (_) { args = null; }
+    if ((!args || !args.length) && curried.getArgs) { try { args = curried.getArgs(); } catch (_) {} }
+    if (!args || !args.length) return null;
+    var first = args[0];
+    if (!first) return null;
+    // The synthetic pk is the first curried argument, an atom of 48 bytes.
+    if (typeof first.toAtom === "function") { try { return first.toAtom(); } catch (_) {} }
+    if (typeof first.toBytes === "function") { try { return first.toBytes(); } catch (_) {} }
+    return null;
   }
 
   // Build unsigned XCH coin spends sending `mojos` to `recipientPh`. Returns { coin_spends }.
