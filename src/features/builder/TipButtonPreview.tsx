@@ -29,7 +29,9 @@ export function TipButtonPreview({ scheme, color, asset, label }: TipButtonPrevi
         style={{
           background: `linear-gradient(135deg, ${resolved.gradientFrom} 0%, ${resolved.gradientTo} 100%)`,
           color: resolved.text,
-          boxShadow: `0 6px 18px ${resolved.shadow}`,
+          // A layered glow so the button reads as spotlit on the plinth: a tight ambient shadow for
+          // depth + a wide scheme-colored halo. The halo hue matches the stage spotlight (§signature).
+          boxShadow: `0 10px 30px ${resolved.shadow}, 0 2px 8px rgba(0,0,0,0.4)`,
         }}
       >
         <span aria-hidden="true" className="tip-btn-heart">

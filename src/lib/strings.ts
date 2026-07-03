@@ -7,10 +7,18 @@
 
 export const S = {
   appName: "xchtip.app",
+  // Top bar one-liner (hidden on narrow screens).
+  headerTag: "Embeddable Chia tip buttons",
+
+  // Hero — the button you're building is the thesis; keep the copy short + confident.
+  heroKicker: "Free · on-chain · no account",
+  heroTitleLead: "A tip button",
+  heroTitleAccent: "worth showing off.",
+  // Legacy key kept for any external reference; the hero now uses the lead/accent pair above.
   tagline: "Build an embeddable Chia tip button — for XCH or any CAT.",
   intro:
-    "Pick who gets tipped, which asset, and a color. Copy the one-line snippet onto any site. " +
-    "Tippers connect a Chia wallet and send on-chain, wallet to wallet — no account, no middleman.",
+    "Configure it on the left, watch it come to life on the stage, then copy one line of HTML " +
+    "onto any site. Tippers connect a Chia wallet and send on-chain — wallet to wallet, no middleman.",
 
   // Builder form
   recipientLabel: "Recipient Chia address",
@@ -36,6 +44,11 @@ export const S = {
 
   presetXchButton: "Preset: XCH (green)",
   presetDigButton: "Preset: $DIG (purple)",
+
+  // Stage + workbench section labels
+  stageCaption: "Live preview — this is exactly what your visitors will see.",
+  configureEyebrow: "Configure",
+  embedEyebrow: "Embed",
 
   // Output
   previewHeading: "Live preview",

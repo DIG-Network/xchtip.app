@@ -36,13 +36,19 @@ export function App({ search, origin }: AppProps) {
           <span className="brand" aria-hidden="true">
             ♥
           </span>
-          <span className="brand-name">{S.appName}</span>
+          <span className="brand-name">
+            xchtip<span className="brand-tld">.app</span>
+          </span>
+          <span className="header-tag">{S.headerTag}</span>
         </div>
       </header>
 
       <main id="main" className="site-main">
         <div className="hero">
-          <h1 className="hero-title">{S.tagline}</h1>
+          <p className="hero-kicker">{S.heroKicker}</p>
+          <h1 className="hero-title">
+            {S.heroTitleLead} <em>{S.heroTitleAccent}</em>
+          </h1>
           <p className="hero-intro">{S.intro}</p>
         </div>
         <BuilderPanel initialForm={initialForm} origin={origin} />

@@ -1,27 +1,57 @@
-/* xchtip.app — global styles. Dark, product-grade surface with generous, consistent spacing.
-   Brand: DIG purple→magenta gradient (#7a3dff→#ff00de) accents on a near-black card (#16131f),
-   with Chia green as the XCH accent. WCAG 2.2 AA contrast throughout. Respects reduced motion. */
+/* xchtip.app — "The workbench, after dark".
+   A maker's tool that mints an embeddable Chia tip button. The page IS a workbench: the live
+   button you are building sits on a spotlit plinth (the hero), and the controls are an instrument
+   panel beside it. Choosing a scheme literally re-lights the stage in that scheme's color — the
+   signature moment.
+
+   Surface: deep desaturated teal-ink (Chia-adjacent, never lime). Ink: warm off-white.
+   Signal accent: gold (#f5b642 — "value / tips"), used only on the primary action + focus + value
+   marks. Confirm: mint. The button's brand schemes (Chia green, DIG purple→magenta) are GUESTS on
+   this stage, so they pop rather than being the whole page.
+   Type: Fraunces (display serif) × Inter (UI) × JetBrains Mono (code). WCAG 2.2 AA. Reduced-motion. */
 
 :root {
-  --bg: #0d0b14;
-  --card: #16131f;
-  --card-2: #1e1a2b;
-  --border: #2c2740;
-  --border-strong: #3a3453;
-  --text: #f4f2fb;
-  --text-dim: #b8b2cc;
-  --text-faint: #8f89a6;
-  --accent: #7a3dff;
-  --accent-2: #ff00de;
-  --green: #3ab54a;
-  --error: #ff6b8a;
-  --focus: #ff00de;
-  --radius: 14px;
-  --radius-sm: 10px;
-  --space: 1rem;
-  --maxw: 1120px;
-  --font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  /* Surface — deep teal-ink, layered */
+  --ink: #0b1512;
+  --ink-2: #0f1d19;
+  --ink-3: #12241f;
+  --well: #081210;
+  --line: #1e3630;
+  --line-2: #2a4b42;
+
+  /* Ink (text) — warm off-white ramp */
+  --paper: #eef4f0;
+  --paper-dim: #a6bcb3;
+  --paper-faint: #6f8880;
+
+  /* Signal accent — gold ("value") */
+  --gold: #f5b642;
+  --gold-hi: #ffcf6a;
+  --gold-soft: rgba(245, 182, 66, 0.14);
+  --gold-line: rgba(245, 182, 66, 0.42);
+
+  /* Life / confirm */
+  --mint: #57e39a;
+  --error: #ff8098;
+
+  /* Brand schemes (button only — guests on the stage) */
+  --xch-a: #3ab54a;
+  --xch-b: #1f8f3a;
+  --dig-a: #7a3dff;
+  --dig-b: #ff00de;
+
+  --focus: var(--gold);
+  --radius: 18px;
+  --radius-sm: 11px;
+  --radius-pill: 999px;
+  --maxw: 1140px;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* The stage spotlight hue — updated per scheme via an inline custom property on .site-main. */
+  --stage-glow: rgba(58, 181, 74, 0.5);
+  --stage-glow-soft: rgba(58, 181, 74, 0.16);
 }
 
 * {
@@ -35,12 +65,21 @@ body {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--ink);
+  color: var(--paper);
   font-family: var(--font);
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
+  /* A very quiet ambient field so the flat dark never reads as a void. */
+  background-image: radial-gradient(
+      1100px 700px at 78% -8%,
+      rgba(87, 227, 154, 0.06),
+      transparent 60%
+    ),
+    radial-gradient(900px 600px at 6% 4%, rgba(245, 182, 66, 0.05), transparent 55%);
+  background-attachment: fixed;
 }
 
 #root {
@@ -50,28 +89,38 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--gold);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  color: var(--gold-hi);
 }
 
-/* Visible focus everywhere (keyboard operability). */
+::selection {
+  background: var(--gold-soft);
+  color: var(--paper);
+}
+
+/* Visible focus everywhere. */
 :focus-visible {
   outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: 3px;
   border-radius: 4px;
 }
 
-/* Skip link — visually hidden until focused. */
+/* Skip link — hidden until focused. */
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 0;
   z-index: 100;
-  background: var(--accent);
-  color: #fff;
-  padding: 10px 16px;
+  background: var(--gold);
+  color: #1a1205;
+  padding: 12px 18px;
   border-radius: 0 0 var(--radius-sm) 0;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
 }
 .skip-link:focus {
   left: 0;
@@ -89,69 +138,235 @@ a {
   border: 0;
 }
 
-/* ---- Header ---- */
+/* ============================================================= Top bar ===== */
 .site-header {
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(122, 61, 255, 0.08), transparent);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 82%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
 }
 .site-header-inner {
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 18px 24px;
+  padding: 16px 28px;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 12px;
 }
 .brand {
-  font-size: 22px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--gold);
+  /* the heart glyph */
+  transform: translateY(1px);
 }
 .brand-name {
-  font-weight: 700;
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.005em;
+  color: var(--paper);
+}
+.brand-tld {
+  color: var(--paper-faint);
+  font-weight: 500;
+}
+.header-tag {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--paper-dim);
   letter-spacing: 0.01em;
 }
+@media (max-width: 620px) {
+  .header-tag {
+    display: none;
+  }
+}
 
-/* ---- Main ---- */
+/* ============================================================= Main ===== */
 .site-main {
   flex: 1;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 40px 24px 56px;
+  padding: 0 28px 72px;
   width: 100%;
 }
 
-.hero {
-  margin-bottom: 40px;
-  max-width: 720px;
+/* Small Fraunces-italic section eyebrow (label, not a number — the workbench is simultaneous). */
+.eyebrow {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-optical-sizing: auto;
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--gold);
+  letter-spacing: 0.01em;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.hero-title {
-  margin: 0 0 14px;
-  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
-  line-height: 1.2;
-  font-weight: 700;
-  background: linear-gradient(120deg, var(--text) 40%, #d9b6ff 75%, var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.hero-intro {
-  margin: 0;
-  color: var(--text-dim);
-  font-size: 1.05rem;
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold-line), transparent);
 }
 
-/* ---- Builder layout ---- */
+/* -------- Hero stage: the live button on a spotlit plinth (the thesis) ------ */
+.hero {
+  padding: 56px 0 44px;
+  text-align: center;
+  max-width: none;
+}
+.hero-kicker {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+  margin: 0 0 18px;
+}
+.hero-title {
+  margin: 0 auto 16px;
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-size: clamp(2rem, 5.2vw, 3.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+}
+.hero-title em {
+  font-style: italic;
+  color: var(--gold);
+}
+.hero-intro {
+  margin: 0 auto;
+  max-width: 52ch;
+  color: var(--paper-dim);
+  font-size: 1.06rem;
+}
+
+/* The plinth: a spotlit pedestal whose glow takes the button's own scheme hue (--stage-glow). */
+.stage {
+  margin: 40px auto 0;
+  max-width: 720px;
+  position: relative;
+  border-radius: calc(var(--radius) + 6px);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--ink-2), var(--well));
+  padding: 60px 24px 30px;
+  overflow: hidden;
+  isolation: isolate;
+}
+/* the spotlight cone from top-center, tinted by the active scheme */
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: -30% 4% auto 4%;
+  height: 460px;
+  background: radial-gradient(52% 100% at 50% 0%, var(--stage-glow), transparent 72%);
+  opacity: 0.9;
+  z-index: -1;
+  transition: background 0.45s ease;
+}
+/* floor line under the plinth */
+.stage::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 64px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-2), transparent);
+}
+.stage-spot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* the live preview button — larger + a scheme-hued glow, plus a soft reflection */
+.preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 8px 26px;
+  position: relative;
+}
+.tip-btn-preview {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: default;
+  padding: 15px 30px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: 0.005em;
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.35s ease,
+    background 0.35s ease;
+}
+.tip-btn-preview:hover {
+  transform: translateY(-2px);
+}
+/* the button's reflection on the plinth floor */
+.tip-btn-preview::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -22px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--stage-glow);
+  opacity: 0.28;
+  filter: blur(11px);
+  transition: background 0.45s ease;
+}
+.tip-btn-heart {
+  font-size: 16px;
+  line-height: 1;
+}
+.stage-caption {
+  margin: 26px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--paper-faint);
+}
+.stage-caption code {
+  font-family: var(--mono);
+  color: var(--paper-dim);
+  background: var(--well);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.78rem;
+}
+
+/* ============================================================= Workbench ===== */
 .builder-panel {
+  margin-top: 64px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 28px;
+  gap: 26px;
   align-items: start;
 }
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .builder-panel {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -159,13 +374,16 @@ a {
 
 .builder-inputs,
 .builder-output {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--ink-2), var(--ink));
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 30px;
+}
+.builder-inputs {
+  position: relative;
 }
 
-/* ---- Form ---- */
+/* ---------------------------------------------------------- Form ---- */
 .builder-form {
   display: flex;
   flex-direction: column;
@@ -179,22 +397,32 @@ a {
 }
 .preset-btn {
   cursor: pointer;
-  border-radius: 999px;
-  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  padding: 11px 18px;
   font: inherit;
   font-weight: 600;
   font-size: 0.9rem;
   color: #fff;
   border: 1px solid transparent;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .preset-xch {
-  background: linear-gradient(135deg, #3ab54a, #1f8f3a);
+  background: linear-gradient(135deg, var(--xch-a), var(--xch-b));
+  box-shadow: 0 4px 16px rgba(31, 143, 58, 0.28);
 }
 .preset-dig {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(135deg, var(--dig-a), var(--dig-b));
+  box-shadow: 0 4px 16px rgba(122, 61, 255, 0.3);
 }
 .preset-btn:hover {
   filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.preset-btn:active {
+  transform: translateY(0);
 }
 
 .field {
@@ -209,40 +437,61 @@ a {
 .field-label,
 legend.field-label {
   font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text);
+  font-size: 0.94rem;
+  color: var(--paper);
   padding: 0;
 }
 .field-help {
   margin: 0;
   font-size: 0.82rem;
-  color: var(--text-faint);
+  color: var(--paper-faint);
 }
 .field-input {
   width: 100%;
-  padding: 11px 13px;
+  padding: 12px 14px;
   border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border-strong);
-  background: var(--card-2);
-  color: var(--text);
+  border: 1.5px solid var(--line-2);
+  background: var(--well);
+  color: var(--paper);
   font: inherit;
   font-size: 0.95rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .field-input::placeholder {
-  color: var(--text-faint);
+  color: var(--paper-faint);
 }
 .field-input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
 }
 .field-input[aria-invalid="true"] {
   border-color: var(--error);
+}
+.field-input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(255, 128, 152, 0.16);
+}
+/* addresses + ids read as data */
+#recipient,
+#catId,
+#color.color-text {
+  font-family: var(--mono);
+  font-size: 0.9rem;
 }
 .field-error {
   margin: 0;
   color: var(--error);
   font-size: 0.85rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.field-error::before {
+  content: "▲";
+  font-size: 0.7em;
 }
 
 .radio-row {
@@ -254,26 +503,37 @@ legend.field-label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-strong);
-  background: var(--card-2);
+  padding: 10px 15px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--line-2);
+  background: var(--ink-3);
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.radio-chip:hover {
+  border-color: var(--gold-line);
 }
 .radio-chip:has(input:checked) {
-  border-color: var(--accent);
-  background: rgba(122, 61, 255, 0.12);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--paper);
 }
 .radio-chip input {
-  accent-color: var(--accent);
+  accent-color: var(--gold);
 }
 
 .subfield {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
 }
 .color-row {
   display: flex;
@@ -281,23 +541,23 @@ legend.field-label {
   align-items: center;
 }
 .color-swatch {
-  width: 48px;
-  height: 44px;
-  padding: 2px;
+  width: 50px;
+  height: 46px;
+  padding: 3px;
   border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border-strong);
-  background: var(--card-2);
+  border: 1.5px solid var(--line-2);
+  background: var(--well);
   cursor: pointer;
 }
 .color-text {
   flex: 1;
 }
 
-/* ---- Output ---- */
+/* ---------------------------------------------------------- Output ---- */
 .builder-output {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 30px;
 }
 .output-block {
   display: flex;
@@ -306,52 +566,26 @@ legend.field-label {
 }
 .output-heading {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
+  color: var(--paper);
 }
 .output-help {
   margin: 0;
   font-size: 0.82rem;
-  color: var(--text-faint);
+  color: var(--paper-faint);
 }
 .output-empty {
   margin: 0;
-  padding: 16px;
+  padding: 18px;
   border-radius: var(--radius-sm);
-  border: 1px dashed var(--border-strong);
-  background: var(--card-2);
-  color: var(--text-dim);
+  border: 1px dashed var(--line-2);
+  background: var(--well);
+  color: var(--paper-dim);
   font-size: 0.9rem;
 }
 
-/* Preview stage */
-.preview-stage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px;
-  border-radius: var(--radius-sm);
-  background: repeating-linear-gradient(45deg, #100d18, #100d18 12px, #13101c 12px, #13101c 24px);
-  border: 1px solid var(--border);
-}
-.tip-btn-preview {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: default;
-  padding: 12px 22px;
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 600;
-  font-size: 15px;
-}
-.tip-btn-heart {
-  font-size: 15px;
-  line-height: 1;
-}
-
-/* Copy field */
+/* ---------------------------------------------------------- Copy field ---- */
 .copy-field {
   display: flex;
   flex-direction: column;
@@ -364,34 +598,67 @@ legend.field-label {
   gap: 12px;
 }
 .copy-field-label {
-  font-size: 0.8rem;
-  color: var(--text-faint);
+  font-size: 0.76rem;
+  color: var(--paper-faint);
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
+/* The copy button is the primary take-away action → the one place gold leads. */
 .copy-btn {
   cursor: pointer;
   border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border-strong);
-  background: var(--card-2);
-  color: var(--text);
+  border: 1.5px solid var(--gold-line);
+  background: var(--gold-soft);
+  color: var(--gold-hi);
   font: inherit;
   font-size: 0.82rem;
-  font-weight: 600;
-  padding: 7px 14px;
+  font-weight: 700;
+  padding: 8px 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease;
+}
+.copy-btn::before {
+  content: "⧉";
+  font-size: 0.95em;
 }
 .copy-btn:hover {
-  border-color: var(--accent);
+  background: rgba(245, 182, 66, 0.22);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.copy-btn:active {
+  transform: translateY(0);
+}
+/* confirmed state (button text becomes "Copied!") reads as mint */
+.copy-btn[data-copied="true"] {
+  color: var(--mint);
+  border-color: color-mix(in srgb, var(--mint) 55%, transparent);
+  background: color-mix(in srgb, var(--mint) 12%, transparent);
+}
+.copy-btn[data-copied="true"]::before {
+  content: "✓";
 }
 .copy-value {
   display: block;
-  background: #0a0810;
-  border: 1px solid var(--border);
+  background: var(--well);
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 14px;
+  padding: 15px;
   font-family: var(--mono);
   font-size: 0.82rem;
-  color: #e9d9ff;
+  line-height: 1.65;
+  color: #dfeee7;
   overflow-x: auto;
+}
+.copy-value:focus-visible {
+  border-color: var(--gold);
 }
 .copy-value-pre {
   margin: 0;
@@ -402,21 +669,34 @@ legend.field-label {
   word-break: break-all;
 }
 
-/* ---- Footer ---- */
+/* ============================================================= Footer ===== */
 .site-footer {
-  border-top: 1px solid var(--border);
-  padding: 28px 24px;
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding: 32px 28px;
   text-align: center;
-  color: var(--text-faint);
+  color: var(--paper-faint);
   font-size: 0.85rem;
 }
 .site-footer p {
-  margin: 4px 0;
+  margin: 5px 0;
 }
+.site-footer a {
+  color: var(--paper-dim);
+}
+.site-footer a:hover {
+  color: var(--gold);
+}
+
+/* Raw mode keeps its own inline styling (see RawSnippet.tsx) — no chrome. */
 
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
     transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  body {
+    background-attachment: scroll;
   }
 }

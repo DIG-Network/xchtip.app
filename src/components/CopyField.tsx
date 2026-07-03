@@ -43,6 +43,7 @@ export function CopyField({ value, label, multiline = false, valueTestId }: Copy
         <button
           type="button"
           className="copy-btn"
+          data-copied={copied ? "true" : "false"}
           onClick={onCopy}
           aria-label={`${S.copyButton}: ${label}`}
         >

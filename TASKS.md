@@ -28,6 +28,14 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
 - [ ] Ship: commit logical units, push origin/main, watch CI green.
 - [ ] Deploy: terraform init/apply locally (S3+CF+cert apply now; cert validation pends on NS).
 
+## Done
+
+- [x] UX/UI overhaul (Fable, world-class direction): "workbench after dark". Deep teal-ink surface
+      + gold ("value") signal accent + Fraunces × Inter × JetBrains Mono type. Signature = the live
+      button on a spotlit plinth whose glow re-lights in the chosen scheme's hue (green/purple/custom).
+      CSS + markup-structure reskin only — all data-testids, logic, embed/scheme modules unchanged.
+      117 unit + 18 a11y tests green (0 axe violations desktop+mobile), cov 99%, lint/typecheck/build clean.
+
 ## Paused / blocked — resume conditions
 
 (none yet)
