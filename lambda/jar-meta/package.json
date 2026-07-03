@@ -1,0 +1,17 @@
+{
+  "name": "xchtip-jar-meta",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "xchtip.app per-recipient <head> meta injection Lambda (#221 item 2) -- serves GET /jar/<recipient>?... with a crawler-visible, personalized <title>/description/canonical/Open-Graph/Twitter card (text via src/lib/jarMeta.ts, image via src/lib/jar.ts ogImageUrl, HTML rewrite via src/lib/htmlMeta.ts), by fetching the site's own built index.html over HTTPS and rewriting its <head> at the edge.",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node build.mjs && node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "esbuild": "^0.28.1",
+    "typescript": "~5.7.2"
+  }
+}

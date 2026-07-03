@@ -138,6 +138,18 @@ describe("JarPage — valid jar", () => {
     expect(document.head.querySelector('meta[name="description"]')!.getAttribute("content")).toBeTruthy();
   });
 
+  it("sets a PERSONALIZED per-recipient og:image/twitter:image (#221) pointing at /og with the same params", () => {
+    renderJar(`/jar/${XCH_ADDR}`, `asset=${DIG_ASSET_ID}&scheme=purple&name=Alice`);
+    const ogImage = document.head.querySelector('meta[property="og:image"]')!.getAttribute("content")!;
+    const twitterImage = document.head.querySelector('meta[name="twitter:image"]')!.getAttribute("content")!;
+    expect(ogImage).toBe(twitterImage);
+    expect(ogImage).toMatch(/^https:\/\/xchtip\.test\/og\?/);
+    expect(ogImage).toContain(`recipient=${XCH_ADDR}`);
+    expect(ogImage).toContain(`asset=${DIG_ASSET_ID}`);
+    expect(ogImage).toContain("scheme=purple");
+    expect(ogImage).toContain("name=Alice");
+  });
+
   it("shows the build's semver subtly in the footer", () => {
     renderJar(`/jar/${XCH_ADDR}`);
     expect(screen.getByTestId("app-version").textContent).toBe(`v${APP_VERSION}`);

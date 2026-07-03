@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import type { JarParseResult, JarConfig } from "@/lib/jar";
-import { jarUrl } from "@/lib/jar";
+import { jarUrl, ogImageUrl } from "@/lib/jar";
 import { assetSymbol, defaultPresetsFor } from "@/lib/embed";
 import { mountEmbedWidget } from "@/lib/embedMount";
 import { applyMeta } from "@/lib/meta";
@@ -122,7 +122,10 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
       : t("jarMetaTitleGeneric").replace("{asset}", symbol);
     const who = displayName ? displayName : t("jarMetaWhoGeneric");
     const description = t("jarMetaDescription").replace("{who}", who).replace("{asset}", symbol);
-    return applyMeta({ title, description, canonical: jarUrl(config, origin) });
+    // A PERSONALIZED per-recipient card (#221) — the SAME color/logo the widget below paints with,
+    // rendered server-side by the /og Lambda so crawlers (which never run this component's JS) see
+    // it too. See lib/ogCard.ts.
+    return applyMeta({ title, description, canonical: jarUrl(config, origin), image: ogImageUrl(config, origin) });
   }, [config, origin, displayName, symbol, t]);
 
   return (

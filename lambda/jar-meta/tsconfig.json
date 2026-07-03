@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "../../src/lib/jar.ts",
+    "../../src/lib/jarMeta.ts",
+    "../../src/lib/htmlMeta.ts",
+    "../../src/lib/embed.ts",
+    "../../src/lib/schemes.ts",
+    "../../src/lib/assetGlyph.ts",
+    "../../src/lib/logo.ts",
+    "../../src/lib/format.ts",
+    "../../src/lib/constants.ts",
+    "../../src/lib/bech32m.ts",
+    "../../src/i18n/messages/en.ts"
+  ]
+}

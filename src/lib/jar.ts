@@ -77,6 +77,27 @@ export function jarUrl(config: JarConfig, origin: string = SITE_ORIGIN): string 
 }
 
 /**
+ * ogImageUrl — the per-recipient `/og?…` OG/Twitter-card image URL (#221) for a JarConfig, so a
+ * crawler unfurling the jar link gets a PERSONALIZED preview image instead of the site-wide default
+ * `og.png`. Carries exactly the params the `/og` Lambda (lib/ogCard.ts) needs to reproduce the SAME
+ * card a human visitor sees: recipient (for the shortened-address fallback), the asset (mark +
+ * pitch), the display name, the color scheme/custom accent, a symbol override, and a custom logo.
+ * Used by JarPage as `applyMeta({ ..., image: ogImageUrl(config, origin) })`.
+ */
+export function ogImageUrl(config: JarConfig, origin: string = SITE_ORIGIN): string {
+  const p = new URLSearchParams();
+  p.set("recipient", config.recipient.toLowerCase());
+  if (config.asset.kind === "cat") p.set("asset", config.asset.assetId.toLowerCase());
+  if (config.name) p.set("name", config.name);
+  if (config.scheme === "purple" || config.scheme === "orange") p.set("scheme", config.scheme);
+  if (config.scheme === "custom" && config.color) p.set("color", config.color.toLowerCase());
+  if (config.symbol) p.set("symbol", config.symbol);
+  if (config.logo) p.set("logo", config.logo);
+  const base = String(origin || SITE_ORIGIN).replace(/\/+$/, "");
+  return `${base}/og?${p.toString()}`;
+}
+
+/**
  * parseJarPath — parse a location (pathname + search) into a JarConfig.
  *   • null            → not a jar route at all (the caller routes elsewhere).
  *   • { ok: false }   → a jar route with an invalid/missing recipient or params (render the

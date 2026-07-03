@@ -5,7 +5,7 @@
 // configs can't produce two different URLs.
 
 import { describe, it, expect } from "vitest";
-import { jarPath, jarUrl, parseJarPath, isJarPath, type JarConfig } from "./jar";
+import { jarPath, jarUrl, ogImageUrl, parseJarPath, isJarPath, type JarConfig } from "./jar";
 import { DIG_ASSET_ID, HOA_ASSET_ID } from "./constants";
 
 const XCH_ADDR = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
@@ -77,6 +77,44 @@ describe("jarPath — canonical generation", () => {
     const a = jarPath(baseConfig({ asset: { kind: "cat", assetId: DIG_ASSET_ID }, scheme: "purple", name: "Bob" }));
     const b = jarPath(baseConfig({ asset: { kind: "cat", assetId: DIG_ASSET_ID.toUpperCase() }, scheme: "purple", name: "Bob" }));
     expect(a).toBe(b);
+  });
+});
+
+describe("ogImageUrl — the per-recipient OG/Twitter-card image URL (#221)", () => {
+  it("always carries the recipient (lowercased), even for a bare XCH config", () => {
+    expect(ogImageUrl(baseConfig())).toBe(`https://xchtip.app/og?recipient=${XCH_ADDR}`);
+  });
+
+  it("carries the asset, scheme, name, and logo when set", () => {
+    const url = ogImageUrl(
+      baseConfig({
+        asset: { kind: "cat", assetId: DIG_ASSET_ID },
+        scheme: "purple",
+        name: "Alice",
+        logo: "https://example.com/logo.png",
+      }),
+    );
+    const parsed = new URL(url);
+    expect(parsed.pathname).toBe("/og");
+    expect(parsed.searchParams.get("recipient")).toBe(XCH_ADDR);
+    expect(parsed.searchParams.get("asset")).toBe(DIG_ASSET_ID);
+    expect(parsed.searchParams.get("scheme")).toBe("purple");
+    expect(parsed.searchParams.get("name")).toBe("Alice");
+    expect(parsed.searchParams.get("logo")).toBe("https://example.com/logo.png");
+  });
+
+  it("carries a custom color (not a named scheme) + a symbol override", () => {
+    const url = ogImageUrl(baseConfig({ scheme: "custom", color: "#7A3DFF", symbol: "SBX" }));
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get("color")).toBe("#7a3dff");
+    expect(parsed.searchParams.get("scheme")).toBeNull();
+    expect(parsed.searchParams.get("symbol")).toBe("SBX");
+  });
+
+  it("respects a custom origin (defaults to production)", () => {
+    expect(ogImageUrl(baseConfig(), "http://localhost:5173")).toBe(
+      `http://localhost:5173/og?recipient=${XCH_ADDR}`,
+    );
   });
 });
 
