@@ -1,0 +1,21 @@
+{
+  "name": "xchtip-og-image",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "xchtip.app per-recipient OG/Twitter-card image Lambda (#221) — GET /og?recipient=&name=&asset=&scheme=&logo= -> a 1200x630 PNG, rendered with satori (JSX/HTML->SVG) + @resvg/resvg-js (SVG->PNG), composed from the SAME shared schemes.ts/assetGlyph.ts resolution the jar page paints with (src/lib/ogCard.ts).",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node build.mjs && node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "satori": "0.26.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "esbuild": "^0.28.1",
+    "typescript": "~5.7.2"
+  }
+}

@@ -11,6 +11,7 @@
 
 import type { Asset } from "@/lib/embed";
 import { resolveAssetGlyph } from "@/lib/assetGlyph";
+import { CHIA_LEAF_PATH, DIG_MARK_PATH } from "@/lib/brandMarks";
 import { SafeLogoImage } from "./SafeLogoImage";
 
 export interface AssetGlyphProps {
@@ -60,7 +61,8 @@ function BuiltInMark({ asset, symbol, className }: { asset: Asset; symbol: strin
   }
 }
 
-// The Chia leaf mark — SAME path data as xch-tip.js's glyphChiaLeaf().
+// The Chia leaf mark — SAME path data as xch-tip.js's glyphChiaLeaf() AND the OG-card renderer
+// (lib/brandMarks.ts is the single source; see that module's header).
 function ChiaLeafGlyph({ className }: { className?: string }) {
   return (
     <svg
@@ -73,12 +75,13 @@ function ChiaLeafGlyph({ className }: { className?: string }) {
       focusable="false"
       fill="currentColor"
     >
-      <path d="M12 2C7 6 4 10 4 14.5A7.5 7.5 0 0 0 11.5 22c.3 0 .5-.2.5-.5V12c0-.3.2-.5.5-.5s.5.2.5.5v9.5c0 .3.2.5.5.5A7.5 7.5 0 0 0 20 14.5C20 10 17 6 12 2z" />
+      <path d={CHIA_LEAF_PATH} />
     </svg>
   );
 }
 
-// The DIG "D" mark — SAME path data as xch-tip.js's glyphDig().
+// The DIG "D" mark — SAME path data as xch-tip.js's glyphDig() AND the OG-card renderer
+// (lib/brandMarks.ts is the single source; see that module's header).
 function DigGlyph({ className }: { className?: string }) {
   return (
     <svg
@@ -91,7 +94,7 @@ function DigGlyph({ className }: { className?: string }) {
       focusable="false"
       fill="currentColor"
     >
-      <path d="M5 4h6a8 8 0 0 1 0 16H5V4zm3.2 3.1v9.8H11a4.9 4.9 0 0 0 0-9.8H8.2z" />
+      <path d={DIG_MARK_PATH} />
     </svg>
   );
 }
