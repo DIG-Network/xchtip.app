@@ -120,7 +120,14 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
       (Facebook/Twitter/Discord/Slack) sees the right preview — a JS-executing browser's own tab
       additionally gets `JarPage`'s client-side `applyMeta()` (unchanged, now also sets `image`).
       Infra: `terraform/og.tf` + `terraform/jar-meta.tf` (Lambda Function URLs behind CloudFront,
-      OAC-only invocation). Folded in the fee-line honesty nit (jar/builder + the widget's OWN
+      OAC-only invocation). DEPLOYED + LIVE-VERIFIED: `GET /og?...` -> 200 image/png 1200x630
+      (green/purple/orange + a custom-logo URL all spot-checked from the live endpoint); a
+      crawler-style no-JS fetch of `/jar/<r>?asset=<digCat>&scheme=purple&name=Alice` returns the
+      personalized `<title>Tip Alice in $DIG · xchtip.app</title>` + og:image/twitter:image pointing
+      at the matching `/og?...`. (First-apply note: the /og + /jar/* behaviors serve the SPA
+      index.html for a few minutes post-apply until the Lambda resource policy + OAC signing
+      converge — documented in runbooks/deploy.md.) Folded in the fee-line honesty nit (jar/builder
+      + the widget's OWN
       14-locale modal catalog in `public/embed/xch-tip.js`): reworded from "network fee goes to
       xchtip.app" (conflated the platform cut with Chia's separate on-chain fee) to "A 0.1% fee
       supports xchtip.app; plus a small XCH network fee — the rest goes straight to the recipient."
