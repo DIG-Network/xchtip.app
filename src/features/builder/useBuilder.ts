@@ -34,6 +34,8 @@ export interface BuilderForm {
   symbol: string;
   /** Display name shown on the shareable tip-jar page (optional). */
   name: string;
+  /** Optional custom logo URL, shown wherever the asset is named (see lib/logo.ts). */
+  logo: string;
 }
 
 /** The derived, read-only outputs of the builder. */
@@ -58,6 +60,7 @@ const DEFAULT_FORM: BuilderForm = {
   variant: "button",
   symbol: "",
   name: "",
+  logo: "",
 };
 
 // The wire `asset` value for a given asset choice + custom CAT id.
@@ -87,6 +90,7 @@ function buildBuilderLink(form: BuilderForm, origin: string, raw: boolean): stri
   if (form.variant !== "button") p.set("variant", form.variant);
   if (form.symbol.trim()) p.set("symbol", form.symbol.trim());
   if (form.name.trim()) p.set("name", form.name.trim());
+  if (form.logo.trim()) p.set("logo", form.logo.trim());
   if (raw) p.set("raw", "1");
   return `${origin}/?${p.toString()}`;
 }
@@ -103,6 +107,7 @@ export function formFromQuery(search: string | URLSearchParams): BuilderForm {
   if (q.variant) form.variant = parseVariant(q.variant);
   if (q.symbol) form.symbol = q.symbol;
   if (q.name) form.name = q.name;
+  if (q.logo) form.logo = q.logo;
 
   // Asset: xch | the DIG id | the HOA id | any other CAT id.
   const asset = (q.asset || "").trim().toLowerCase().replace(/^0x/, "");
@@ -180,6 +185,7 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
         variant: form.variant,
         symbol: form.symbol,
         name: form.name,
+        logo: form.logo,
       },
       origin,
     );
@@ -212,6 +218,7 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
           label: result.config.label,
           symbol: result.config.symbol,
           name: result.config.name,
+          logo: result.config.logo,
         },
         origin,
       ),

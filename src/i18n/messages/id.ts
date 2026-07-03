@@ -4,7 +4,7 @@ export const id: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "Tombol tip Chia yang bisa disematkan",
 
-  heroKicker: "Gratis · on-chain · tanpa akun",
+  heroKicker: "Dompet ke dompet · on-chain · tanpa akun",
   heroTitleLead: "Tombol tip",
   heroTitleAccent: "yang layak dipamerkan.",
   intro:

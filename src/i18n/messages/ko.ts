@@ -4,7 +4,7 @@ export const ko: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "삽입 가능한 Chia 팁 버튼",
 
-  heroKicker: "무료 · 온체인 · 계정 불필요",
+  heroKicker: "지갑 대 지갑 · 온체인 · 계정 불필요",
   heroTitleLead: "팁 버튼",
   heroTitleAccent: "자랑할 만한.",
   intro:

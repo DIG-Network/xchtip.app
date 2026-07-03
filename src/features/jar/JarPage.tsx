@@ -9,15 +9,19 @@
 // preconfigured from the parsed JarConfig, so the page is the WORKING widget on a hosted surface —
 // not a mock. An invalid link renders a clean, deterministic error with a route back to the builder.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import type { JarParseResult, JarConfig } from "@/lib/jar";
-import { jarAssetAttr, jarUrl } from "@/lib/jar";
+import { jarUrl } from "@/lib/jar";
 import { assetSymbol, defaultPresetsFor } from "@/lib/embed";
+import { mountEmbedWidget } from "@/lib/embedMount";
 import { applyMeta } from "@/lib/meta";
+import { resolveScheme } from "@/lib/schemes";
 import { useCopy } from "@/components/useCopy";
-import { SITE_ORIGIN, EMBED_PATH } from "@/lib/constants";
+import { AssetGlyph } from "@/components/AssetGlyph";
+import { SITE_ORIGIN } from "@/lib/constants";
 import { useT } from "@/i18n/useT";
 import { useLocale } from "@/i18n/I18nProvider";
+import { APP_VERSION } from "@/lib/version";
 
 export interface JarPageProps {
   /** The parsed jar route result (valid config, or an error). */
@@ -64,6 +68,9 @@ export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
         <p>
           <a href="/">{t("jarFooterCta")}</a>
         </p>
+        <p className="footer-version" data-testid="app-version">
+          {t("versionLabel", { version: APP_VERSION })}
+        </p>
       </footer>
     </>
   );
@@ -79,6 +86,20 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   const heading = displayName ? t("jarHeadingNamed").replace("{name}", displayName) : t("jarHeadingGeneric");
   const amounts = config.presets && config.presets.length ? config.presets : defaultPresetsFor(config.asset);
 
+  // Theme the WHOLE page to the selected scheme's palette (green/purple/orange/custom) — the SAME
+  // resolveScheme the builder's stage glow and the widget itself paint with (lib/schemes.ts is the
+  // one shared source), so a DIG jar reads purple end-to-end, an HOA jar orange end-to-end, etc.
+  // Exposed as CSS custom properties consumed by .jar-card's accent/glow/top-edge rules.
+  const resolved = useMemo(
+    () => resolveScheme(config.scheme === "custom" ? config.color : config.scheme),
+    [config.scheme, config.color],
+  );
+  const jarStyle = {
+    "--jar-accent": resolved.gradientFrom,
+    "--jar-accent-2": resolved.gradientTo,
+    "--jar-glow": resolved.shadow,
+  } as CSSProperties;
+
   // Per-page SEO/social meta (§6.6) — each jar URL is its own shareable page, so it gets its own
   // deterministic title + description + canonical + Open Graph, restored on unmount so SPA
   // navigation never leaves a stale card. All derived from the URL (no backend).
@@ -92,11 +113,24 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   }, [config, origin, displayName, symbol, t]);
 
   return (
-    <div className="jar-card" data-testid="jar-card">
+    <div className="jar-card" data-testid="jar-card" style={jarStyle}>
       <p className="jar-eyebrow">{t("jarEyebrow")}</p>
       <h1 className="jar-heading">{heading}</h1>
       <p className="jar-sub">
-        {t("jarSub")} <span data-testid="jar-asset" className="jar-asset">{symbol}</span>.
+        {t("jarSub")}{" "}
+        <span className="jar-asset-chip">
+          <AssetGlyph
+            asset={config.asset}
+            symbol={symbol}
+            logo={config.logo}
+            className="jar-asset-glyph"
+            size={18}
+          />
+          <span data-testid="jar-asset" className="jar-asset">
+            {symbol}
+          </span>
+        </span>
+        .
       </p>
 
       {/* Optional display name — the prominent, human-readable recipient identity, shown ABOVE the
@@ -181,34 +215,22 @@ function JarWidget({ config, locale }: { config: JarConfig; origin?: string; loc
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
-
-    const script = document.createElement("script");
-    // Root-relative src: the embed asset is always served same-origin as the tip page, so a
-    // root-relative path is correct on production AND on any preview/short-link host — no origin math.
-    script.setAttribute("src", EMBED_PATH);
-    script.async = true;
-    script.setAttribute("data-recipient", config.recipient);
-    script.setAttribute("data-asset", jarAssetAttr(config));
-    if (config.scheme === "custom" && config.color) script.setAttribute("data-color", config.color);
-    else if (config.scheme === "purple" || config.scheme === "orange") script.setAttribute("data-scheme", config.scheme);
-    else script.setAttribute("data-scheme", "green");
-    if (config.presets && config.presets.length) {
-      script.setAttribute("data-amount-presets", config.presets.join(","));
-    }
-    if (config.label) script.setAttribute("data-label", config.label);
-    if (config.symbol) script.setAttribute("data-symbol", config.symbol);
-    if (config.name) script.setAttribute("data-name", config.name);
-    // The tip page's widget honors the page's active locale.
-    script.setAttribute("data-locale", locale);
-    // A tip PAGE wants a prominent button — the widget's large size.
-    script.setAttribute("data-size", "lg");
-    // Mount into this container (the widget targets it).
-    script.setAttribute("data-target", `#${WIDGET_MOUNT_ID}`);
-
-    mount.appendChild(script);
-    return () => {
-      mount.replaceChildren();
-    };
+    // A tip PAGE wants a prominent button (data-size="lg") + the page's active locale, mounted
+    // into its own target container. See lib/embedMount.ts for the shared mounting contract.
+    return mountEmbedWidget(mount, {
+      recipient: config.recipient,
+      asset: config.asset,
+      scheme: config.scheme,
+      color: config.color,
+      presets: config.presets,
+      label: config.label,
+      symbol: config.symbol,
+      name: config.name,
+      logo: config.logo,
+      locale,
+      size: "lg",
+      target: `#${WIDGET_MOUNT_ID}`,
+    });
   }, [config, locale]);
 
   return (

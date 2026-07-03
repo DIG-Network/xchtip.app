@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderIntl as render } from "@/test/intl";
 import { App } from "./App";
+import { APP_VERSION } from "@/lib/version";
 
 const XCH = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
 
@@ -46,5 +47,34 @@ describe("App", () => {
   it("keeps the builder on the root path", () => {
     render(<App pathname="/" search="" origin="https://xchtip.test" />);
     expect(screen.getByTestId("input-recipient")).toBeInTheDocument();
+  });
+
+  it("shows the build's semver subtly in the footer", () => {
+    render(<App search="" origin="https://xchtip.test" />);
+    const version = screen.getByTestId("app-version");
+    expect(version).toBeInTheDocument();
+    expect(version.textContent).toBe(`v${APP_VERSION}`);
+    // Non-empty, real semver — not a placeholder that failed to inject.
+    expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it("routes /embed-preview to the chromeless live-widget preview (no builder, no jar, no bug-report button)", () => {
+    render(<App pathname="/embed-preview" search={`recipient=${XCH}&scheme=purple`} origin="https://xchtip.test" />);
+    expect(screen.getByTestId("embed-preview-stage")).toBeInTheDocument();
+    const script = screen.getByTestId("embed-preview-widget").querySelector("script")!;
+    expect(script.getAttribute("data-recipient")).toBe(XCH);
+    expect(script.getAttribute("data-scheme")).toBe("purple");
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("bugreport-launcher")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("input-recipient")).not.toBeInTheDocument();
+  });
+
+  it("does NOT claim the tip itself is free (honest header — a 0.1% fee applies)", () => {
+    render(<App search="" origin="https://xchtip.test" />);
+    const kicker = document.querySelector(".hero-kicker");
+    expect(kicker).not.toBeNull();
+    expect(kicker!.textContent).not.toMatch(/\bfree\b/i);
+    // The real fee disclosure is present and legible near the live preview.
+    expect(document.querySelector(".stage-fee")?.textContent).toMatch(/0\.1%/);
   });
 });

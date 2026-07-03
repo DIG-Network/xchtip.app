@@ -21,6 +21,7 @@ const baseForm: Form = {
   variant: "button",
   symbol: "",
   name: "",
+  logo: "",
 };
 
 function setup(overrides: Partial<Form> = {}, errors = {}) {
@@ -137,5 +138,32 @@ describe("BuilderForm", () => {
   it("hides the token-symbol field for XCH", () => {
     setup({ assetChoice: "xch" });
     expect(screen.queryByTestId("input-symbol")).not.toBeInTheDocument();
+  });
+
+  it("labels the quick-preset section 'Presets' and each button just by coin (no redundant 'Preset:' wording)", () => {
+    setup();
+    expect(screen.getByText("Presets")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-xch")).toHaveTextContent("XCH");
+    expect(screen.getByTestId("preset-xch")).not.toHaveTextContent(/preset/i);
+    expect(screen.getByTestId("preset-dig")).toHaveTextContent("$DIG");
+    expect(screen.getByTestId("preset-dig")).not.toHaveTextContent(/preset/i);
+    expect(screen.getByTestId("preset-hoa")).toHaveTextContent("HOA");
+    expect(screen.getByTestId("preset-hoa")).not.toHaveTextContent(/preset/i);
+  });
+
+  it("each quick-preset button shows its coin glyph", () => {
+    setup();
+    expect(screen.getByTestId("preset-xch").querySelector('[data-testid="asset-glyph-xch"]')).toBeInTheDocument();
+    expect(screen.getByTestId("preset-dig").querySelector('[data-testid="asset-glyph-dig"]')).toBeInTheDocument();
+    expect(screen.getByTestId("preset-hoa").querySelector('[data-testid="asset-glyph-hoa"]')).toBeInTheDocument();
+  });
+
+  it("has a Logo URL field that calls setField", async () => {
+    const user = userEvent.setup();
+    const { setField } = setup();
+    const logoInput = screen.getByTestId("input-logo");
+    expect(logoInput).toBeInTheDocument();
+    await user.type(logoInput, "h");
+    expect(setField).toHaveBeenCalledWith("logo", "h");
   });
 });

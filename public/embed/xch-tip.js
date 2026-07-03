@@ -23,6 +23,7 @@
  *     data-variant="button"                  (optional: button|compact|pill|inline|banner|card)
  *     data-symbol="DIG"                      (optional: display symbol for a CAT; overrides auto)
  *     data-name="Alice"                      (optional: recipient display name; shown on card/banner)
+ *     data-logo="https://…/logo.png"         (optional: custom logo shown instead of the built-in mark; https:// or data:image/* only)
  *     data-locale="ja"                       (optional: UI language; default = the visitor's browser)
  *     data-wc-project-id="<your projectId>"  (optional — defaults to xchtip.app's)
  *     data-target="#my-container"            (optional CSS selector to mount into; default: inline)
@@ -30,7 +31,8 @@
  *
  * FEE: a 0.1% protocol fee on each tip is routed to the xchtip.app fee address (same asset), created
  * as a coin alongside the recipient output in the same signed spend; the recipient gets the rest. The
- * tipper is shown a subtle disclosure. Tips too small to carry a whole-base-unit fee pay no fee.
+ * tipper is shown a clear disclosure BEFORE the send/cancel actions. Tips too small to carry a
+ * whole-base-unit fee pay no fee.
  *
  * PROVENANCE: this widget is a GENERALIZED port of the proven hub.dig.net tip widget
  * (public/embed/dig-tip.js). That widget solved self-hosted wasm loading (esm.sh's wrapper drops
@@ -273,6 +275,35 @@
     if (isHoaAsset(asset)) return GLYPH_ORANGE;
     return GLYPH_HEART;
   }
+  // buildGlyphNode — the leading mark for a config's button: an explicit custom logo (data-logo)
+  // takes precedence, rendered ONLY as a real <img> (never inline HTML) with the same hardening as
+  // src/components/SafeLogoImage.tsx (no-referrer, lazy, async-decode, fixed size); on a load error
+  // it swaps itself for the built-in brand glyph so a broken URL never leaves a broken image icon.
+  // Mirrors lib/assetGlyph.ts's "custom logo > built-in mark" precedence.
+  function buildGlyphNode(cfg) {
+    if (cfg.logo) {
+      var img = document.createElement("img");
+      img.className = "xt-glyph xt-logo";
+      img.src = cfg.logo;
+      img.alt = "";
+      img.setAttribute("aria-hidden", "true");
+      img.width = 18;
+      img.height = 18;
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.referrerPolicy = "no-referrer";
+      img.onerror = function () {
+        var fallback = document.createElement("span");
+        fallback.innerHTML = glyphFor(cfg.asset, cfg.scheme);
+        var node = fallback.firstChild;
+        if (img.parentNode && node) img.parentNode.replaceChild(node, img);
+      };
+      return img;
+    }
+    var wrap = document.createElement("span");
+    wrap.innerHTML = glyphFor(cfg.asset, cfg.scheme);
+    return wrap.firstChild || wrap;
+  }
   function amountToBaseUnits(asset, amount) {
     if (asset.kind === "xch") return Math.round(Number(amount) * XCH_MOJOS_PER_XCH);
     return Math.round(Number(amount) * CAT_BASE_UNITS);
@@ -375,6 +406,19 @@
     return s === "" ? null : s;
   }
 
+  // normalizeLogoUrl — an optional custom logo URL from data-logo. Mirrors src/lib/logo.ts: only
+  // https:// or data:image/*;base64, URLs are accepted (javascript:/http:/file:/blob:/etc. are
+  // silently dropped to null, never a hard error — the widget falls back to its built-in mark).
+  // Rendered ONLY as a plain <img src> (see buildGlyphNode), never inline markup.
+  var ALLOWED_DATA_IMAGE_RE = /^data:image\/(png|jpe?g|gif|webp|svg\+xml)(;charset=[\w-]+)?;base64,/i;
+  function normalizeLogoUrl(raw) {
+    var s = String(raw == null ? "" : raw).trim();
+    if (s === "") return null;
+    if (/^https:\/\//i.test(s)) return s;
+    if (ALLOWED_DATA_IMAGE_RE.test(s)) return s;
+    return null;
+  }
+
   function parseConfig(a) {
     a = a || {};
     var recipientPh = addressToPuzzleHash(a.recipient);
@@ -398,6 +442,7 @@
       color: color,
       symbol: symbol || null,
       name: sanitizeName(a.name),
+      logo: normalizeLogoUrl(a.logo),
       presets: parsePresets(a.presets, asset.kind === "xch") || defaultPresets(asset),
       label: (a.label && String(a.label).trim()) || defaultLabel(asset, symbol),
       align: parseAlign(a.align),
@@ -442,6 +487,7 @@
       ".xt-banner .xt-btn{margin:0;flex:0 0 auto}",
       ".xt-heart{font-size:15px;line-height:1}",
       ".xt-glyph{display:inline-block;width:1em;height:1em;line-height:1;flex:0 0 auto;vertical-align:-.125em}",
+      ".xt-logo{object-fit:contain;border-radius:3px}",
       ".xt-btn-label{display:inline-block}",
       /* data-variant=card: a self-contained tip card wrapping the button. */
       ".xt-card{display:inline-block;box-sizing:border-box;position:relative;overflow:hidden;text-align:center;",
@@ -477,7 +523,8 @@
       ".xt-action[disabled]{opacity:.5;cursor:not-allowed}",
       ".xt-secondary{border:1.5px solid #e6e1f2;color:#3a3450}",
       ".xt-note{margin:14px 0 0;font-size:12px;color:#9a93ad;text-align:center;line-height:1.5}",
-      ".xt-fee{margin:12px 0 0;font-size:11px;color:#b3adc0;text-align:center;line-height:1.4}",
+      // Legible (not buried fine print) — the tipper reads this BEFORE the Send button, not after.
+      ".xt-fee{margin:12px 0;font-size:12.5px;color:#d7d2e0;text-align:center;line-height:1.4}",
       ".xt-balance{margin:0 0 12px;font-size:12.5px;color:#6b6580;text-align:center;font-weight:600}",
       ".xt-getdig{margin:10px 0 0;font-size:12px;color:#6b6580;text-align:center;line-height:1.5}",
       ".xt-getdig a{font-weight:600;text-decoration:none}",
@@ -922,7 +969,6 @@
     injectStyles(scheme);
     var assetBase = widgetAssetBase() || "https://xchtip.app";
     var unit = assetUnitLabel(cfg.asset, cfg.symbol);
-    var glyph = glyphFor(cfg.asset, cfg.scheme);
     var L = cfg.locale; // widget locale for wt() lookups
 
     var mountTarget = null;
@@ -947,7 +993,11 @@
       btn.style.color = scheme.text;
       btn.style.boxShadow = "0 6px 18px " + scheme.shadow;
     }
-    btn.innerHTML = glyph + '<span class="xt-btn-label">' + escapeHtml(cfg.label) + "</span>";
+    btn.appendChild(buildGlyphNode(cfg));
+    var btnLabel = document.createElement("span");
+    btnLabel.className = "xt-btn-label";
+    btnLabel.textContent = cfg.label;
+    btn.appendChild(btnLabel);
 
     var wrap = document.createElement("div");
     wrap.className = "xt-wrap" + (cfg.align === "left" ? " xt-align-left" : cfg.align === "right" ? " xt-align-right" : "");
@@ -1057,9 +1107,11 @@
         body =
           '<p class="xt-sub">' + escapeHtml(wt(L, "pickSub", { unit: unit })) + "</p>" + balLine +
           '<div class="xt-amounts">' + chips + "</div>" + customRow +
+          // The fee disclosure sits BEFORE the action buttons — so the tipper reads exactly what's
+          // deducted before deciding to send, not as an easy-to-miss afterthought below the button.
+          '<p class="xt-fee">' + escapeHtml(wt(L, "fee")) + "</p>" +
           '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">' + escapeHtml(wt(L, "cancel")) + "</button>" +
           '<button class="xt-action" style="' + accentStyle() + '" data-act="confirm"' + (amt > 0 ? "" : " disabled") + ">" + escapeHtml(wt(L, "send", { amt: amt > 0 ? amountLabel(amt) : unit })) + " ♥</button></div>" +
-          '<p class="xt-fee">' + escapeHtml(wt(L, "fee")) + "</p>" +
           (isDigAsset(cfg.asset) ? getDigHtml(scheme.from, L) : "") +
           '<button class="xt-disconnect" data-act="disconnect">' + escapeHtml(wt(L, "disconnect")) + "</button>";
       } else if (state.status === "preparing") {
@@ -1192,6 +1244,7 @@
       variant: el.dataset.variant,
       symbol: el.dataset.symbol,
       name: el.dataset.name,
+      logo: el.dataset.logo,
       locale: el.dataset.locale,
     });
     if (!cfg.ok) {

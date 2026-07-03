@@ -14,6 +14,13 @@ export interface PageMeta {
   description: string;
   /** The canonical URL + og:url (absolute). */
   canonical: string;
+  /**
+   * OPTIONAL per-page og:image + twitter:image (absolute URL). Omitted → the page's default image
+   * (set in index.html, currently the static `og.png`) is left completely untouched — this keeps
+   * the door open for a future per-recipient jar OG image (e.g. `/og?recipient=…&scheme=…&logo=…`)
+   * without this module hardcoding any assumption about a single site-wide image.
+   */
+  image?: string;
 }
 
 type Revert = () => void;
@@ -98,6 +105,13 @@ export function applyMeta(meta: PageMeta): Revert {
   set(metaByProp("og:url"), "content", meta.canonical);
   set(metaByName("twitter:title"), "content", meta.title);
   set(metaByName("twitter:description"), "content", meta.description);
+
+  // Only touch og:image/twitter:image when a per-page image is explicitly given — otherwise the
+  // page keeps whatever default index.html already set (see PageMeta.image doc above).
+  if (meta.image) {
+    set(metaByProp("og:image"), "content", meta.image);
+    set(metaByName("twitter:image"), "content", meta.image);
+  }
 
   return () => {
     // Revert in reverse creation order.

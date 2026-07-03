@@ -10,6 +10,7 @@
 import { SITE_ORIGIN, EMBED_PATH, DIG_ASSET_ID, HOA_ASSET_ID, DEFAULT_DIG_PRESETS, DEFAULT_XCH_PRESETS } from "./constants";
 import { isChiaAddress } from "./bech32m";
 import { isNamedScheme, normalizeHexColor, type SchemeName } from "./schemes";
+import { normalizeLogoUrl } from "./logo";
 
 /** The asset a tip is paid in: native XCH, or a CAT identified by its 64-hex asset id. */
 export type Asset = { kind: "xch" } | { kind: "cat"; assetId: string };
@@ -38,6 +39,13 @@ export interface TipConfig {
    * length-capped) but NOT HTML-escaped here — escaping happens at the render/attribute boundary.
    */
   name: string | null;
+  /**
+   * Optional CUSTOM logo URL, shown wherever the asset is named (the jar page, the widget's own
+   * button) INSTEAD of the built-in DIG/HOA/XCH mark. `https://` or `data:image/*` only — see
+   * lib/logo.ts. Rendered ONLY as a plain `<img src>` (never inline markup); an invalid scheme is
+   * dropped to `null` here, and a load failure at render time falls back to the built-in mark.
+   */
+  logo: string | null;
 }
 
 /** The maximum length (characters) of a display name — URL-sourced text is hard-capped. */
@@ -101,6 +109,22 @@ export function parseAsset(value: unknown): Asset | null {
 /** The `data-asset` attribute value for an asset (`xch` or the CAT id). */
 export function assetToAttr(asset: Asset): string {
   return asset.kind === "xch" ? "xch" : asset.assetId;
+}
+
+/**
+ * schemeAttr — the ONE embed data-attribute that encodes scheme + color, and its value: a custom
+ * accent always wins (`data-color`), otherwise the named scheme (`data-scheme`, falling back to
+ * `green` for anything unrecognized). Shared by every surface that emits or mounts the widget
+ * (buildEmbedSnippet below, the jar page, the embed-preview route) so the "custom color overrides
+ * a named scheme" rule lives in exactly one place.
+ */
+export function schemeAttr(
+  scheme: SchemeName,
+  color: string | null,
+): { attr: "data-color" | "data-scheme"; value: string } {
+  if (scheme === "custom" && color) return { attr: "data-color", value: color };
+  if (scheme === "purple" || scheme === "orange") return { attr: "data-scheme", value: scheme };
+  return { attr: "data-scheme", value: "green" };
 }
 
 /** True when the asset is the canonical $DIG CAT. */
@@ -179,6 +203,7 @@ export function validateConfig(input: {
   variant?: unknown;
   symbol?: unknown;
   name?: unknown;
+  logo?: unknown;
 }): ValidationResult {
   const errors: ValidationErrors = {};
 
@@ -214,6 +239,7 @@ export function validateConfig(input: {
       variant: parseVariant(input.variant),
       symbol: normalizeSymbol(input.symbol),
       name: normalizeDisplayName(input.name),
+      logo: normalizeLogoUrl(input.logo),
     },
   };
 }
@@ -290,13 +316,8 @@ export function buildEmbedSnippet(config: TipConfig, origin: string = SITE_ORIGI
   attrs += ` data-asset="${escapeHtmlAttr(assetToAttr(config.asset))}"`;
 
   // Scheme: emit the custom accent as data-color when custom, else the named scheme as data-scheme.
-  if (config.scheme === "custom" && config.color) {
-    attrs += ` data-color="${escapeHtmlAttr(config.color)}"`;
-  } else if (config.scheme === "purple" || config.scheme === "orange") {
-    attrs += ` data-scheme="${config.scheme}"`;
-  } else {
-    attrs += ` data-scheme="green"`;
-  }
+  const sa = schemeAttr(config.scheme, config.color);
+  attrs += ` ${sa.attr}="${escapeHtmlAttr(sa.value)}"`;
 
   if (config.presets && config.presets.length) {
     attrs += ` data-amount-presets="${escapeHtmlAttr(config.presets.join(","))}"`;
@@ -312,6 +333,9 @@ export function buildEmbedSnippet(config: TipConfig, origin: string = SITE_ORIGI
   }
   if (config.name) {
     attrs += ` data-name="${escapeHtmlAttr(config.name)}"`;
+  }
+  if (config.logo) {
+    attrs += ` data-logo="${escapeHtmlAttr(config.logo)}"`;
   }
   return `<script${attrs} async></script>`;
 }
@@ -341,6 +365,8 @@ export interface QueryParams {
   symbol: string | null;
   /** The optional recipient display name (raw text; sanitized downstream by normalizeDisplayName). */
   name: string | null;
+  /** The optional custom logo URL (raw text; validated downstream by normalizeLogoUrl). */
+  logo: string | null;
   raw: boolean;
 }
 
@@ -367,6 +393,7 @@ export function parseQueryParams(search: string | URLSearchParams): QueryParams 
     variant: p.get("variant"),
     symbol: p.get("symbol"),
     name: p.get("name"),
+    logo: p.get("logo"),
     raw,
   };
 }
@@ -382,6 +409,7 @@ export function hasBuilderParams(q: QueryParams): boolean {
     q.label != null ||
     q.variant != null ||
     q.symbol != null ||
-    q.name != null
+    q.name != null ||
+    q.logo != null
   );
 }

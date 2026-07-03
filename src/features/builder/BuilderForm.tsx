@@ -7,6 +7,8 @@ import type { BuilderForm as Form, AssetChoice } from "./useBuilder";
 import type { ValidationErrors, WidgetVariant } from "@/lib/embed";
 import { useCatSymbol } from "./useCatSymbol";
 import { useT } from "@/i18n/useT";
+import { AssetGlyph } from "@/components/AssetGlyph";
+import { DIG_ASSET_ID, HOA_ASSET_ID } from "@/lib/constants";
 
 export interface BuilderFormProps {
   form: Form;
@@ -23,18 +25,26 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
   const catSymbol = useCatSymbol(form.catId, form.assetChoice === "cat");
   return (
     <form className="builder-form" onSubmit={(e) => e.preventDefault()} noValidate aria-label="Tip widget builder">
-      {/* One-click presets */}
-      <div className="preset-row" role="group" aria-label="Quick presets">
-        <button type="button" className="preset-btn preset-xch" onClick={applyXchPreset} data-testid="preset-xch">
-          {t("presetXchButton")}
-        </button>
-        <button type="button" className="preset-btn preset-dig" onClick={applyDigPreset} data-testid="preset-dig">
-          {t("presetDigButton")}
-        </button>
-        <button type="button" className="preset-btn preset-hoa" onClick={applyHoaPreset} data-testid="preset-hoa">
-          {t("presetHoaButton")}
-        </button>
-      </div>
+      {/* One-click presets: asset + scheme in one tap. A single "Presets" legend; each button is
+          just named by coin — its glyph + scheme-colored gradient already say the rest (no
+          redundant "Preset:" repeated on every button). */}
+      <fieldset className="field preset-group">
+        <legend className="field-label">{t("quickPresetsLabel")}</legend>
+        <div className="preset-row" role="group" aria-label={t("quickPresetsLabel")}>
+          <button type="button" className="preset-btn preset-xch" onClick={applyXchPreset} data-testid="preset-xch">
+            <AssetGlyph asset={{ kind: "xch" }} symbol="XCH" className="preset-glyph" />
+            {t("presetXchButton")}
+          </button>
+          <button type="button" className="preset-btn preset-dig" onClick={applyDigPreset} data-testid="preset-dig">
+            <AssetGlyph asset={{ kind: "cat", assetId: DIG_ASSET_ID }} symbol="$DIG" className="preset-glyph" />
+            {t("presetDigButton")}
+          </button>
+          <button type="button" className="preset-btn preset-hoa" onClick={applyHoaPreset} data-testid="preset-hoa">
+            <AssetGlyph asset={{ kind: "cat", assetId: HOA_ASSET_ID }} symbol="HOA" className="preset-glyph" />
+            {t("presetHoaButton")}
+          </button>
+        </div>
+      </fieldset>
 
       {/* Recipient */}
       <div className="field">
@@ -297,6 +307,30 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
           onChange={(e) => setField("name", e.target.value)}
           aria-describedby="name-help"
           autoComplete="off"
+        />
+      </div>
+
+      {/* Custom logo URL — overrides the built-in DIG/HOA/XCH mark wherever the asset is shown
+          (the jar page, the widget's own button). Invalid/unsafe schemes are silently ignored
+          (see lib/logo.ts) rather than blocking the whole form. */}
+      <div className="field">
+        <label htmlFor="logo" className="field-label">
+          {t("logoLabel")}
+        </label>
+        <p id="logo-help" className="field-help">
+          {t("logoHelp")}
+        </p>
+        <input
+          id="logo"
+          type="text"
+          className="field-input"
+          data-testid="input-logo"
+          value={form.logo}
+          placeholder={t("logoPlaceholder")}
+          onChange={(e) => setField("logo", e.target.value)}
+          aria-describedby="logo-help"
+          autoComplete="off"
+          spellCheck={false}
         />
       </div>
     </form>

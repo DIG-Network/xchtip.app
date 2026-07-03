@@ -53,6 +53,12 @@ describe("formFromQuery", () => {
     expect(formFromQuery(`?recipient=${XCH}&name=DIG+Network`).name).toBe("DIG Network");
     expect(formFromQuery(`?recipient=${XCH}`).name).toBe("");
   });
+
+  it("pre-fills the logo URL from ?logo=", () => {
+    const url = "https://example.com/logo.png";
+    expect(formFromQuery(`?recipient=${XCH}&logo=${encodeURIComponent(url)}`).logo).toBe(url);
+    expect(formFromQuery(`?recipient=${XCH}`).logo).toBe("");
+  });
 });
 
 describe("useBuilder", () => {
@@ -81,6 +87,25 @@ describe("useBuilder", () => {
     expect(result.current.derived.snippet).toContain('data-name="DIG Network"');
     expect(result.current.derived.builderLink).toContain("name=DIG+Network");
     expect(result.current.derived.rawLink).toContain("name=DIG+Network");
+  });
+
+  it("threads a custom logo URL into the jar URL, snippet, and share links", () => {
+    const { result } = renderHook(() => useBuilder(undefined, ORIGIN));
+    act(() => result.current.setField("recipient", XCH));
+    act(() => result.current.setField("logo", "https://example.com/logo.png"));
+    const encoded = encodeURIComponent("https://example.com/logo.png");
+    expect(result.current.derived.jarLink).toContain(`logo=${encoded}`);
+    expect(result.current.derived.snippet).toContain('data-logo="https://example.com/logo.png"');
+    expect(result.current.derived.builderLink).toContain(`logo=${encoded}`);
+    expect(result.current.derived.rawLink).toContain(`logo=${encoded}`);
+  });
+
+  it("drops an unsafe logo URL scheme (no data-logo in the snippet)", () => {
+    const { result } = renderHook(() => useBuilder(undefined, ORIGIN));
+    act(() => result.current.setField("recipient", XCH));
+    act(() => result.current.setField("logo", "javascript:alert(1)"));
+    expect(result.current.derived.ok).toBe(true);
+    expect(result.current.derived.snippet).not.toContain("data-logo");
   });
 
   it("applyDigPreset switches to the DIG asset + purple scheme", () => {

@@ -207,6 +207,7 @@ describe("buildEmbedSnippet", () => {
     variant: "button",
     symbol: null,
     name: null,
+    logo: null,
   };
 
   it("emits a self-contained script tag with the recipient + asset + scheme", () => {
@@ -420,5 +421,67 @@ describe("display name through the config + snippet", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.snippet).toContain('data-name="DIG Network"');
+  });
+});
+
+// ── Custom logo (`logo`) — an optional custom mark shown wherever the asset is named, overriding
+// the built-in DIG/HOA/XCH mark (SPEC §5 data-logo, §6 logo, lib/logo.ts owns URL validation). ────
+describe("custom logo through the config + snippet", () => {
+  it("validateConfig accepts a valid https logo URL", () => {
+    const r = validateConfig({ recipient: XCH, asset: "xch", logo: "https://example.com/logo.png" });
+    expect(r.ok && r.config.logo).toBe("https://example.com/logo.png");
+  });
+
+  it("validateConfig drops an unsafe logo scheme to null (never a hard error)", () => {
+    const r = validateConfig({ recipient: XCH, asset: "xch", logo: "javascript:alert(1)" });
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.config.logo).toBe(null);
+  });
+
+  it("validateConfig defaults logo to null when absent", () => {
+    const r = validateConfig({ recipient: XCH, asset: "xch" });
+    expect(r.ok && r.config.logo).toBe(null);
+  });
+
+  it("buildEmbedSnippet emits data-logo only when a valid logo is set", () => {
+    const base = validateConfig({ recipient: XCH, asset: "xch" });
+    expect(base.ok && buildEmbedSnippet(base.config)).not.toContain("data-logo");
+    const withLogo = validateConfig({ recipient: XCH, asset: "xch", logo: "https://example.com/logo.png" });
+    expect(withLogo.ok && buildEmbedSnippet(withLogo.config)).toContain(
+      'data-logo="https://example.com/logo.png"',
+    );
+  });
+
+  it("HTML-escapes the logo URL in the snippet", () => {
+    const r = validateConfig({ recipient: XCH, asset: "xch", logo: 'https://example.com/a"b.png' });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const s = buildEmbedSnippet(r.config);
+      expect(s).toContain('data-logo="https://example.com/a&quot;b.png"');
+    }
+  });
+
+  it("parseQueryParams extracts logo; hasBuilderParams counts it", () => {
+    const q = parseQueryParams(`?logo=${encodeURIComponent("https://example.com/logo.png")}`);
+    expect(q.logo).toBe("https://example.com/logo.png");
+    expect(hasBuilderParams(q)).toBe(true);
+    expect(parseQueryParams("").logo).toBe(null);
+  });
+
+  it("a raw link with logo yields a snippet carrying data-logo", () => {
+    const q = parseQueryParams(
+      `?recipient=${XCH}&asset=xch&logo=${encodeURIComponent("https://example.com/logo.png")}&raw=1`,
+    );
+    const r = buildSnippetFromInput({
+      recipient: q.recipient,
+      asset: q.asset,
+      scheme: q.scheme,
+      color: q.color,
+      presets: q.presets,
+      label: q.label,
+      logo: q.logo,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.snippet).toContain('data-logo="https://example.com/logo.png"');
   });
 });

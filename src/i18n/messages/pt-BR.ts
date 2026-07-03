@@ -4,7 +4,7 @@ export const ptBR: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "Botões de gorjeta Chia incorporáveis",
 
-  heroKicker: "Grátis · on-chain · sem conta",
+  heroKicker: "De carteira para carteira · on-chain · sem conta",
   heroTitleLead: "Um botão de gorjeta",
   heroTitleAccent: "de dar orgulho.",
   intro:

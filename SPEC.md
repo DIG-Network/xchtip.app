@@ -70,6 +70,7 @@ The generated snippet is a single self-contained script tag:
         data-variant="button|compact|pill|inline|banner|card"  OPTIONAL (default button; widget style)
         data-symbol="<TICKER>"                         OPTIONAL (CAT display symbol; overrides auto)
         data-name="<display name>"                     OPTIONAL (recipient display name; shown on the card/banner variants + jar page)
+        data-logo="<https:// or data:image/* URL>"     OPTIONAL (custom logo/mark; overrides the built-in DIG/HOA/XCH mark)
         data-locale="<bcp47>"                          OPTIONAL (widget UI language; default = browser)
         data-wc-project-id="<projectId>"               OPTIONAL (defaults to xchtip.app's, build-injected)
         data-target="<css selector>"                   OPTIONAL (mount container; default: inline)
@@ -105,9 +106,20 @@ Attribute semantics:
 - `data-locale` — the widget UI language (a BCP-47 tag). Default: the visitor's browser language,
   resolved to one of the 14 supported locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr,
   vi, id, hi) with per-string English fallback. The tip page passes its active locale through.
-- **Brand glyph:** the button's leading glyph is chosen from the asset/scheme — a Chia leaf for XCH,
-  the DIG mark for the $DIG CAT, the 🍊 mark for the HOA CAT, and a heart for a custom-color scheme
-  or any other CAT.
+- **Brand glyph / logo (§"Custom logo" below):** the button's leading mark, and the mark shown
+  next to the asset name on the jar page, follow ONE precedence resolved by `resolveAssetGlyph`
+  (`src/lib/assetGlyph.ts` on the site; `glyphFor`/`buildGlyphNode` in the widget) — a custom
+  `data-logo`/`logo` (if present and valid) ALWAYS wins; otherwise a Chia leaf for XCH, the DIG mark
+  for the $DIG CAT, the 🍊 mark for the HOA CAT, or a heart for a custom-color scheme or any other
+  CAT with no logo.
+- `data-logo` — an OPTIONAL custom logo/mark URL, shown INSTEAD of the built-in DIG/HOA/XCH mark
+  wherever the asset is named (the button's leading glyph, the jar page's "Paid in `<asset>`"
+  line). MUST be an `https://` URL or a `data:image/{png,jpg,jpeg,gif,webp,svg+xml};base64,` URL —
+  any other scheme (`javascript:`, plain `http:`, `file:`, `blob:`, …) is silently dropped (falls
+  back to the built-in mark, never a hard error). Rendered ONLY as a plain `<img src>` (never
+  inline HTML/SVG markup or a CSS background), hardened with `referrerpolicy="no-referrer"`,
+  `loading="lazy"`, `decoding="async"`, and fixed dimensions (no layout shift); a load failure
+  (`onerror`) falls back to the built-in mark so a broken URL never leaves a broken image icon.
 - `data-wc-project-id` — a WalletConnect (Reown) projectId. Absent → the widget uses xchtip.app's own
   projectId, baked into the deployed asset at build time. If NO projectId is available at all, the
   button explains the missing id on click.
@@ -131,6 +143,7 @@ The builder page (`/`) accepts these query parameters:
 | `variant`   | `button`\|`compact`\|`pill`\|`inline`\|`banner`\|`card` (default `button`)        |
 | `symbol`    | CAT display symbol override (e.g. `DIG`)                                 |
 | `name`      | recipient display name (sanitized + capped at 64 chars; shown on the card/banner + jar page) |
+| `logo`      | custom logo/mark URL (`https://` or `data:image/*`; invalid schemes are dropped, §5 data-logo) |
 | `raw`       | `1` / `true` → raw (machine-readable) mode                               |
 | `format`    | `raw` → equivalent to `raw=1`                                            |
 
@@ -160,6 +173,7 @@ configs always mint the identical URL:
   &presets=<a,b,c>               only when custom amount presets are set
   &label=<text>                  only when a custom button label is set
   &name=<text>                   only when a display name for the page is set
+  &logo=<url>                    only when a custom logo URL is set (URL-encoded, §5 data-logo)
 ```
 
 Determinism (round-trip law, tested): generating a URL from a config and parsing it back yields the
@@ -179,6 +193,67 @@ visible directly below it (never truncated) so a lookalike name can never mask w
 The name is sanitized identically to `data-name` (§5): whitespace collapsed, control characters
 stripped, capped at 64 characters, rendered as inert text (never parsed as HTML). It also flows to
 the mounted widget as `data-name` and into the page title/description/Open Graph.
+
+**Theming (whole-page, per selected scheme).** The jar page's own chrome — NOT just the mounted
+widget — themes to the resolved scheme's palette (§4), via the SAME `resolveScheme()` the widget
+paints with (`src/lib/schemes.ts`, the one shared source): the card's top-edge accent bar, its
+ambient glow, the "Send a tip" eyebrow color, and the recipient-address chip's hover border/copy-icon
+accent all derive from the active scheme. A `$DIG` jar (`scheme=purple`) reads purple end-to-end; an
+`HOA` jar (`scheme=orange`) reads orange end-to-end; XCH (`scheme=green`, the default) reads green;
+a custom accent (`color=`) tints the same surfaces. The page is NEVER a fixed color regardless of
+the asset.
+
+**Coin logo/glyph.** Next to the asset name in the "Paid in `<asset>`" line, the page shows that
+asset's mark — resolved by the SAME precedence as the widget's own button glyph (§5 "Brand glyph /
+logo"): a custom `logo=` URL (if present and valid) wins; otherwise the Chia leaf (XCH), the DIG
+mark ($DIG), the 🍊 mark (HOA), or a graceful text-initial fallback for an unknown CAT with no logo
+(NEVER a broken image).
+
+## 6b. Embed-preview route (`/embed-preview`)
+
+`GET /embed-preview?<params>` is a minimal, CHROMELESS route whose sole purpose is to be **iframed
+by a third-party page** (canonically hub.dig.net's Developer-tab "Embeddable Tip button" panel) to
+show a real, isolated live preview of the widget for the params being edited — isolated from the
+embedding page's own CSP/JS/WalletConnect state, and without any of xchtip.app's own site chrome
+(header, hero, footer) bleeding into a small preview container.
+
+Query parameters (a subset of the builder/jar contract, §6/§6a):
+
+| Param       | Meaning                                                                  |
+|-------------|---------------------------------------------------------------------------|
+| `recipient` | REQUIRED — recipient bech32m Chia address (§3)                            |
+| `asset`     | optional, default `xch` — `xch` or a 64-hex CAT id (§2)                   |
+| `scheme`    | optional, default `green` — `green` \| `purple` \| `orange` \| a 6-hex color (custom) |
+| `name`      | optional — recipient display name, sanitized IDENTICALLY to `data-name`/the jar page (§5): whitespace collapsed, control characters stripped, capped at 64 characters |
+| `logo`      | optional — custom logo/mark URL (`https://` or `data:image/*`; invalid schemes dropped, §5 data-logo) |
+
+`color`, `presets`, `label`, `symbol`, and `variant` are also accepted (the full `validateConfig`
+input shape, §6), for parity with the rest of the snippet contract — but `recipient`/`asset`/
+`scheme`/`name`/`logo` are the params the canonical hub integration sends, and are the ones a
+consuming integration MUST rely on.
+
+Behavior:
+
+- **Valid params** → the page renders NOTHING but the real embed widget (§8), mounted exactly as a
+  consuming site's own copy-pasted snippet would mount it (same `mountEmbedWidget` contract as the
+  jar page) — no `data-size` override, no `data-target` (default inline mount), centered on the
+  page via flex layout so it looks right cropped to a small preview container.
+- **Missing/invalid `recipient` (or any other invalid param)** → the page renders a BLANK,
+  transparent stage — no widget, no error text. The embedding page is expected to update the
+  iframe `src` reactively as its own form changes, so a transient invalid/incomplete state
+  (mid-edit) is normal and MUST be visually silent, not an error flash inside a small preview box.
+- **Background** — the `<body>` is forced transparent (no ink/gradient site surface) for this
+  route only, so the widget composites cleanly onto whatever background the embedding page uses.
+- **No bug-report button** — like raw mode (§6), this route is an iframe target, not a page a human
+  browses directly, so the floating bug-report launcher is omitted.
+- **Reactivity** — this route has NO client-side router; each param change is a fresh navigation
+  (the embedding page sets a new `iframe.src`), so the page simply re-reads its query params on
+  each load. No polling or `postMessage` contract is required.
+- **Frameable** — this route MUST NOT be served with `X-Frame-Options` or a `frame-ancestors` CSP
+  directive that blocks framing (it inherits xchtip.app's site-wide embed-anywhere posture, §9/§10
+  — the CloudFront default behavior applies no such header to any route).
+
+Example: `https://xchtip.app/embed-preview?recipient=xch1...&asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
 
 ## 7. Raw plain-text endpoint (`/embed.txt`)
 
@@ -237,8 +312,12 @@ Every tip carries a **0.1% protocol fee** paid to the xchtip.app fee address
   recipient with nothing — NO fee coin is created and the recipient receives the entire tip.
 - The fee output is a first-class coin created on the first selected coin's conditions (a CAT coin of
   the same asset for a CAT tip). It is signed + broadcast atomically with the recipient output.
-- The fee is DISCLOSED to the tipper: the tip modal shows a subtle "Includes a 0.1% network fee to
-  xchtip.app" line, and the builder + jar page carry the same disclosure.
+- The fee is CLEARLY disclosed to the tipper, not buried: the tip modal shows an "Includes a 0.1%
+  network fee to xchtip.app" line BEFORE the Send/Cancel actions (read before committing to send,
+  not as an easy-to-miss afterthought below the button), and the builder + jar page carry the same
+  disclosure as legible secondary text near the button (not hidden fine print). No surface claims
+  the tip itself is "free" — copy describing the tool (e.g. the header tagline) refers to using
+  xchtip.app (no signup/account), never to the tip being fee-less.
 
 ## 9. WalletConnect projectId injection
 

@@ -10,7 +10,9 @@ export const en = {
   appName: "xchtip.app",
   headerTag: "Embeddable Chia tip buttons",
 
-  heroKicker: "Free · on-chain · no account",
+  // NOT "Free" — a 0.1% tip fee applies (feeNote), so a bare "Free" would misleadingly read as a
+  // zero-fee tip. "Wallet-to-wallet" is the honest, distinct claim (no platform holds the funds).
+  heroKicker: "Wallet-to-wallet · on-chain · no account",
   heroTitleLead: "A tip button",
   heroTitleAccent: "worth showing off.",
   intro:
@@ -40,9 +42,12 @@ export const en = {
   labelLabel: "Button label (optional)",
   labelPlaceholder: "Tip",
 
-  presetXchButton: "Preset: XCH (green)",
-  presetDigButton: "Preset: $DIG (purple)",
-  presetHoaButton: "Preset: HOA (orange)",
+  // The one-click quick-preset row (asset + scheme in one tap) — a single "Presets" section
+  // legend; each button is just named by coin (its glyph + scheme color already say the rest).
+  quickPresetsLabel: "Presets",
+  presetXchButton: "XCH",
+  presetDigButton: "$DIG",
+  presetHoaButton: "HOA",
 
   stageCaption: "Live preview — this is exactly what your visitors will see.",
   stageCaptionDisabled: "Enter a recipient address to activate your live tip button.",
@@ -94,6 +99,9 @@ export const en = {
   jarNameLabel: "Display name (optional)",
   jarNameHelp: "Shown on your tip page (e.g. your name or project). Leave blank for a generic page.",
   jarNamePlaceholder: "e.g. Alice, or Café Zoë",
+  logoLabel: "Logo URL (optional)",
+  logoHelp: "A custom coin/brand mark shown next to the asset name, instead of the built-in mark. Must be an https:// image URL.",
+  logoPlaceholder: "https://example.com/logo.png",
   shortLinkHeading: "Short link",
   shortLinkHelp: "Turn the long tip-page link into a short xchtip.app link that's easy to share.",
   shortLinkButton: "Create short link",
@@ -104,6 +112,9 @@ export const en = {
 
   poweredBy: "Runs on Chia. Wallet connection via WalletConnect.",
   digNetwork: "A DIG Network dapp",
+  // A version tag isn't translatable prose (universally read as "version" across locales), so
+  // only English defines it — every other locale gets it via the per-key English fallback.
+  versionLabel: "v{version}",
 
   languageLabel: "Language",
 

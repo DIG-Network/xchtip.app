@@ -392,15 +392,16 @@ a:hover {
   font-size: 0.82rem;
   color: var(--paper-faint);
 }
-/* Subtle fee disclosure under the stage / on the jar page. */
+/* The fee disclosure under the stage / on the jar page — legible (not buried): the ONLY fee is the
+   0.1% cut to xchtip.app, so a tipper reads exactly what's deducted before they ever reach the
+   wallet-connect step. Sized/colored as normal secondary text, not hidden fine print. */
 .stage-fee,
 .jar-fee {
-  margin: 8px auto 0;
+  margin: 10px auto 0;
   max-width: 46ch;
   text-align: center;
-  font-size: 0.74rem;
-  color: var(--paper-faint);
-  opacity: 0.85;
+  font-size: 0.85rem;
+  color: var(--paper-dim);
 }
 .stage-caption code {
   font-family: var(--mono);
@@ -444,6 +445,11 @@ a:hover {
   gap: 26px;
 }
 
+.preset-group {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
 .preset-row {
   display: flex;
   gap: 12px;
@@ -451,6 +457,9 @@ a:hover {
 }
 .preset-btn {
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border-radius: var(--radius-pill);
   padding: 11px 18px;
   font: inherit;
@@ -462,6 +471,12 @@ a:hover {
     transform 0.15s ease,
     filter 0.15s ease,
     box-shadow 0.15s ease;
+}
+.preset-glyph {
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 1.05em;
+  color: #fff;
 }
 .preset-xch {
   background: linear-gradient(135deg, var(--xch-a), var(--xch-b));
@@ -878,6 +893,16 @@ legend.field-label {
 .site-footer a:hover {
   color: var(--gold);
 }
+/* The build version — present so a reporter can read it, but visually secondary to the copy
+   above it (smaller + dimmer than the already-muted footer text). Scoped under .site-footer to
+   out-specificity the `.site-footer p { margin }` rule above without an !important. */
+.site-footer .footer-version {
+  margin-top: 10px;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  letter-spacing: 0.02em;
+  font-family: var(--mono);
+}
 
 /* ============================================================= Short-link (builder) ===== */
 .shortlink-row {
@@ -941,6 +966,9 @@ legend.field-label {
   flex-direction: column;
   align-items: center;
 }
+/* Themed to the SELECTED scheme's palette (green/purple/orange/custom) via --jar-accent/-2/--jar-glow,
+   set inline from the SAME resolveScheme() the builder stage + the widget itself paint with
+   (JarPage.tsx) — a DIG jar reads purple end-to-end, an HOA jar orange end-to-end, XCH green. */
 .jar-card {
   width: 100%;
   text-align: center;
@@ -952,19 +980,29 @@ legend.field-label {
   overflow: hidden;
   isolation: isolate;
 }
+/* The top-edge accent bar — a thin scheme-tinted line across the card's top. */
+.jar-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--jar-accent, var(--gold)), transparent);
+}
+/* The ambient glow behind the heading, tinted by the active scheme. */
 .jar-card::before {
   content: "";
   position: absolute;
   inset: -30% 8% auto 8%;
   height: 360px;
-  background: radial-gradient(52% 100% at 50% 0%, var(--gold-soft), transparent 72%);
+  background: radial-gradient(52% 100% at 50% 0%, var(--jar-glow, var(--gold-soft)), transparent 72%);
   z-index: -1;
+  transition: background 0.45s ease;
 }
 .jar-eyebrow {
   font-family: var(--font-display);
   font-style: italic;
   font-size: 0.95rem;
-  color: var(--gold);
+  color: var(--jar-accent, var(--gold));
   margin: 0 0 10px;
 }
 .jar-heading {
@@ -983,6 +1021,18 @@ legend.field-label {
   max-width: 42ch;
   color: var(--paper-dim);
   font-size: 1.02rem;
+}
+/* The asset name + its coin logo/glyph (AssetGlyph), shown together in the "Paid in <asset>" line. */
+.jar-asset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: -0.15em;
+}
+.jar-asset-glyph {
+  display: inline-flex;
+  color: var(--jar-accent, var(--gold));
+  flex: 0 0 auto;
 }
 .jar-asset {
   color: var(--paper);
@@ -1026,7 +1076,7 @@ legend.field-label {
 }
 .jar-address:hover,
 .jar-address:focus-visible {
-  border-color: var(--gold-line);
+  border-color: var(--jar-glow, var(--gold-line));
 }
 .jar-address-to {
   font-size: 0.7rem;
@@ -1046,7 +1096,7 @@ legend.field-label {
   text-align: center;
 }
 .jar-address-copy {
-  color: var(--gold);
+  color: var(--jar-accent, var(--gold));
   font-size: 0.95rem;
 }
 
@@ -1151,6 +1201,22 @@ legend.field-label {
 }
 
 /* Raw mode keeps its own inline styling (see RawSnippet.tsx) — no chrome. */
+
+/* ============================================================= Embed-preview route ===== */
+/* /embed-preview (App.tsx / EmbedPreviewPage): chromeless + transparent, so the widget blends
+   into whatever page embeds it (the hub's Developer-tab live-preview iframe). Higher specificity
+   than the base `body` rule above; the `background` shorthand also resets that rule's ambient
+   gradient + background-attachment back to their initial (none/scroll) values. */
+body.embed-preview-page {
+  background: transparent;
+}
+.embed-preview-stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   * {

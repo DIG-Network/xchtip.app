@@ -4,7 +4,7 @@ export const zhCN: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "可嵌入的 Chia 打赏按钮",
 
-  heroKicker: "免费 · 链上 · 无需账户",
+  heroKicker: "钱包对钱包 · 链上 · 无需账户",
   heroTitleLead: "一个打赏按钮",
   heroTitleAccent: "值得炫耀。",
   intro:

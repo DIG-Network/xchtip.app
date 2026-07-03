@@ -82,6 +82,7 @@ describe("BuilderPanel", () => {
           variant: "button",
           symbol: "",
           name: "",
+          logo: "",
         }}
       />,
     );

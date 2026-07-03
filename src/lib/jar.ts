@@ -14,6 +14,7 @@
 //     &presets=<a,b,c>                   only when custom amount presets are set
 //     &label=<text>                      only when a custom button label is set
 //     &name=<text>                       only when a display name for the page is set
+//     &logo=<url>                        only when a custom logo URL is set (URL-encoded)
 //
 // Round-trip law (tested): parseJarPath(jarPath(c)) yields c, and jarPath(parse(url)) re-yields
 // the same url byte-for-byte.
@@ -40,6 +41,8 @@ export interface JarConfig {
   symbol: string | null;
   /** Display name shown on the jar page heading, or null. */
   name: string | null;
+  /** Optional custom logo URL shown next to the asset name/mark, or null (see lib/logo.ts). */
+  logo: string | null;
 }
 
 /** Result of parsing a would-be jar URL: a config, or a human-readable reason it is invalid. */
@@ -63,6 +66,7 @@ export function jarPath(config: JarConfig): string {
   if (config.label) p.set("label", config.label);
   if (config.symbol) p.set("symbol", config.symbol);
   if (config.name) p.set("name", config.name);
+  if (config.logo) p.set("logo", config.logo);
   const q = p.toString();
   return `/jar/${config.recipient.toLowerCase()}${q ? `?${q}` : ""}`;
 }
@@ -99,6 +103,7 @@ export function parseJarPath(pathname: string, search: string | URLSearchParams)
     presets: q.get("presets") ?? undefined,
     label: q.get("label") ?? undefined,
     symbol: q.get("symbol") ?? undefined,
+    logo: q.get("logo") ?? undefined,
   });
   if (!result.ok) {
     const messages = [result.errors.recipient, result.errors.asset, result.errors.color].filter(Boolean);
@@ -119,6 +124,7 @@ export function parseJarPath(pathname: string, search: string | URLSearchParams)
       label: result.config.label,
       symbol: result.config.symbol,
       name,
+      logo: result.config.logo,
     },
   };
 }

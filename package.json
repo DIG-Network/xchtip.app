@@ -16,7 +16,7 @@
     "test:a11y": "playwright test"
   },
   "dependencies": {
-    "@dignetwork/components": "^0.1.0",
+    "@dignetwork/components": "^0.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-intl": "^6.8.9"

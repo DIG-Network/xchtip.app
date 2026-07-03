@@ -4,7 +4,7 @@ export const de: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "Einbettbare Chia-Trinkgeld-Buttons",
 
-  heroKicker: "Kostenlos · on-chain · ohne Konto",
+  heroKicker: "Wallet-zu-Wallet · on-chain · ohne Konto",
   heroTitleLead: "Ein Trinkgeld-Button,",
   heroTitleAccent: "den man gern herzeigt.",
   intro:

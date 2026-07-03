@@ -86,6 +86,23 @@ function cleanName(v) {
     .slice(0, 64);
 }
 
+var WIDGET_VARIANTS = ["button", "compact", "pill", "inline", "banner", "card"];
+function normVariant(v) {
+  var s = String(v == null ? "" : v).trim().toLowerCase();
+  return WIDGET_VARIANTS.indexOf(s) >= 0 ? s : null;
+}
+// normalizeLogoUrl — mirrors src/lib/logo.ts: only https:// or data:image/*;base64, URLs are
+// accepted; anything else (javascript:, http:, file:, blob:, …) is dropped silently (never a hard
+// error — an invalid logo just isn't emitted, the widget falls back to its built-in mark).
+var ALLOWED_DATA_IMAGE_RE = /^data:image\/(png|jpe?g|gif|webp|svg\+xml)(;charset=[\w-]+)?;base64,/i;
+function normalizeLogoUrl(v) {
+  var s = String(v == null ? "" : v).trim();
+  if (s === "") return null;
+  if (/^https:\/\//i.test(s)) return s;
+  if (ALLOWED_DATA_IMAGE_RE.test(s)) return s;
+  return null;
+}
+
 function textResponse(status, body) {
   return {
     statusCode: status,
@@ -111,6 +128,9 @@ function handler(event) {
   var presets = qv(qs, "presets");
   var label = qv(qs, "label");
   var name = cleanName(qv(qs, "name"));
+  var symbol = qv(qs, "symbol");
+  var variant = normVariant(qv(qs, "variant"));
+  var logo = normalizeLogoUrl(qv(qs, "logo"));
 
   var errors = [];
   if (!recipient || !isChiaAddress(recipient)) errors.push("recipient: enter a valid Chia address (xch1…).");
@@ -120,7 +140,8 @@ function handler(event) {
   else if (asset && isCatId(asset)) assetAttr = strip0x(asset);
   else errors.push("asset: use xch or a 64-hex CAT asset id.");
 
-  // Scheme/color: explicit color OR a hex scheme → custom; else named (green default).
+  // Scheme/color: explicit color OR a hex scheme → custom; else named (green default). Mirrors
+  // src/lib/embed.ts schemeAttr — purple AND orange (HOA) are both named schemes, not just purple.
   var schemeAttr = null;
   var colorAttr = null;
   if (color) {
@@ -128,8 +149,8 @@ function handler(event) {
     else errors.push("color: enter a valid 6-digit hex color (e.g. #7a3dff).");
   } else if (scheme && isHex6(scheme)) {
     colorAttr = normHex(scheme);
-  } else if (scheme === "purple") {
-    schemeAttr = "purple";
+  } else if (scheme === "purple" || scheme === "orange") {
+    schemeAttr = scheme;
   } else {
     schemeAttr = "green";
   }
@@ -153,7 +174,10 @@ function handler(event) {
     if (list.length) attrs += ' data-amount-presets="' + esc(list.join(",")) + '"';
   }
   if (label) attrs += ' data-label="' + esc(label) + '"';
+  if (symbol) attrs += ' data-symbol="' + esc(symbol) + '"';
+  if (variant && variant !== "button") attrs += ' data-variant="' + esc(variant) + '"';
   if (name) attrs += ' data-name="' + esc(name) + '"';
+  if (logo) attrs += ' data-logo="' + esc(logo) + '"';
 
   return textResponse(200, "<script" + attrs + " async></script>");
 }

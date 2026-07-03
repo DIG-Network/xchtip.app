@@ -20,6 +20,7 @@ function baseConfig(overrides: Partial<JarConfig> = {}): JarConfig {
     label: null,
     symbol: null,
     name: null,
+    logo: null,
     ...overrides,
   };
 }
@@ -47,11 +48,18 @@ describe("jarPath — canonical generation", () => {
     );
   });
 
-  it("presets, label and name append in fixed order", () => {
+  it("presets, label, name and logo append in fixed order", () => {
     const p = jarPath(
-      baseConfig({ presets: [1, 5, 25], label: "Buy me a coffee", name: "Alice" }),
+      baseConfig({
+        presets: [1, 5, 25],
+        label: "Buy me a coffee",
+        name: "Alice",
+        logo: "https://example.com/logo.png",
+      }),
     );
-    expect(p).toBe(`/jar/${XCH_ADDR}?presets=1%2C5%2C25&label=Buy+me+a+coffee&name=Alice`);
+    expect(p).toBe(
+      `/jar/${XCH_ADDR}?presets=1%2C5%2C25&label=Buy+me+a+coffee&name=Alice&logo=https%3A%2F%2Fexample.com%2Flogo.png`,
+    );
   });
 
   it("recipient is lowercased canonically", () => {
@@ -91,6 +99,7 @@ describe("parseJarPath — round-trip + validation", () => {
       baseConfig({ asset: { kind: "cat", assetId: HOA_ASSET_ID }, scheme: "orange" }),
       baseConfig({ scheme: "custom", color: "#7a3dff" }),
       baseConfig({ presets: [0.1, 0.5, 1], label: "Tip me", name: "Café Zoë" }),
+      baseConfig({ logo: "https://example.com/logo.png" }),
     ];
     for (const config of shapes) {
       const path = jarPath(config);
@@ -147,5 +156,17 @@ describe("parseJarPath — round-trip + validation", () => {
     const dirty = parseJarPath(`/jar/${XCH_ADDR}`, `name=${encodeURIComponent("A\u0000B\tC")}`);
     expect(dirty!.ok).toBe(true);
     if (dirty!.ok) expect(dirty!.config.name).toBe("AB C");
+  });
+
+  it("accepts a valid https logo URL", () => {
+    const parsed = parseJarPath(`/jar/${XCH_ADDR}`, `logo=${encodeURIComponent("https://example.com/logo.png")}`);
+    expect(parsed!.ok).toBe(true);
+    if (parsed!.ok) expect(parsed!.config.logo).toBe("https://example.com/logo.png");
+  });
+
+  it("drops an unsafe logo URL scheme to null (never invalidates the whole link)", () => {
+    const parsed = parseJarPath(`/jar/${XCH_ADDR}`, `logo=${encodeURIComponent("javascript:alert(1)")}`);
+    expect(parsed!.ok).toBe(true);
+    if (parsed!.ok) expect(parsed!.config.logo).toBe(null);
   });
 });

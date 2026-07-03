@@ -4,7 +4,7 @@ export const ru: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "Встраиваемые кнопки чаевых Chia",
 
-  heroKicker: "Бесплатно · ончейн · без аккаунта",
+  heroKicker: "Кошелёк — кошельку · ончейн · без аккаунта",
   heroTitleLead: "Кнопка чаевых,",
   heroTitleAccent: "которой хочется хвастаться.",
   intro:

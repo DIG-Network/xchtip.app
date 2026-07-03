@@ -4,7 +4,7 @@ export const hi: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "एम्बेड करने योग्य Chia टिप बटन",
 
-  heroKicker: "मुफ़्त · ऑन-चेन · कोई खाता नहीं",
+  heroKicker: "वॉलेट-से-वॉलेट · ऑन-चेन · कोई खाता नहीं",
   heroTitleLead: "एक टिप बटन",
   heroTitleAccent: "जिसे दिखाने में गर्व हो।",
   intro:

@@ -4,7 +4,7 @@ export const tr: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "Yerleştirilebilir Chia bahşiş düğmeleri",
 
-  heroKicker: "Ücretsiz · zincir üstü · hesapsız",
+  heroKicker: "Cüzdandan cüzdana · zincir üstü · hesapsız",
   heroTitleLead: "Gururla gösterebileceğin",
   heroTitleAccent: "bir bahşiş düğmesi.",
   intro:

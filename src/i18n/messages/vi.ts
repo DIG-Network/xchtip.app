@@ -4,7 +4,7 @@ export const vi: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "Nút tip Chia có thể nhúng",
 
-  heroKicker: "Miễn phí · on-chain · không cần tài khoản",
+  heroKicker: "Từ ví đến ví · on-chain · không cần tài khoản",
   heroTitleLead: "Một nút tip",
   heroTitleAccent: "đáng để khoe.",
   intro:

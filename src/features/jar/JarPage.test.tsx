@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { JarPage } from "./JarPage";
 import { parseJarPath } from "@/lib/jar";
 import { DIG_ASSET_ID, HOA_ASSET_ID } from "@/lib/constants";
+import { APP_VERSION } from "@/lib/version";
 
 const XCH_ADDR = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
 
@@ -134,6 +135,11 @@ describe("JarPage — valid jar", () => {
       "/jar/",
     );
     expect(document.head.querySelector('meta[name="description"]')!.getAttribute("content")).toBeTruthy();
+  });
+
+  it("shows the build's semver subtly in the footer", () => {
+    renderJar(`/jar/${XCH_ADDR}`);
+    expect(screen.getByTestId("app-version").textContent).toBe(`v${APP_VERSION}`);
   });
 });
 

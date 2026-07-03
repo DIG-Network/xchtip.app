@@ -35,6 +35,10 @@ Parameters:
 - `symbol` (optional) — a CAT display symbol override (e.g. `DIG`); auto-detected otherwise.
 - `name` (optional) — a recipient display name (e.g. a handle or store label). Shown on the tip page
   above the address and on the `card`/`banner` widget variants; sanitized and capped at 64 characters.
+- `logo` (optional) — a custom logo/mark URL shown instead of the built-in DIG/HOA/XCH mark, wherever
+  the asset is named (the button's leading glyph, the tip page's "Paid in `<asset>`" line). MUST be
+  an `https://` URL or a `data:image/{png,jpg,jpeg,gif,webp,svg+xml};base64,` URL; any other scheme
+  is dropped (falls back to the built-in mark). A load failure also falls back to the built-in mark.
 - `raw` (optional) — `1`/`true` → return the snippet as plain text only (raw mode).
 - `format` (optional) — `raw` is equivalent to `raw=1`.
 
@@ -65,10 +69,24 @@ same widget.
 
 The path segment is the recipient bech32m address. Optional query params (a canonical, fixed order;
 defaults omitted): `asset=<64-hex CAT id>` (omit for XCH), `scheme=purple`, `color=%23rrggbb`,
-`presets=1,5,25`, `label=<text>`, `name=<display name>`. Each jar URL is its own SEO page (unique
-title, description, canonical, Open Graph) so a shared link previews well.
+`presets=1,5,25`, `label=<text>`, `name=<display name>`, `logo=<url>`. Each jar URL is its own SEO
+page (unique title, description, canonical, Open Graph) so a shared link previews well.
+
+The page THEMES to the selected scheme end-to-end (not a fixed color): a `$DIG` jar reads purple,
+an `HOA` jar orange, XCH green, a custom `color` tints the same surfaces. It also shows that asset's
+logo/glyph (or a custom `logo=` mark) next to the asset name.
 
 Example: `https://xchtip.app/jar/xch1...?asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
+
+## Embed preview (for integrators embedding a live preview)
+
+`https://xchtip.app/embed-preview?recipient=<xch1...>&asset=<xch|catId>&scheme=<green|purple|orange|hex>&name=<text>&logo=<url>`
+is a minimal, CHROMELESS route — no header/footer/hero — rendering ONLY the live embed widget for the
+given params, on a transparent background. Built to be `<iframe>`d by a third-party page (e.g.
+hub.dig.net's Developer-tab "Embeddable Tip button" panel) for a real, isolated live preview; the
+route is frameable by design (no `X-Frame-Options`/`frame-ancestors`, matching the rest of the site).
+An invalid/incomplete `recipient` renders a blank, transparent stage (no error) so a mid-edit state
+looks clean while the embedding page's form is incomplete.
 
 ## The embed snippet (data-attribute contract)
 
@@ -86,13 +104,16 @@ The generated snippet is a single self-contained script tag served from `https:/
         data-variant="button"            (optional: button|compact|pill|inline|banner|card)
         data-symbol="DIG"                (optional: CAT display symbol; auto-detected otherwise)
         data-name="Alice"                (optional: recipient display name; card/banner + jar page)
+        data-logo="https://…/logo.png"   (optional: custom logo; overrides the built-in DIG/HOA/XCH mark)
         async></script>
 ```
 
 The widget is fully self-contained: on click it opens its own WalletConnect session, lets the visitor
 pick an amount, builds the spend client-side (XCH = a plain standard spend; a CAT = a CAT spend for
-that asset id), signs via the wallet, and broadcasts to Chia mainnet. A 0.1% network fee on each tip
-goes to the xchtip.app fee address; the recipient receives the remainder (disclosed in the widget).
+that asset id), signs via the wallet, and broadcasts to Chia mainnet. A 0.1% fee on each tip goes to
+the xchtip.app fee address; the recipient receives the remainder. The fee is shown clearly on the
+amount screen BEFORE the send/cancel buttons — not hidden fine print, and no page claims the tip
+itself is free (only that using xchtip.app requires no signup/account).
 The embed asset and its wasm
 are served with permissive CORS (`Access-Control-Allow-Origin: *`) so it loads from any page on any
 domain, and the site imposes no frame/embedding restrictions.
@@ -101,5 +122,6 @@ domain, and the site imposes no frame/embedding restrictions.
 
 - Builder: https://xchtip.app/
 - Tip page (per recipient): https://xchtip.app/jar/<recipient>
+- Embed preview (iframe target): https://xchtip.app/embed-preview
 - Embed script: https://xchtip.app/embed/xch-tip.js
 - Sitemap: https://xchtip.app/sitemap.xml

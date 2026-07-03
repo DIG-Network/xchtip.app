@@ -110,17 +110,11 @@ test.describe("bug-report button integration", () => {
     await page.goto("/");
     await page.getByTestId("bugreport-launcher").click();
     await expect(page.getByTestId("bugreport-panel")).toBeVisible();
+    // @dignetwork/components v0.1.1 fixed the two WCAG 2.5.8 (target-size) findings that v0.1.0's
+    // panel markup had (the file input + the console-log <summary> toggle) — target-size is no
+    // longer disabled; this asserts zero violations across the board.
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-      // KNOWN UPSTREAM ISSUE (not introduced by, or fixable within, xchtip.app's integration):
-      // @dignetwork/components v0.1.0's own panel markup has two WCAG 2.5.8 (target-size)
-      // findings — the native `<input type="file">` and the `<summary>` console-log toggle are
-      // both under the 24px minimum target size. That markup lives entirely inside the shared
-      // component (modules/lib/components), which xchtip.app only consumes and does not own —
-      // flagged to the orchestrator for a fix + patch release there. Disabling just this rule here
-      // keeps the test asserting zero violations for everything xchtip.app itself controls (the
-      // launcher, the app shell around it, and any future host-level change).
-      .disableRules(["target-size"])
       .analyze();
     expect(results.violations).toEqual([]);
   });

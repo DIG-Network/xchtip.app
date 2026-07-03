@@ -1,4 +1,6 @@
 // App — the top-level shell. Reads the URL ONCE to decide the mode:
+//   • embed-preview route (`/embed-preview?…`) → render ONLY the live widget for the given params,
+//     transparent + chromeless (the hub iframes this for its Developer-tab live preview).
 //   • tip-jar route (`/jar/<recipient>?…`) → the recipient's standalone, DETERMINISTIC tip page
 //     (all state in the URL — there is no backend that stores landing pages).
 //   • raw mode (`?…&raw=1` / `format=raw`) → render ONLY the machine-readable snippet (no chrome).
@@ -13,12 +15,17 @@ import { formFromQuery } from "@/features/builder/useBuilder";
 import { BuilderPanel } from "@/features/builder/BuilderPanel";
 import { RawSnippet } from "@/features/raw/RawSnippet";
 import { JarPage } from "@/features/jar/JarPage";
+import { EmbedPreviewPage } from "@/features/embedPreview/EmbedPreviewPage";
+import { isEmbedPreviewPath } from "@/lib/embedPreviewPath";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useT } from "@/i18n/useT";
+import { APP_VERSION } from "@/lib/version";
 
 // The GitHub repo bug reports file into (DIG-Network/xchtip.app) — the shared widget's one
 // required prop. `apiBase` and `position` keep their component defaults (api.bugreport.dig.net,
-// bottom-right).
+// bottom-right). `appVersion` is passed explicitly (belt-and-suspenders) so every report records
+// which build it came from even on a components version that predates auto-detection — see
+// src/lib/version.ts.
 const BUG_REPORT_REPO = "xchtip.app";
 
 export interface AppProps {
@@ -41,11 +48,17 @@ export function App({ search, pathname, origin }: AppProps) {
   // is only meaningful on the builder route.
   const jar = useMemo(() => parseJarPath(rawPath, rawSearch), [rawPath, rawSearch]);
 
+  // The embed-preview route is a distinct, chromeless surface (an iframe target, not a page a
+  // human browses directly) — no bug-report button, same reasoning as raw mode below.
+  if (isEmbedPreviewPath(rawPath)) {
+    return <EmbedPreviewPage search={rawSearch} />;
+  }
+
   if (jar) {
     return (
       <>
         <JarPage result={jar} origin={origin} />
-        <BugReportButton repo={BUG_REPORT_REPO} />
+        <BugReportButton repo={BUG_REPORT_REPO} appVersion={APP_VERSION} />
       </>
     );
   }
@@ -88,9 +101,12 @@ export function App({ search, pathname, origin }: AppProps) {
       <footer className="site-footer">
         <p>{t("poweredBy")}</p>
         <p>{t("digNetwork")}</p>
+        <p className="footer-version" data-testid="app-version">
+          {t("versionLabel", { version: APP_VERSION })}
+        </p>
       </footer>
 
-      <BugReportButton repo={BUG_REPORT_REPO} />
+      <BugReportButton repo={BUG_REPORT_REPO} appVersion={APP_VERSION} />
     </>
   );
 }

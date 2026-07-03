@@ -4,7 +4,7 @@ export const ja: Partial<Messages> = {
   appName: "xchtip.app",
   headerTag: "埋め込み可能な Chia チップボタン",
 
-  heroKicker: "無料 · オンチェーン · アカウント不要",
+  heroKicker: "ウォレット間送金 · オンチェーン · アカウント不要",
   heroTitleLead: "チップボタンを",
   heroTitleAccent: "自慢したくなる。",
   intro:
