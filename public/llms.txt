@@ -9,6 +9,8 @@
 
 - Build a tip-button embed snippet from a recipient + asset + color, via the UI or the URL API.
 - Get the RAW embed snippet as plain text (no UI) so a tool/agent can generate embed codes.
+- Share a standalone tip page for a recipient at `https://xchtip.app/jar/<recipient>?...` — a full,
+  ready-to-share landing page with a working tip button, no site or embedding needed.
 
 ## URL query-param API
 
@@ -48,6 +50,20 @@ The canonical `$DIG` CAT asset id is
 (served at the edge). The SPA raw mode (`?...&raw=1`) renders the identical snippet inside a single
 `<pre data-testid="raw-snippet">` element for clients that execute JavaScript.
 
+## Tip-jar pages (a standalone hosted tip page per recipient)
+
+`https://xchtip.app/jar/<recipient>` is a full, shareable tip page for one recipient — no embedding
+and no backend: EVERY setting rides in the URL, so the same recipient (+ asset + scheme) always maps
+to the same page. The recipient hands out this link; a tipper opens it and sends on-chain via the
+same widget.
+
+The path segment is the recipient bech32m address. Optional query params (a canonical, fixed order;
+defaults omitted): `asset=<64-hex CAT id>` (omit for XCH), `scheme=purple`, `color=%23rrggbb`,
+`presets=1,5,25`, `label=<text>`, `name=<display name>`. Each jar URL is its own SEO page (unique
+title, description, canonical, Open Graph) so a shared link previews well.
+
+Example: `https://xchtip.app/jar/xch1...?asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
+
 ## The embed snippet (data-attribute contract)
 
 The generated snippet is a single self-contained script tag served from `https://xchtip.app/embed/xch-tip.js`:
@@ -60,6 +76,7 @@ The generated snippet is a single self-contained script tag served from `https:/
         data-color="#7a3dff"             (optional custom accent; overrides data-scheme)
         data-amount-presets="1,5,25"     (optional)
         data-label="Tip"                 (optional)
+        data-size="md"                   (optional: md | lg — lg = a prominent tip-page button)
         async></script>
 ```
 
@@ -72,5 +89,6 @@ domain, and the site imposes no frame/embedding restrictions.
 ## Links
 
 - Builder: https://xchtip.app/
+- Tip page (per recipient): https://xchtip.app/jar/<recipient>
 - Embed script: https://xchtip.app/embed/xch-tip.js
 - Sitemap: https://xchtip.app/sitemap.xml

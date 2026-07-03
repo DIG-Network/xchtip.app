@@ -46,6 +46,34 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
     await recipient.fill(XCH);
     await expect(page.getByTestId("snippet-output")).toBeVisible();
   });
+
+  test("tip-jar page has zero axe violations (XCH)", async ({ page }) => {
+    await page.goto(`/jar/${XCH}?name=Alice`);
+    await expect(page.getByTestId("jar-widget")).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("tip-jar page has zero axe violations ($DIG purple)", async ({ page }) => {
+    const DIG = "a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81";
+    await page.goto(`/jar/${XCH}?asset=${DIG}&scheme=purple&name=DIG+Network`);
+    await expect(page.getByTestId("jar-widget")).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("tip-jar invalid link has zero axe violations", async ({ page }) => {
+    await page.goto("/jar/xch1notvalid");
+    await expect(page.getByTestId("jar-error")).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
 });
 
 test.describe("SEO / machine-friendliness", () => {

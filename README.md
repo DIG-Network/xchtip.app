@@ -5,6 +5,8 @@ Embeddable Chia **tip-widget builder**. Pick a recipient, an asset (XCH or any C
 Chia wallet (WalletConnect → Sage) and tip on-chain, wallet to wallet — non-custodial, no account.
 
 - **Builder:** https://xchtip.app/
+- **Tip page (per recipient):** https://xchtip.app/jar/&lt;recipient&gt; — a standalone, shareable
+  landing page with a working tip button (deterministic, backend-free: every setting lives in the URL)
 - **Embed script:** https://xchtip.app/embed/xch-tip.js
 - **Machine API:** query-param builder + a plain-text `/embed.txt` endpoint (see [`llms.txt`](public/llms.txt))
 
@@ -20,7 +22,11 @@ The normative contract (embed data-attributes, query-param API, widget wire beha
    hub.dig.net tip widget. On click it opens its own WalletConnect session, the visitor picks an
    amount, and the widget builds + signs + broadcasts the payment (XCH = plain spend; CAT = CAT ring
    spend for that asset id).
-3. **Automate.** Any client can GET a snippet without the UI: `?...&raw=1` renders the snippet as
+3. **Share a tip page.** Instead of embedding, hand out `https://xchtip.app/jar/<recipient>?...` — a
+   full landing page with the recipient's working tip button. It is deterministic and backend-free
+   (the same config always maps to the same URL; the page is reconstructed entirely from the link),
+   and each jar URL is its own SEO/Open Graph page. The builder emits this as the "Your tip page" link.
+4. **Automate.** Any client can GET a snippet without the UI: `?...&raw=1` renders the snippet as
    plain text in the SPA, and `/embed.txt?...` returns it as a real `text/plain` response.
 
 ## Query-param / raw API (quick reference)
@@ -52,7 +58,8 @@ See [`runbooks/local.md`](runbooks/local.md) for full local setup and
 
 - `src/lib/` — pure, dependency-free logic (the tested single source of truth): bech32m validation,
   asset/scheme validation, embed-snippet generation, query-param mapping, centralized copy.
-- `src/features/builder/` — the builder hook + form + live preview + copyable output.
+- `src/features/builder/` — the builder hook + form + live preview + copyable output + tip-page link.
+- `src/features/jar/` — the deterministic per-recipient tip-jar landing page (`/jar/<recipient>`).
 - `src/features/raw/` — the machine-readable raw mode.
 - `public/embed/xch-tip.js` (+ `vendor/` wasm) — the self-contained embeddable widget.
 - `terraform/` — AWS infra (S3 + CloudFront + ACM + Route53). **No WAF; embeddable-anywhere; CORS `*`.**

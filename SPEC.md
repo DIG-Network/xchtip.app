@@ -113,6 +113,37 @@ Behavior:
   scraping. Invalid params render `ERROR: invalid parameters — <field>: <message>; …` in the same
   `<pre>` (with `data-ok="false"`).
 
+## 6a. Tip-jar pages (`/jar/<recipient>`)
+
+A tip jar is a standalone, self-contained landing page for ONE recipient. It is **deterministic and
+backend-free**: every setting rides in the URL, so the same config always maps to the same page and
+the page is 100% reconstructable from the link alone (served via the CloudFront SPA fallback — a deep
+link to `/jar/…` returns `index.html`, which reads the path).
+
+Canonical URL form — parameters appear in this FIXED order, and defaults are OMITTED so equivalent
+configs always mint the identical URL:
+
+```
+/jar/<recipient>                 recipient bech32m xch address (path segment; canonical lowercase)
+  ?asset=<64-hex CAT id>         only when the asset is a CAT (omitted for XCH)
+  &scheme=purple                 only for the purple scheme (green is the default)
+  &color=%23rrggbb               only for a custom accent (implies the custom scheme)
+  &presets=<a,b,c>               only when custom amount presets are set
+  &label=<text>                  only when a custom button label is set
+  &name=<text>                   only when a display name for the page is set
+```
+
+Determinism (round-trip law, tested): generating a URL from a config and parsing it back yields the
+SAME config, and re-generating from that parsed config yields the SAME URL byte-for-byte. Parsing is
+tolerant (a trailing slash and an uppercase recipient canonicalize to lowercase; unknown query params
+are ignored for forward-compatibility). An invalid/missing recipient renders a clean error state with
+a route back to the builder — never a broken page.
+
+The page mounts the real embed widget (§8) preconfigured from the URL (with `data-size="lg"`), so it
+is a working tip surface, not a mock. Each `/jar/…` URL is its OWN SEO page: a unique title,
+description, canonical, and Open Graph derived from the config (§6.6 baseline). The builder emits the
+canonical jar URL as the "Your tip page" share link.
+
 ## 7. Raw plain-text endpoint (`/embed.txt`)
 
 `GET /embed.txt?<same params as §6>` MUST return the embed snippet with
