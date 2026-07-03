@@ -19,7 +19,7 @@
 // the same url byte-for-byte.
 
 import { SITE_ORIGIN } from "./constants";
-import { validateConfig, assetToAttr, type Asset } from "./embed";
+import { validateConfig, assetToAttr, normalizeDisplayName, type Asset } from "./embed";
 import type { SchemeName } from "./schemes";
 
 /** The full config a tip-jar page renders from (a TipConfig plus the page display name). */
@@ -105,7 +105,9 @@ export function parseJarPath(pathname: string, search: string | URLSearchParams)
     return { ok: false, error: messages.join(" ") || "This tip jar link is invalid." };
   }
 
-  const name = (q.get("name") ?? "").trim();
+  // The display name is URL-sourced → hard-sanitize (control-char strip, whitespace-collapse,
+  // length cap). Kept as inert plain text; the page/attribute layer escapes it.
+  const name = normalizeDisplayName(q.get("name"));
   return {
     ok: true,
     config: {
@@ -116,7 +118,7 @@ export function parseJarPath(pathname: string, search: string | URLSearchParams)
       presets: result.config.presets,
       label: result.config.label,
       symbol: result.config.symbol,
-      name: name === "" ? null : name,
+      name,
     },
   };
 }

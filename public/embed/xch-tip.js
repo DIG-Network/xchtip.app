@@ -22,6 +22,7 @@
  *     data-size="md"                         (optional: md|lg; lg = a prominent tip-page button)
  *     data-variant="button"                  (optional: button|compact|pill|inline|banner|card)
  *     data-symbol="DIG"                      (optional: display symbol for a CAT; overrides auto)
+ *     data-name="Alice"                      (optional: recipient display name; shown on card/banner)
  *     data-locale="ja"                       (optional: UI language; default = the visitor's browser)
  *     data-wc-project-id="<your projectId>"  (optional — defaults to xchtip.app's)
  *     data-target="#my-container"            (optional CSS selector to mount into; default: inline)
@@ -355,6 +356,15 @@
     return hex;
   }
 
+  // sanitizeName — an optional recipient display name from data-name. Hard-sanitized (strip control
+  // chars, collapse whitespace, trim, cap at 64) to match src/lib/embed.ts normalizeDisplayName;
+  // rendered only via escapeHtml, never as raw markup. Returns the clean text or null.
+  function sanitizeName(raw) {
+    if (raw == null) return null;
+    var s = String(raw).replace(/\s+/g, " ").replace(/[\u0000-\u001f\u007f-\u009f]/g, "").trim().slice(0, 64);
+    return s === "" ? null : s;
+  }
+
   function parseConfig(a) {
     a = a || {};
     var recipientPh = addressToPuzzleHash(a.recipient);
@@ -377,6 +387,7 @@
       scheme: scheme,
       color: color,
       symbol: symbol || null,
+      name: sanitizeName(a.name),
       presets: parsePresets(a.presets, asset.kind === "xch") || defaultPresets(asset),
       label: (a.label && String(a.label).trim()) || defaultLabel(asset, symbol),
       align: parseAlign(a.align),
@@ -940,7 +951,7 @@
       card.innerHTML =
         '<div class="xt-card-bar" style="background:linear-gradient(90deg,' + scheme.from + "," + scheme.to + ')"></div>' +
         '<div class="xt-card-eyebrow">Tip in ' + escapeHtml(unit) + "</div>" +
-        '<div class="xt-card-title">Support this creator</div>' +
+        '<div class="xt-card-title">' + escapeHtml(cfg.name ? cfg.name : "Support this creator") + "</div>" +
         '<div class="xt-card-addr" title="' + escapeHtml(cfg.recipientAddress) + '">' + escapeHtml(cfg.recipientAddress) + "</div>";
       card.appendChild(btn);
       card.insertAdjacentHTML("beforeend", '<div class="xt-card-note">On-chain, wallet to wallet. Includes a 0.1% fee to xchtip.app.</div>');
@@ -952,7 +963,7 @@
       banner.style.setProperty("--xt-accent", scheme.from);
       var pitch = document.createElement("div");
       pitch.className = "xt-banner-text";
-      pitch.innerHTML = '<strong>Support this creator</strong><span>Tip in ' + escapeHtml(unit) + " on Chia — wallet to wallet.</span>";
+      pitch.innerHTML = '<strong>' + escapeHtml(cfg.name ? cfg.name : "Support this creator") + '</strong><span>Tip in ' + escapeHtml(unit) + " on Chia — wallet to wallet.</span>";
       banner.appendChild(pitch);
       banner.appendChild(btn);
       wrap.appendChild(banner);
@@ -1170,6 +1181,7 @@
       size: el.dataset.size,
       variant: el.dataset.variant,
       symbol: el.dataset.symbol,
+      name: el.dataset.name,
       locale: el.dataset.locale,
     });
     if (!cfg.ok) {

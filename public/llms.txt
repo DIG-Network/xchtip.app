@@ -31,6 +31,8 @@ Parameters:
 - `label` (optional) — a custom button label.
 - `variant` (optional) — the widget style: `button` (default), `compact`, `pill`, `inline`, `banner`, or `card`.
 - `symbol` (optional) — a CAT display symbol override (e.g. `DIG`); auto-detected otherwise.
+- `name` (optional) — a recipient display name (e.g. a handle or store label). Shown on the tip page
+  above the address and on the `card`/`banner` widget variants; sanitized and capped at 64 characters.
 - `raw` (optional) — `1`/`true` → return the snippet as plain text only (raw mode).
 - `format` (optional) — `raw` is equivalent to `raw=1`.
 
@@ -81,6 +83,7 @@ The generated snippet is a single self-contained script tag served from `https:/
         data-size="md"                   (optional: md | lg — lg = a prominent tip-page button)
         data-variant="button"            (optional: button|compact|pill|inline|banner|card)
         data-symbol="DIG"                (optional: CAT display symbol; auto-detected otherwise)
+        data-name="Alice"                (optional: recipient display name; card/banner + jar page)
         async></script>
 ```
 

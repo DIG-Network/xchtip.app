@@ -983,6 +983,21 @@ legend.field-label {
   font-weight: 600;
 }
 
+/* Optional display name — the prominent, human-readable recipient identity, shown directly above
+   the full address (which stays visible below for anti-spoofing verification). Luxury display type. */
+.jar-name {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-size: clamp(1.35rem, 4vw, 1.85rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  margin: 0 auto 12px;
+  max-width: 28ch;
+  overflow-wrap: break-word;
+}
+
 /* Recipient chip — click to copy the full address */
 .jar-address {
   all: unset;

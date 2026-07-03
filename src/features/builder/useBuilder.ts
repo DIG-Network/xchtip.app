@@ -85,6 +85,7 @@ function buildBuilderLink(form: BuilderForm, origin: string, raw: boolean): stri
   if (form.label.trim()) p.set("label", form.label.trim());
   if (form.variant !== "button") p.set("variant", form.variant);
   if (form.symbol.trim()) p.set("symbol", form.symbol.trim());
+  if (form.name.trim()) p.set("name", form.name.trim());
   if (raw) p.set("raw", "1");
   return `${origin}/?${p.toString()}`;
 }
@@ -100,6 +101,7 @@ export function formFromQuery(search: string | URLSearchParams): BuilderForm {
   if (q.presets) form.presets = q.presets;
   if (q.variant) form.variant = parseVariant(q.variant);
   if (q.symbol) form.symbol = q.symbol;
+  if (q.name) form.name = q.name;
 
   // Asset: xch | the DIG id | any other CAT id.
   const asset = (q.asset || "").trim().toLowerCase().replace(/^0x/, "");
@@ -167,6 +169,7 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
         label: form.label,
         variant: form.variant,
         symbol: form.symbol,
+        name: form.name,
       },
       origin,
     );
@@ -180,7 +183,6 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
         jarLink: null,
       };
     }
-    const name = form.name.trim();
     return {
       ok: true,
       snippet: result.snippet,
@@ -188,7 +190,8 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
       builderLink: buildBuilderLink(form, origin, false),
       rawLink: buildBuilderLink(form, origin, true),
       // The deterministic hosted tip-jar page for this config (canonical /jar/<recipient>?… URL).
-      // The jar page controls its own presentation, so `variant` is not part of the jar URL.
+      // The jar page controls its own presentation, so `variant` is not part of the jar URL. The
+      // display name is the sanitized value from validateConfig (single source of truth).
       jarLink: jarUrl(
         {
           recipient: result.config.recipient,
@@ -198,7 +201,7 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
           presets: result.config.presets,
           label: result.config.label,
           symbol: result.config.symbol,
-          name: name === "" ? null : name,
+          name: result.config.name,
         },
         origin,
       ),

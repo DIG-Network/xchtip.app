@@ -58,6 +58,35 @@ describe("JarPage — valid jar", () => {
     expect(screen.getByTestId("jar-asset").textContent).toContain("$DIG");
   });
 
+  it("renders the display name PROMINENTLY, above the full recipient address", () => {
+    renderJar(`/jar/${XCH_ADDR}`, "name=Caf%C3%A9%20Zo%C3%AB");
+    const name = screen.getByTestId("jar-name");
+    expect(name.textContent).toBe("Café Zoë");
+    const address = screen.getByTestId("jar-address");
+    // The name renders BEFORE (above) the address; the FULL address stays visible (anti-spoofing).
+    expect(name.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(address.textContent).toContain(XCH_ADDR);
+  });
+
+  it("renders an HTML-looking name as inert literal text (XSS-proof)", () => {
+    renderJar(`/jar/${XCH_ADDR}`, `name=${encodeURIComponent("<img src=x onerror=alert(1)>")}`);
+    const name = screen.getByTestId("jar-name");
+    expect(name.textContent).toBe("<img src=x onerror=alert(1)>");
+    // Nothing was parsed as markup — no element was injected anywhere in the card.
+    expect(document.querySelector("img")).toBeNull();
+  });
+
+  it("caps an over-long display name (URL-sourced text is length-limited)", () => {
+    renderJar(`/jar/${XCH_ADDR}`, `name=${"x".repeat(300)}`);
+    expect(screen.getByTestId("jar-name").textContent).toBe("x".repeat(64));
+  });
+
+  it("passes the display name to the widget (data-name)", () => {
+    renderJar(`/jar/${XCH_ADDR}`, "name=Alice");
+    const script = screen.getByTestId("jar-widget").querySelector("script")!;
+    expect(script.getAttribute("data-name")).toBe("Alice");
+  });
+
   it("falls back to a generic heading without a name", () => {
     renderJar(`/jar/${XCH_ADDR}`);
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();

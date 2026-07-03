@@ -99,6 +99,16 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
         {t("jarSub")} <span data-testid="jar-asset" className="jar-asset">{symbol}</span>.
       </p>
 
+      {/* Optional display name — the prominent, human-readable recipient identity, shown ABOVE the
+          full address. It is rendered as a React text node (inert; never parsed as HTML) and was
+          hard-sanitized on parse (length-capped, control-chars stripped). The FULL address below
+          stays visible so a lookalike name can never mask who is actually paid (anti-spoofing). */}
+      {displayName && (
+        <p className="jar-name" data-testid="jar-name">
+          {displayName}
+        </p>
+      )}
+
       <JarAddress recipient={config.recipient} />
 
       {/* Suggested amounts (display-only echo of what the widget offers; the widget owns the flow). */}
@@ -110,7 +120,7 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
         ))}
       </ul>
 
-      {/* The real widget mounts here, preconfigured from the URL. */}
+      {/* The real widget mounts here, preconfigured from the URL (including the display name). */}
       <JarWidget config={config} locale={locale} />
 
       <p className="jar-note">{t("jarNote")}</p>
@@ -187,6 +197,7 @@ function JarWidget({ config, locale }: { config: JarConfig; origin?: string; loc
     }
     if (config.label) script.setAttribute("data-label", config.label);
     if (config.symbol) script.setAttribute("data-symbol", config.symbol);
+    if (config.name) script.setAttribute("data-name", config.name);
     // The tip page's widget honors the page's active locale.
     script.setAttribute("data-locale", locale);
     // A tip PAGE wants a prominent button — the widget's large size.

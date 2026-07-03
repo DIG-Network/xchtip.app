@@ -65,6 +65,7 @@ The generated snippet is a single self-contained script tag:
         data-size="md" | "lg"                          OPTIONAL (default md; lg = prominent tip-page button)
         data-variant="button|compact|pill|inline|banner|card"  OPTIONAL (default button; widget style)
         data-symbol="<TICKER>"                         OPTIONAL (CAT display symbol; overrides auto)
+        data-name="<display name>"                     OPTIONAL (recipient display name; shown on the card/banner variants + jar page)
         data-locale="<bcp47>"                          OPTIONAL (widget UI language; default = browser)
         data-wc-project-id="<projectId>"               OPTIONAL (defaults to xchtip.app's, build-injected)
         data-target="<css selector>"                   OPTIONAL (mount container; default: inline)
@@ -90,6 +91,12 @@ Attribute semantics:
   `card` (a self-contained tip card with the recipient + pitch). Any other value → `button`.
 - `data-symbol` — a display symbol for a CAT (e.g. `DIG`), shown on the button + amounts. Overrides
   auto-detection; XCH is always `XCH`, the canonical DIG tail is `$DIG`, other CATs default to `CAT`.
+- `data-name` — an OPTIONAL recipient DISPLAY NAME (e.g. a handle or store label). The widget shows
+  it as the title of the `card` and `banner` variants; the jar page renders it prominently above the
+  recipient address. It is HARD-sanitized on ingest — whitespace runs collapse to a single space, all
+  control characters are stripped, and it is capped at 64 characters — then HTML-attribute-escaped, so
+  URL-sourced text can never inject markup. It NEVER replaces the full recipient address (which stays
+  visible for anti-spoofing).
 - `data-locale` — the widget UI language (a BCP-47 tag). Default: the visitor's browser language,
   resolved to one of the 14 supported locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr,
   vi, id, hi) with per-string English fallback. The tip page passes its active locale through.
@@ -117,6 +124,7 @@ The builder page (`/`) accepts these query parameters:
 | `label`     | custom button label                                                     |
 | `variant`   | `button`\|`compact`\|`pill`\|`inline`\|`banner`\|`card` (default `button`)        |
 | `symbol`    | CAT display symbol override (e.g. `DIG`)                                 |
+| `name`      | recipient display name (sanitized + capped at 64 chars; shown on the card/banner + jar page) |
 | `raw`       | `1` / `true` → raw (machine-readable) mode                               |
 | `format`    | `raw` → equivalent to `raw=1`                                            |
 
@@ -158,6 +166,13 @@ The page mounts the real embed widget (§8) preconfigured from the URL (with `da
 is a working tip surface, not a mock. Each `/jar/…` URL is its OWN SEO page: a unique title,
 description, canonical, and Open Graph derived from the config (§6.6 baseline). The builder emits the
 canonical jar URL as the "Your tip page" share link.
+
+When `name=<display name>` is present, the jar page renders it PROMINENTLY above the recipient
+address (luxury display typography) as the human-readable identity; the FULL recipient address stays
+visible directly below it (never truncated) so a lookalike name can never mask who is actually paid.
+The name is sanitized identically to `data-name` (§5): whitespace collapsed, control characters
+stripped, capped at 64 characters, rendered as inert text (never parsed as HTML). It also flows to
+the mounted widget as `data-name` and into the page title/description/Open Graph.
 
 ## 7. Raw plain-text endpoint (`/embed.txt`)
 

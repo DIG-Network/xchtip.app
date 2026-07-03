@@ -30,4 +30,19 @@ describe("rawOutput", () => {
     expect(r.ok).toBe(false);
     expect(r.text).toMatch(/^ERROR:/);
   });
+
+  it("passes the display name through (data-name in the raw snippet)", () => {
+    const q = parseQueryParams(`?recipient=${XCH}&asset=xch&name=DIG+Network&raw=1`);
+    const r = rawOutput(q);
+    expect(r.ok).toBe(true);
+    expect(r.text).toContain('data-name="DIG Network"');
+  });
+
+  it("passes variant + symbol through (raw mode = the full builder param set)", () => {
+    const q = parseQueryParams(`?recipient=${XCH}&asset=${DIG_ASSET_ID}&variant=card&symbol=DIG&raw=1`);
+    const r = rawOutput(q);
+    expect(r.ok).toBe(true);
+    expect(r.text).toContain('data-variant="card"');
+    expect(r.text).toContain('data-symbol="DIG"');
+  });
 });

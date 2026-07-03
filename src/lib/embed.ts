@@ -32,7 +32,16 @@ export interface TipConfig {
   variant: WidgetVariant;
   /** Optional display symbol for a CAT (overrides auto-detection); null for XCH / default. */
   symbol: string | null;
+  /**
+   * Optional recipient DISPLAY NAME shown prominently above the address on the jar page and passed
+   * to the widget (`data-name`). Sanitized (trimmed, whitespace-collapsed, control-chars stripped,
+   * length-capped) but NOT HTML-escaped here — escaping happens at the render/attribute boundary.
+   */
+  name: string | null;
 }
+
+/** The maximum length (characters) of a display name — URL-sourced text is hard-capped. */
+export const DISPLAY_NAME_MAX_LENGTH = 64;
 
 /** The selectable widget style. */
 export type WidgetVariant = "button" | "compact" | "pill" | "inline" | "banner" | "card";
@@ -162,6 +171,7 @@ export function validateConfig(input: {
   label?: unknown;
   variant?: unknown;
   symbol?: unknown;
+  name?: unknown;
 }): ValidationResult {
   const errors: ValidationErrors = {};
 
@@ -196,6 +206,7 @@ export function validateConfig(input: {
       label: normalizeLabel(input.label),
       variant: parseVariant(input.variant),
       symbol: normalizeSymbol(input.symbol),
+      name: normalizeDisplayName(input.name),
     },
   };
 }
@@ -204,6 +215,27 @@ export function validateConfig(input: {
 function normalizeSymbol(raw: unknown): string | null {
   const s = String(raw == null ? "" : raw).trim();
   return s === "" ? null : s;
+}
+
+/**
+ * normalizeDisplayName — sanitize a would-be display name into safe plain text, or null.
+ *
+ * The name can arrive from a URL (`?name=…`, the jar path query, a raw snippet) so it is HARD
+ * sanitized: strip ALL control characters (C0/C1/DEL), collapse any run of whitespace to a single
+ * space, trim, and hard-cap at DISPLAY_NAME_MAX_LENGTH characters. The result is inert plain TEXT —
+ * it is NOT HTML-escaped here; escaping happens where it becomes markup (escapeHtmlAttr for the
+ * snippet attribute, React text nodes on the page), so the value is never double-escaped.
+ */
+export function normalizeDisplayName(raw: unknown): string | null {
+  if (raw == null) return null;
+  const cleaned = String(raw)
+    // Collapse whitespace FIRST so tabs/newlines become a space (not stripped as controls below).
+    .replace(/\s+/g, " ")
+    // eslint-disable-next-line no-control-regex -- intentional: strip remaining C0/C1 controls + DEL.
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, "")
+    .trim()
+    .slice(0, DISPLAY_NAME_MAX_LENGTH);
+  return cleaned === "" ? null : cleaned;
 }
 
 // normalizeLabel — a trimmed non-empty label, or null (the widget then uses its default).
@@ -271,6 +303,9 @@ export function buildEmbedSnippet(config: TipConfig, origin: string = SITE_ORIGI
   if (config.variant && config.variant !== "button") {
     attrs += ` data-variant="${escapeHtmlAttr(config.variant)}"`;
   }
+  if (config.name) {
+    attrs += ` data-name="${escapeHtmlAttr(config.name)}"`;
+  }
   return `<script${attrs} async></script>`;
 }
 
@@ -297,6 +332,8 @@ export interface QueryParams {
   label: string | null;
   variant: string | null;
   symbol: string | null;
+  /** The optional recipient display name (raw text; sanitized downstream by normalizeDisplayName). */
+  name: string | null;
   raw: boolean;
 }
 
@@ -322,6 +359,7 @@ export function parseQueryParams(search: string | URLSearchParams): QueryParams 
     label: p.get("label"),
     variant: p.get("variant"),
     symbol: p.get("symbol"),
+    name: p.get("name"),
     raw,
   };
 }
@@ -336,6 +374,7 @@ export function hasBuilderParams(q: QueryParams): boolean {
     q.presets != null ||
     q.label != null ||
     q.variant != null ||
-    q.symbol != null
+    q.symbol != null ||
+    q.name != null
   );
 }

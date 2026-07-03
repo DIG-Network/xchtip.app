@@ -132,4 +132,13 @@ describe("parseJarPath — round-trip + validation", () => {
     expect(parsed!.ok).toBe(true);
     if (parsed!.ok) expect(jarPath(parsed!.config)).toBe(`/jar/${XCH_ADDR}`);
   });
+
+  it("sanitizes a URL-sourced display name (length cap + control-char strip)", () => {
+    const long = parseJarPath(`/jar/${XCH_ADDR}`, `name=${"a".repeat(200)}`);
+    expect(long!.ok).toBe(true);
+    if (long!.ok) expect(long!.config.name).toBe("a".repeat(64));
+    const dirty = parseJarPath(`/jar/${XCH_ADDR}`, `name=${encodeURIComponent("A\u0000B\tC")}`);
+    expect(dirty!.ok).toBe(true);
+    if (dirty!.ok) expect(dirty!.config.name).toBe("AB C");
+  });
 });

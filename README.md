@@ -32,8 +32,8 @@ The normative contract (embed data-attributes, query-param API, widget wire beha
 ## Query-param / raw API (quick reference)
 
 ```
-https://xchtip.app/?recipient=xch1...&asset=xch|<catId>&scheme=green|purple|<hex>&color=<hex>&presets=1,5&label=Tip[&raw=1]
-https://xchtip.app/embed.txt?recipient=xch1...&asset=<...>&scheme=<...>   # → text/plain snippet
+https://xchtip.app/?recipient=xch1...&asset=xch|<catId>&scheme=green|purple|<hex>&color=<hex>&presets=1,5&label=Tip&name=Alice[&raw=1]
+https://xchtip.app/embed.txt?recipient=xch1...&asset=<...>&scheme=<...>&name=<...>   # → text/plain snippet
 ```
 
 $DIG CAT asset id: `a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81`.

@@ -41,6 +41,11 @@ describe("formFromQuery", () => {
     expect(formFromQuery("?asset=xch").assetChoice).toBe("xch");
     expect(formFromQuery("?label=hi").assetChoice).toBe("xch");
   });
+
+  it("pre-fills the display name from ?name=", () => {
+    expect(formFromQuery(`?recipient=${XCH}&name=DIG+Network`).name).toBe("DIG Network");
+    expect(formFromQuery(`?recipient=${XCH}`).name).toBe("");
+  });
 });
 
 describe("useBuilder", () => {
@@ -59,6 +64,16 @@ describe("useBuilder", () => {
     expect(result.current.derived.snippet).toContain('data-asset="xch"');
     expect(result.current.derived.builderLink).toContain(`${ORIGIN}/?`);
     expect(result.current.derived.rawLink).toContain("raw=1");
+  });
+
+  it("threads the display name into the jar URL, snippet, and share links", () => {
+    const { result } = renderHook(() => useBuilder(undefined, ORIGIN));
+    act(() => result.current.setField("recipient", XCH));
+    act(() => result.current.setField("name", "DIG Network"));
+    expect(result.current.derived.jarLink).toContain("name=DIG+Network");
+    expect(result.current.derived.snippet).toContain('data-name="DIG Network"');
+    expect(result.current.derived.builderLink).toContain("name=DIG+Network");
+    expect(result.current.derived.rawLink).toContain("name=DIG+Network");
   });
 
   it("applyDigPreset switches to the DIG asset + purple scheme", () => {

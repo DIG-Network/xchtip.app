@@ -13,6 +13,8 @@ import {
   buildSnippetFromInput,
   parseQueryParams,
   hasBuilderParams,
+  normalizeDisplayName,
+  DISPLAY_NAME_MAX_LENGTH,
   type TipConfig,
 } from "./embed";
 import { DIG_ASSET_ID } from "./constants";
@@ -188,6 +190,7 @@ describe("buildEmbedSnippet", () => {
     label: null,
     variant: "button",
     symbol: null,
+    name: null,
   };
 
   it("emits a self-contained script tag with the recipient + asset + scheme", () => {
@@ -320,5 +323,80 @@ describe("query-param → snippet mapping (raw mode)", () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.snippet).toContain('data-color="#00aabb"');
+  });
+});
+
+// ── Display name (`name`) — the optional recipient display name (SPEC §5 data-name, §6 name). ──────
+describe("normalizeDisplayName", () => {
+  it("trims and passes a plain name through", () => {
+    expect(normalizeDisplayName("  Alice  ")).toBe("Alice");
+    expect(normalizeDisplayName("Café Zoë")).toBe("Café Zoë");
+  });
+  it("returns null for empty / whitespace-only / nullish", () => {
+    expect(normalizeDisplayName("")).toBe(null);
+    expect(normalizeDisplayName("   ")).toBe(null);
+    expect(normalizeDisplayName(null)).toBe(null);
+    expect(normalizeDisplayName(undefined)).toBe(null);
+  });
+  it("strips control characters and collapses whitespace runs", () => {
+    expect(normalizeDisplayName("A\u0000B\u001fC")).toBe("ABC");
+    expect(normalizeDisplayName("A\tB\n\nC")).toBe("A B C");
+  });
+  it(`caps at ${DISPLAY_NAME_MAX_LENGTH} characters`, () => {
+    const long = "x".repeat(DISPLAY_NAME_MAX_LENGTH + 40);
+    expect(normalizeDisplayName(long)).toBe("x".repeat(DISPLAY_NAME_MAX_LENGTH));
+  });
+  it("keeps HTML-looking text as inert TEXT (escaping happens at render)", () => {
+    expect(normalizeDisplayName('<script>alert(1)</script>')).toBe("<script>alert(1)</script>");
+  });
+});
+
+describe("display name through the config + snippet", () => {
+  it("validateConfig normalizes name (trim, cap, empty→null)", () => {
+    const r1 = validateConfig({ recipient: XCH, asset: "xch", name: "  Alice  " });
+    expect(r1.ok && r1.config.name).toBe("Alice");
+    const r2 = validateConfig({ recipient: XCH, asset: "xch", name: "   " });
+    expect(r2.ok && r2.config.name).toBe(null);
+    const r3 = validateConfig({ recipient: XCH, asset: "xch" });
+    expect(r3.ok && r3.config.name).toBe(null);
+  });
+
+  it("buildEmbedSnippet emits data-name only when a name is set (back-compat)", () => {
+    const base = validateConfig({ recipient: XCH, asset: "xch" });
+    expect(base.ok && buildEmbedSnippet(base.config)).not.toContain("data-name");
+    const named = validateConfig({ recipient: XCH, asset: "xch", name: "Alice" });
+    expect(named.ok && buildEmbedSnippet(named.config)).toContain('data-name="Alice"');
+  });
+
+  it("HTML-escapes the name in the snippet (XSS-proof)", () => {
+    const r = validateConfig({ recipient: XCH, asset: "xch", name: '"><script>x</script>' });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const s = buildEmbedSnippet(r.config);
+      expect(s).not.toContain("<script>x");
+      expect(s).toContain("data-name=\"&quot;&gt;&lt;script&gt;x&lt;/script&gt;\"");
+    }
+  });
+
+  it("parseQueryParams extracts name; hasBuilderParams counts it", () => {
+    const q = parseQueryParams(`?name=DIG+Network`);
+    expect(q.name).toBe("DIG Network");
+    expect(hasBuilderParams(q)).toBe(true);
+    expect(parseQueryParams("").name).toBe(null);
+  });
+
+  it("a raw link with name yields a snippet carrying data-name", () => {
+    const q = parseQueryParams(`?recipient=${XCH}&asset=xch&name=DIG+Network&raw=1`);
+    const r = buildSnippetFromInput({
+      recipient: q.recipient,
+      asset: q.asset,
+      scheme: q.scheme,
+      color: q.color,
+      presets: q.presets,
+      label: q.label,
+      name: q.name,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.snippet).toContain('data-name="DIG Network"');
   });
 });

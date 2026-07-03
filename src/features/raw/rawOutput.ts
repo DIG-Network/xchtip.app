@@ -17,6 +17,9 @@ export function rawOutput(params: QueryParams, origin: string = SITE_ORIGIN): { 
       color: params.color,
       presets: params.presets,
       label: params.label,
+      variant: params.variant,
+      symbol: params.symbol,
+      name: params.name,
     },
     origin,
   );

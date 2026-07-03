@@ -75,6 +75,16 @@ function esc(s) {
 function qv(qs, key) {
   return qs[key] && qs[key].value != null ? qs[key].value : null;
 }
+// Sanitize a URL-sourced display name: collapse whitespace, strip control chars, cap at 64. Mirrors
+// src/lib/embed.ts normalizeDisplayName (kept in agreement). Returns "" for an empty/nullish name.
+function cleanName(v) {
+  if (v == null) return "";
+  return String(v)
+    .replace(/\s+/g, " ")
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, "")
+    .replace(/^\s+|\s+$/g, "")
+    .slice(0, 64);
+}
 
 function textResponse(status, body) {
   return {
@@ -100,6 +110,7 @@ function handler(event) {
   var color = qv(qs, "color");
   var presets = qv(qs, "presets");
   var label = qv(qs, "label");
+  var name = cleanName(qv(qs, "name"));
 
   var errors = [];
   if (!recipient || !isChiaAddress(recipient)) errors.push("recipient: enter a valid Chia address (xch1…).");
@@ -142,6 +153,7 @@ function handler(event) {
     if (list.length) attrs += ' data-amount-presets="' + esc(list.join(",")) + '"';
   }
   if (label) attrs += ' data-label="' + esc(label) + '"';
+  if (name) attrs += ' data-name="' + esc(name) + '"';
 
   return textResponse(200, "<script" + attrs + " async></script>");
 }
