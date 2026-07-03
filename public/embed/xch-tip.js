@@ -85,6 +85,21 @@
 
   var SAGE_WALLET_URL = "https://sagewallet.net/";
 
+  // Get-$DIG funnel — the canonical venues to acquire $DIG, so a tipper low on DIG can refill from one
+  // click without leaving the flow. Mirrors the hub tip widget (lib/links.js GET_DIG_SOURCES). Shown
+  // only when tipping in $DIG.
+  var GET_DIG_SOURCES = [
+    { name: "TibetSwap", url: "https://v2.tibetswap.io/" },
+    { name: "dexie", url: "https://dexie.space/offers/" + DIG_ASSET_ID + "/XCH" },
+    { name: "9mm.pro", url: "https://xch.9mm.pro/token/" + DIG_ASSET_ID },
+  ];
+  function getDigHtml(accentColor) {
+    var links = GET_DIG_SOURCES.map(function (s) {
+      return '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer" style="color:' + accentColor + '">' + escapeHtml(s.name) + " ↗</a>";
+    }).join(" · ");
+    return '<p class="xt-getdig">Low on $DIG? Get it on ' + links + "</p>";
+  }
+
   // Default WalletConnect (Reown) projectId — xchtip.app's own, so a drop-in embed works with NO
   // data-wc-project-id. The placeholder is substituted in the DEPLOYED asset by
   // scripts/inject-embed-config.mjs at build time; NEVER the real id in committed source.
@@ -357,6 +372,10 @@
       ".xt-secondary{border:1.5px solid #e6e1f2;color:#3a3450}",
       ".xt-note{margin:14px 0 0;font-size:12px;color:#9a93ad;text-align:center;line-height:1.5}",
       ".xt-fee{margin:12px 0 0;font-size:11px;color:#b3adc0;text-align:center;line-height:1.4}",
+      ".xt-getdig{margin:10px 0 0;font-size:12px;color:#6b6580;text-align:center;line-height:1.5}",
+      ".xt-getdig a{font-weight:600;text-decoration:none}",
+      ".xt-disconnect{all:unset;box-sizing:border-box;cursor:pointer;display:block;margin:14px auto 0;font-size:11px;color:#9a93ad;text-decoration:underline;text-underline-offset:2px}",
+      ".xt-disconnect:hover{color:#1a1430}",
       ".xt-note a{text-decoration:none}",
       ".xt-qr{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0 2px}",
       ".xt-qr canvas{width:200px;height:200px;border-radius:12px;background:#fff;border:1px solid #eee}",
@@ -475,7 +494,18 @@
         return await Promise.race([c.request({ topic: topic, chainId: CHAIN, request: { method: method, params: params } }), timeout]);
       } finally { clearTimeout(t); }
     }
-    return { connect: connect, restore: restore, request: request, getTopic: function () { return topic; } };
+    // Disconnect the current WalletConnect session so the user can connect a different wallet. Best
+    // effort: tells the relay to close, then forgets the topic locally regardless of the relay result.
+    async function disconnect() {
+      var t = topic;
+      topic = null;
+      if (!t) return;
+      try {
+        var c = await getClient();
+        await c.disconnect({ topic: t, reason: { code: 6000, message: "User disconnected" } });
+      } catch (_) { /* already gone / relay error — the local topic is cleared either way */ }
+    }
+    return { connect: connect, restore: restore, request: request, disconnect: disconnect, getTopic: function () { return topic; } };
   }
 
   // ── Spend helpers (chia from wasm, coins via WC, parents/broadcast via coinset). ─────────────────
@@ -498,24 +528,12 @@
     };
   }
 
-  // Read the sender's synthetic public key + inner puzzle hash from a standard-puzzle reveal (shared
-  // by the XCH + CAT paths). The wallet's coins are p2_delegated_puzzle_or_hidden_puzzle (the Chia
-  // "standard" puzzle) curried with ONE argument: the 48-byte synthetic public key. We recover it by
-  // uncurrying the reveal and reading that first curried argument as an atom — the only API the
-  // vendored chia-wallet-sdk-wasm actually exposes (there is no puzzle.parseStandard* helper).
-  function readSenderKey(chia, clvm, puzzleRevealHex) {
-    var syntheticPkBytes = recoverSyntheticPk(chia, clvm, puzzleRevealHex);
-    if (!syntheticPkBytes || syntheticPkBytes.length !== 48) {
-      throw new Error("Could not read your wallet's signing key from its coins.");
-    }
-    var pk = chia.PublicKey.fromBytes(syntheticPkBytes);
-    var innerPhBytes = chia.standardPuzzleHash ? chia.standardPuzzleHash(pk) : clvm.standardPuzzle(pk).puzzleHash();
-    return { pk: pk, innerPh: strip0x(chia.toHex(innerPhBytes)) };
-  }
 
-  // Recover the 48-byte synthetic pk (Uint8Array) from a standard-puzzle reveal by uncurrying. Tries
-  // the CurriedProgram.args accessor first (getter or method), then falls back to toArgList() on the
-  // uncurried program's rest — tolerant of minor wasm-binding shape differences across versions.
+  // Recover the 48-byte synthetic pk (Uint8Array) from a STANDARD p2 puzzle reveal by uncurrying: the
+  // standard puzzle is curried with ONE argument, the synthetic public key. This mirrors the proven
+  // hub lib/chia-address.ts syntheticPkHexFromCoinPuzzle (verified against the real wasm). The reveal
+  // MUST be the bare standard p2 puzzle — callers read it from the wallet's XCH standard coins (never
+  // a CAT coin, whose puzzle may be the outer CAT wrapper).
   function recoverSyntheticPk(chia, clvm, puzzleRevealHex) {
     var prog = clvm.deserialize(chia.fromHex(strip0x(puzzleRevealHex)));
     var curried = prog.uncurry ? prog.uncurry() : null;
@@ -526,9 +544,30 @@
     if (!args || !args.length) return null;
     var first = args[0];
     if (!first) return null;
-    // The synthetic pk is the first curried argument, an atom of 48 bytes.
     if (typeof first.toAtom === "function") { try { return first.toAtom(); } catch (_) {} }
     if (typeof first.toBytes === "function") { try { return first.toBytes(); } catch (_) {} }
+    return null;
+  }
+
+  // Resolve the sender's synthetic pk + inner puzzle hash from the wallet's XCH STANDARD coins. The
+  // synthetic key is wallet-wide (same for XCH + every CAT), and XCH coins always reveal the bare
+  // standard p2 puzzle — so this is the reliable source for BOTH the XCH and CAT tip paths (the CAT
+  // coin's own puzzle may be the outer CAT wrapper, which does not uncurry to the pk). Mirrors the hub
+  // tip builder, which reads the key from getAssetCoins (XCH).
+  async function resolveSenderFromXch(wallet, chia, clvm) {
+    var entries = (await wallet.request("chip0002_getAssetCoins", { type: null, assetId: null, includedLocked: false, offset: 0, limit: 200 })) || [];
+    var coins = Array.isArray(entries) ? entries : (entries.coins || []);
+    function prOf(e) { return (e && (e.puzzle || e.puzzleReveal || e.puzzle_reveal)) || null; }
+    for (var k = 0; k < coins.length; k++) {
+      var pr = prOf(coins[k]);
+      if (!pr) continue;
+      var pkBytes = recoverSyntheticPk(chia, clvm, pr);
+      if (pkBytes && pkBytes.length === 48) {
+        var pk = chia.PublicKey.fromBytes(pkBytes);
+        var innerPhBytes = chia.standardPuzzleHash ? chia.standardPuzzleHash(pk) : clvm.standardPuzzle(pk).puzzleHash();
+        return { pk: pk, innerPh: strip0x(chia.toHex(innerPhBytes)) };
+      }
+    }
     return null;
   }
 
@@ -543,11 +582,8 @@
     var coins = Array.isArray(entries) ? entries : (entries.coins || []);
     if (!coins.length) throw new Error("Your wallet holds no XCH. Add XCH and try again.");
 
-    function puzzleRevealOf(e) { return (e && (e.puzzle || e.puzzleReveal || e.puzzle_reveal)) || null; }
-    var lead = null;
-    for (var k = 0; k < coins.length; k++) { if (puzzleRevealOf(coins[k])) { lead = coins[k]; break; } }
-    if (!lead) throw new Error("Your wallet didn't return spendable XCH coins. Reconnect and try again.");
-    var sender = readSenderKey(chia, clvm, puzzleRevealOf(lead));
+    var sender = await resolveSenderFromXch(wallet, chia, clvm);
+    if (!sender) throw new Error("Could not read your wallet's signing key from its coins.");
     var senderPhBytes = chia.fromHex(sender.innerPh);
     var senderPh = sender.innerPh;
 
@@ -602,11 +638,11 @@
     var coins = Array.isArray(entries) ? entries : (entries.coins || []);
     if (!coins.length) throw new Error("Your wallet holds none of that token. Add it and try again.");
 
-    function puzzleRevealOf(e) { return (e && (e.puzzle || e.puzzleReveal || e.puzzle_reveal)) || null; }
-    var lead = null;
-    for (var k = 0; k < coins.length; k++) { if (puzzleRevealOf(coins[k])) { lead = coins[k]; break; } }
-    if (!lead) throw new Error("Your wallet didn't return spendable coins. Reconnect and try again.");
-    var sender = readSenderKey(chia, clvm, puzzleRevealOf(lead));
+    // The sender's synthetic key comes from the wallet's XCH standard coins (wallet-wide key; the CAT
+    // coin's own puzzle may be the outer CAT wrapper and does NOT uncurry to the pk). Requires the
+    // wallet to hold at least one XCH coin (also needed for the tx fee on chain).
+    var sender = await resolveSenderFromXch(wallet, chia, clvm);
+    if (!sender) throw new Error("Could not read your wallet's signing key. Make sure your wallet holds a little XCH, then try again.");
 
     var senderCatPhBytes = chia.catPuzzleHash(assetIdBytes, chia.fromHex(sender.innerPh));
     var senderCatPh = strip0x(chia.toHex(senderCatPhBytes));
@@ -829,7 +865,9 @@
           '<div class="xt-amounts">' + chips + "</div>" + customRow +
           '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">Cancel</button>' +
           '<button class="xt-action" style="' + accentStyle() + '" data-act="confirm"' + (amt > 0 ? "" : " disabled") + ">Send " + (amt > 0 ? amountLabel(amt) : unit) + " ♥</button></div>" +
-          '<p class="xt-fee">Includes a 0.1% network fee to xchtip.app.</p>';
+          '<p class="xt-fee">Includes a 0.1% network fee to xchtip.app.</p>' +
+          (isDigAsset(cfg.asset) ? getDigHtml(scheme.from) : "") +
+          '<button class="xt-disconnect" data-act="disconnect">Disconnect wallet</button>';
       } else if (state.status === "preparing") {
         body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">Preparing your ' + amountLabel(currentAmount()) + " tip…</p></div>";
       } else if (state.status === "sign") {
@@ -845,8 +883,10 @@
           '<p class="xt-sub" style="text-align:center">Tip sent! You sent <strong>' + amountLabel(currentAmount()) + "</strong> — broadcast to the Chia network.</p>" +
           '<div class="xt-actions"><button class="xt-action" style="' + accentStyle() + '" data-act="close">Done</button></div>';
       } else if (state.status === "error") {
+        var lowOnDig = isDigAsset(cfg.asset) && /not enough/i.test(state.error || "");
         body =
           '<p class="xt-err" role="alert">' + escapeHtml(state.error || "Something went wrong.") + "</p>" +
+          (lowOnDig ? getDigHtml(scheme.from) : "") +
           '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">Close</button>' +
           '<button class="xt-action" style="' + accentStyle() + '" data-act="retry">Try again</button></div>';
       }
@@ -884,8 +924,18 @@
       if (act === "custom") { state.useCustom = true; render(); return; }
       if (act === "backtopick") { state.status = "pick"; state.prepared = null; render(); return; }
       if (act === "retry") { state.status = "pick"; state.error = null; state.prepared = null; render(); return; }
+      if (act === "disconnect") return doDisconnect();
       if (act === "confirm") return doPrepare();
       if (act === "sign") return doSign();
+    }
+
+    // Disconnect the wallet: drop the WC session + local state, then close the modal. The next tip
+    // click starts a fresh connect (the user can pair a different wallet).
+    async function doDisconnect() {
+      try { if (wallet && wallet.disconnect) await wallet.disconnect(); } catch (_) {}
+      wallet = null;
+      state.topic = null; state.prepared = null; state.error = null;
+      close();
     }
 
     async function doPrepare() {

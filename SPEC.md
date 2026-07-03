@@ -181,6 +181,17 @@ On button click the widget:
      proofs (parent puzzle+solution fetched from coinset), creating a CAT coin to the recipient puzzle
      hash for the NET amount, a CAT coin to the fee address for the fee, and change. This is the proven
      hub $DIG-tip path, generalized to any asset id.
+   - **Sender key:** the sender's synthetic public key + inner puzzle hash are recovered from the
+     wallet's XCH STANDARD coins (`chip0002_getAssetCoins`, no assetId) by uncurrying the bare standard
+     p2 puzzle reveal (args[0] = the 48-byte synthetic pk). The synthetic key is wallet-wide, so this
+     single source serves BOTH the XCH and CAT paths — the CAT coin's own puzzle is NOT used for the
+     key (a wallet may return the outer CAT wrapper, which does not uncurry to the pk). This mirrors
+     the hub tip builder (`pickSenderOwner` reads the key from XCH coins). A CAT tip therefore requires
+     the wallet to also hold a little XCH.
+   - **Low on $DIG:** for a $DIG tip, the widget shows a "Low on $DIG? Get it on TibetSwap · dexie ·
+     9mm.pro" refill line on the amount screen and (on a not-enough error) the error screen.
+   - **Disconnect:** the connected amount screen offers a small "Disconnect wallet" control that closes
+     the WalletConnect session so a different wallet can be paired.
 4. Requests a signature via `chip0002_signCoinSpends` (partialSign) and broadcasts the assembled
    spend bundle to Chia mainnet via `https://api.coinset.org/push_tx`.
 

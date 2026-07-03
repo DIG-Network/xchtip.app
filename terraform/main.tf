@@ -63,7 +63,7 @@ data "aws_cloudfront_cache_policy" "disabled" {
 
 resource "aws_cloudfront_response_headers_policy" "embed_open" {
   name    = "${var.s3_bucket}-embed-open"
-  comment = "Permissive CORS (*), long-immutable cache; NO frame restrictions (embeddable anywhere)."
+  comment = "Permissive CORS (*), long-immutable cache for CONTENT-HASHED assets; NO frame restrictions."
 
   cors_config {
     access_control_allow_credentials = false
@@ -92,6 +92,68 @@ resource "aws_cloudfront_response_headers_policy" "embed_open" {
       override = true
     }
     # NOTE: intentionally NO frame_options / content_security_policy — embeddable anywhere.
+  }
+}
+
+# Response-headers for the EMBED assets (/embed/xch-tip.js + vendored wasm/glue). These live at
+# STABLE urls whose CONTENT changes on deploy, so they MUST be revalidated — never immutable, or an
+# embedder keeps the old widget forever. A short public max-age + must-revalidate keeps them fresh
+# while still cacheable. Same permissive CORS + no frame guard (embeddable anywhere).
+resource "aws_cloudfront_response_headers_policy" "embed_stable" {
+  name    = "${var.s3_bucket}-embed-stable"
+  comment = "Permissive CORS (*), SHORT revalidating cache for the stable-url embed script + wasm."
+
+  cors_config {
+    access_control_allow_credentials = false
+    access_control_allow_headers {
+      items = ["*"]
+    }
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS"]
+    }
+    access_control_allow_origins {
+      items = ["*"]
+    }
+    origin_override = true
+  }
+
+  custom_headers_config {
+    items {
+      header = "Cache-Control"
+      # 5 min browser cache, then revalidate; allow a day of stale-while-revalidate for speed.
+      value    = "public, max-age=300, must-revalidate, stale-while-revalidate=86400"
+      override = true
+    }
+  }
+
+  security_headers_config {
+    content_type_options {
+      override = true
+    }
+  }
+}
+
+# A short-TTL edge cache policy for the embed assets so CloudFront itself revalidates with the origin
+# quickly after a deploy (the Managed-CachingOptimized policy caches for up to a year at the edge).
+resource "aws_cloudfront_cache_policy" "embed_short" {
+  name        = "${var.s3_bucket}-embed-short"
+  comment     = "Short edge TTL for the stable-url embed script + wasm (revalidate soon after deploy)."
+  default_ttl = 300
+  min_ttl     = 0
+  max_ttl     = 3600
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    headers_config {
+      header_behavior = "none"
+    }
+    query_strings_config {
+      query_string_behavior = "none"
+    }
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
   }
 }
 
@@ -156,15 +218,16 @@ resource "aws_cloudfront_distribution" "site" {
     }
   }
 
-  # The embed assets (script + vendored wasm/glue): permissive CORS + long-immutable cache.
+  # The embed assets (script + vendored wasm/glue) live at STABLE urls whose content changes on
+  # deploy → a SHORT revalidating cache (never immutable), so embedders always get the current widget.
   ordered_cache_behavior {
     path_pattern               = "/embed/*"
     target_origin_id           = local.s3_origin_id
     viewer_protocol_policy     = "redirect-to-https"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    cache_policy_id            = data.aws_cloudfront_cache_policy.optimized.id
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.embed_open.id
+    cache_policy_id            = aws_cloudfront_cache_policy.embed_short.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.embed_stable.id
     compress                   = true
   }
 

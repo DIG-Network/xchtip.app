@@ -36,6 +36,34 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
   submodule (e.g. @dignetwork/wallet-emulator) for reuse across every frontend submodule (user
   request). Superproject + hub change — orchestrator owns .gitmodules + the extraction.
 
+## OPEN (2026-07-02, later)
+
+- [x] **P0 root cause = STALE CACHE, not the fix.** The uncurry fix IS correct — PROVEN in Node
+      against a real synthetic key + the standard puzzle reveal (standardSpend(pk,inner).puzzle),
+      matching hub lib/chia-address.ts syntheticPkHexFromCoinPuzzle exactly (recovered pk === expected).
+      BUT the embed /embed/xch-tip.js is served `Cache-Control: max-age=31536000, immutable` at a STABLE
+      url → browsers/CDN keep the OLD broken widget forever. FIX: short cache + revalidate for the
+      embed script + vendored wasm (stable-path assets), keep hashed assets immutable. (terraform.)
+- [ ] **CLAUDE.md: document chia-wallet-sdk-wasm** as the canonical wasm for Chia spend/keys/puzzle
+      work (uncurry synthetic pk, standardSpend, CAT spends) + chip35_dl_coin for DL/CAT spend bundles
+      — so it's never forgotten. SUPERPROJECT file → FLAG TO ORCHESTRATOR (out of xchtip scope).
+- [ ] **Disconnect wallet** — add a very small "Disconnect" control in the widget (clears the WC
+      session so the user can reconnect a different wallet). Loading/idle states.
+- [ ] **DIG refill link** — when tipping in $DIG (and the wallet lacks enough), show a message in the
+      widget linking to refill DIG, like the hub tip widget. Find the hub's refill URL/UX.
+- [ ] **CAT sender-key fix (real cause)** — the CAT path read the synthetic pk from the CAT coin's
+      puzzle (outer CAT puzzle from Sage) → uncurry args[0] is NOT the pk → error. The HUB reads the
+      pk from the wallet's XCH STANDARD coins (getAssetCoins, no assetId) which are always bare p2.
+      FIX: source sender key from XCH coins for BOTH paths (the synthetic key is wallet-wide). This is
+      the proven hub strategy (lib/tip.ts pickSenderOwner reads getAssetCoins = XCH). Do NOT parse CAT
+      puzzles. VERIFIED in Node: recover from standardSpend(pk,inner).puzzle === expected pk.
+- [ ] **URL shortener not visible** — ShortLink hides itself unless VITE_SHORTENER_API is set (by
+      design). Backend (lambda/shortener + terraform/shortener.tf) exists but isn't provisioned/wired.
+      To make it visible: provision the shortener infra (terraform -var enable_shortener=true) OR set
+      VITE_SHORTENER_API at build. Lower priority than the P0 signing bug.
+
+## Live-preview-shows-selected-style: VERIFIED working (variant radio → preview updates card/compact/button).
+
 ## New user requests (2026-07-02) — status
 
 - [x] **BUG (P0): widget tip fails** — FIXED (e5fbfe1): synthetic-pk via uncurry().args[0].toAtom().
