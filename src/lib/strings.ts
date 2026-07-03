@@ -47,8 +47,27 @@ export const S = {
 
   // Stage + workbench section labels
   stageCaption: "Live preview — this is exactly what your visitors will see.",
+  stageCaptionDisabled: "Enter a recipient address to activate your live tip button.",
   configureEyebrow: "Configure",
   embedEyebrow: "Embed",
+
+  // Widget style variants
+  variantLabel: "Widget style",
+  variantHelp: "How the tip widget looks where it's embedded.",
+  variantButton: "Button",
+  variantCompact: "Compact",
+  variantCard: "Tip card",
+
+  // CAT symbol
+  symbolLabel: "Token symbol (optional)",
+  symbolHelp: "Shown on the button + amounts. Auto-detected from the asset id; override here.",
+  symbolPlaceholder: "e.g. DIG",
+  symbolDetecting: "Detecting symbol…",
+  symbolDetected: "Detected: ",
+
+  // Tip page URL actions
+  visitButton: "Visit",
+  copyShort: "Copy",
 
   // Output
   previewHeading: "Live preview",

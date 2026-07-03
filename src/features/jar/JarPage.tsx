@@ -70,7 +70,8 @@ export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
 
 // ── The valid jar: identity + suggested amounts + the live widget + the Chia story. ──────────────
 function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
-  const symbol = assetSymbol(config.asset);
+  // Prefer an explicit CAT symbol override; else the asset's auto symbol (XCH / $DIG / CAT).
+  const symbol = config.symbol?.trim() || assetSymbol(config.asset);
   const displayName = config.name?.trim() || null;
   const heading = displayName ? S.jarHeadingNamed.replace("{name}", displayName) : S.jarHeadingGeneric;
   const amounts = config.presets && config.presets.length ? config.presets : defaultPresetsFor(config.asset);
@@ -179,6 +180,7 @@ function JarWidget({ config }: { config: JarConfig; origin?: string }) {
       script.setAttribute("data-amount-presets", config.presets.join(","));
     }
     if (config.label) script.setAttribute("data-label", config.label);
+    if (config.symbol) script.setAttribute("data-symbol", config.symbol);
     // A tip PAGE wants a prominent button — the widget's large size.
     script.setAttribute("data-size", "lg");
     // Mount into this container (the widget targets it).

@@ -15,9 +15,11 @@ export interface CopyFieldProps {
   multiline?: boolean;
   /** A stable test id for the value element. */
   valueTestId?: string;
+  /** Override the copy-button text (default: the shared "Copy snippet"). */
+  copyLabel?: string;
 }
 
-export function CopyField({ value, label, multiline = false, valueTestId }: CopyFieldProps) {
+export function CopyField({ value, label, multiline = false, valueTestId, copyLabel }: CopyFieldProps) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -45,9 +47,9 @@ export function CopyField({ value, label, multiline = false, valueTestId }: Copy
           className="copy-btn"
           data-copied={copied ? "true" : "false"}
           onClick={onCopy}
-          aria-label={`${S.copyButton}: ${label}`}
+          aria-label={`${copyLabel ?? S.copyButton}: ${label}`}
         >
-          {copied ? S.copiedButton : S.copyButton}
+          {copied ? S.copiedButton : copyLabel ?? S.copyButton}
         </button>
       </div>
       {multiline ? (

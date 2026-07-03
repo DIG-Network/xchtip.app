@@ -8,7 +8,9 @@ import {
   buildSnippetFromInput,
   parseQueryParams,
   hasBuilderParams,
+  parseVariant,
   type ValidationErrors,
+  type WidgetVariant,
 } from "@/lib/embed";
 import { jarUrl } from "@/lib/jar";
 import { SITE_ORIGIN } from "@/lib/constants";
@@ -26,6 +28,10 @@ export interface BuilderForm {
   color: string;
   presets: string;
   label: string;
+  /** The widget style variant. */
+  variant: WidgetVariant;
+  /** Optional display symbol override for a CAT (auto-detected when blank). */
+  symbol: string;
   /** Display name shown on the shareable tip-jar page (optional). */
   name: string;
 }
@@ -49,6 +55,8 @@ const DEFAULT_FORM: BuilderForm = {
   color: "#7a3dff",
   presets: "",
   label: "",
+  variant: "button",
+  symbol: "",
   name: "",
 };
 
@@ -75,6 +83,8 @@ function buildBuilderLink(form: BuilderForm, origin: string, raw: boolean): stri
   else p.set("scheme", form.scheme);
   if (form.presets.trim()) p.set("presets", form.presets.trim());
   if (form.label.trim()) p.set("label", form.label.trim());
+  if (form.variant !== "button") p.set("variant", form.variant);
+  if (form.symbol.trim()) p.set("symbol", form.symbol.trim());
   if (raw) p.set("raw", "1");
   return `${origin}/?${p.toString()}`;
 }
@@ -88,6 +98,8 @@ export function formFromQuery(search: string | URLSearchParams): BuilderForm {
   if (q.recipient) form.recipient = q.recipient;
   if (q.label) form.label = q.label;
   if (q.presets) form.presets = q.presets;
+  if (q.variant) form.variant = parseVariant(q.variant);
+  if (q.symbol) form.symbol = q.symbol;
 
   // Asset: xch | the DIG id | any other CAT id.
   const asset = (q.asset || "").trim().toLowerCase().replace(/^0x/, "");
@@ -153,6 +165,8 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
         color,
         presets: form.presets,
         label: form.label,
+        variant: form.variant,
+        symbol: form.symbol,
       },
       origin,
     );
@@ -174,7 +188,20 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
       builderLink: buildBuilderLink(form, origin, false),
       rawLink: buildBuilderLink(form, origin, true),
       // The deterministic hosted tip-jar page for this config (canonical /jar/<recipient>?… URL).
-      jarLink: jarUrl({ ...result.config, name: name === "" ? null : name }, origin),
+      // The jar page controls its own presentation, so `variant` is not part of the jar URL.
+      jarLink: jarUrl(
+        {
+          recipient: result.config.recipient,
+          asset: result.config.asset,
+          scheme: result.config.scheme,
+          color: result.config.color,
+          presets: result.config.presets,
+          label: result.config.label,
+          symbol: result.config.symbol,
+          name: name === "" ? null : name,
+        },
+        origin,
+      ),
     };
   }, [form, origin]);
 

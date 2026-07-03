@@ -186,6 +186,8 @@ describe("buildEmbedSnippet", () => {
     color: null,
     presets: null,
     label: null,
+    variant: "button",
+    symbol: null,
   };
 
   it("emits a self-contained script tag with the recipient + asset + scheme", () => {
@@ -220,6 +222,18 @@ describe("buildEmbedSnippet", () => {
   it("respects a custom origin", () => {
     const s = buildEmbedSnippet(base, "https://example.test/");
     expect(s).toContain('src="https://example.test/embed/xch-tip.js"');
+  });
+
+  it("emits data-variant only when it is not the default button", () => {
+    expect(buildEmbedSnippet(base)).not.toContain("data-variant");
+    expect(buildEmbedSnippet({ ...base, variant: "card" })).toContain('data-variant="card"');
+    expect(buildEmbedSnippet({ ...base, variant: "compact" })).toContain('data-variant="compact"');
+  });
+
+  it("emits data-symbol when a CAT symbol is set", () => {
+    expect(buildEmbedSnippet(base)).not.toContain("data-symbol");
+    const s = buildEmbedSnippet({ ...base, asset: { kind: "cat", assetId: DIG_ASSET_ID }, symbol: "DIG" });
+    expect(s).toContain('data-symbol="DIG"');
   });
 });
 

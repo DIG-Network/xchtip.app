@@ -61,6 +61,12 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
       tip card, etc. New `data-variant` (append-only) on the widget + a style picker in the builder +
       live preview per variant + jar page uses card. Document in SPEC/llms.
 
+- [ ] **0.1% protocol fee** — 0.1% of every tip is redirected to the fee address
+      xch1kxdp5hsu34e2ku8p4e6f3ap27dw8fvhjghxe88dcve8n77zwekhsemh66h. Implement in the widget's spend
+      build (XCH + CAT): first coin creates recipient output = amount − fee, plus a fee output to the
+      fee puzzle hash; fee = floor(baseUnits * 0.001), min handling so tiny tips still net > 0. Add
+      subtle disclosure text on the modal (+ jar/builder). Document in SPEC. E2E via hub emulator.
+
 ## Batched widget work (design coherently — single-writer on xch-tip.js)
 
 These all touch the embed widget + builder; do as one coherent design pass:

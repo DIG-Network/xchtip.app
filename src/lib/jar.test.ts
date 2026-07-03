@@ -18,6 +18,7 @@ function baseConfig(overrides: Partial<JarConfig> = {}): JarConfig {
     color: null,
     presets: null,
     label: null,
+    symbol: null,
     name: null,
     ...overrides,
   };

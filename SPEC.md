@@ -63,6 +63,8 @@ The generated snippet is a single self-contained script tag:
         data-label="Tip"                               OPTIONAL (button label)
         data-align="center" | "left" | "right"         OPTIONAL (default center)
         data-size="md" | "lg"                          OPTIONAL (default md; lg = prominent tip-page button)
+        data-variant="button" | "compact" | "card"     OPTIONAL (default button; the widget style)
+        data-symbol="<TICKER>"                         OPTIONAL (CAT display symbol; overrides auto)
         data-wc-project-id="<projectId>"               OPTIONAL (defaults to xchtip.app's, build-injected)
         data-target="<css selector>"                   OPTIONAL (mount container; default: inline)
         async></script>
@@ -82,6 +84,12 @@ Attribute semantics:
 - `data-align` — button alignment within its block wrapper. Default `center`.
 - `data-size` — button size: `md` (default) or `lg` (a larger, more prominent button for a dedicated
   tip page). Any other value → `md`.
+- `data-variant` — the widget style: `button` (default), `compact` (a smaller inline pill), or `card`
+  (a self-contained tip card with the recipient + pitch). Any other value → `button`.
+- `data-symbol` — a display symbol for a CAT (e.g. `DIG`), shown on the button + amounts. Overrides
+  auto-detection; XCH is always `XCH`, the canonical DIG tail is `$DIG`, other CATs default to `CAT`.
+- **Brand glyph:** the button's leading glyph is chosen from the asset/scheme — a Chia leaf for XCH,
+  the DIG mark for the $DIG CAT, and a heart for a custom-color scheme or any other CAT.
 - `data-wc-project-id` — a WalletConnect (Reown) projectId. Absent → the widget uses xchtip.app's own
   projectId, baked into the deployed asset at build time. If NO projectId is available at all, the
   button explains the missing id on click.
@@ -102,6 +110,8 @@ The builder page (`/`) accepts these query parameters:
 | `color`     | a 6-hex custom accent; overrides `scheme`                                |
 | `presets`   | comma-separated amounts                                                  |
 | `label`     | custom button label                                                     |
+| `variant`   | `button` \| `compact` \| `card` (widget style; default `button`)         |
+| `symbol`    | CAT display symbol override (e.g. `DIG`)                                 |
 | `raw`       | `1` / `true` → raw (machine-readable) mode                               |
 | `format`    | `raw` → equivalent to `raw=1`                                            |
 

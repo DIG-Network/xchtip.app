@@ -5,12 +5,10 @@
 import type { CSSProperties } from "react";
 import { useBuilder, type BuilderForm as Form } from "./useBuilder";
 import { BuilderForm } from "./BuilderForm";
-import { TipButtonPreview } from "./TipButtonPreview";
+import { LiveWidgetPreview } from "./LiveWidgetPreview";
 import { ShortLink } from "./ShortLink";
 import { CopyField } from "@/components/CopyField";
-import { parseAsset } from "@/lib/embed";
 import { resolveScheme } from "@/lib/schemes";
-import { DIG_ASSET_ID } from "@/lib/constants";
 import { S } from "@/lib/strings";
 
 export interface BuilderPanelProps {
@@ -23,13 +21,6 @@ export interface BuilderPanelProps {
 export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
   const { form, derived, setField, applyXchPreset, applyDigPreset } = useBuilder(initialForm, origin);
 
-  // The asset for the preview: parse the current selection (fall back to XCH so the preview always
-  // renders a valid button, even mid-edit before a CAT id is complete).
-  const previewAsset =
-    parseAsset(
-      form.assetChoice === "xch" ? "xch" : form.assetChoice === "dig" ? DIG_ASSET_ID : form.catId,
-    ) ?? { kind: "xch" };
-
   // Signature moment: the plinth's spotlight + the button's reflection take the ACTIVE scheme's hue,
   // so choosing green / purple / a custom color literally re-lights the stage. Derived from the same
   // resolveScheme the button paints with, exposed to CSS via custom properties on the stage.
@@ -41,18 +32,14 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
 
   return (
     <>
-      {/* Hero stage — the live button on a spotlit plinth (the page's thesis). */}
+      {/* Hero stage — the REAL, working tip widget on a spotlit plinth (the page's thesis). It is
+          grayed out + inert until a valid recipient makes a real snippet. */}
       <section className="stage" style={stageStyle} aria-label="Live tip button preview">
         <div className="stage-spot">
           <h2 className="sr-only">{S.previewHeading}</h2>
-          <TipButtonPreview
-            scheme={form.scheme}
-            color={form.color}
-            asset={previewAsset}
-            label={form.label}
-          />
+          <LiveWidgetPreview snippet={derived.ok ? derived.snippet : null} />
         </div>
-        <p className="stage-caption">{S.stageCaption}</p>
+        <p className="stage-caption">{derived.ok ? S.stageCaption : S.stageCaptionDisabled}</p>
       </section>
 
       <div className="builder-panel">
@@ -73,9 +60,25 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
           {/* Simplest path first: a ready-to-share hosted tip page (no embedding needed). */}
           {derived.ok && derived.jarLink && (
             <div className="output-block">
-              <h2 className="output-heading">{S.jarLinkHeading}</h2>
+              <div className="output-heading-row">
+                <h2 className="output-heading">{S.jarLinkHeading}</h2>
+                <a
+                  className="visit-link"
+                  href={derived.jarLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="jar-visit"
+                >
+                  {S.visitButton}
+                </a>
+              </div>
               <p className="output-help">{S.jarLinkHelp}</p>
-              <CopyField value={derived.jarLink} label={S.jarLinkLabel} valueTestId="jar-link" />
+              <CopyField
+                value={derived.jarLink}
+                label={S.jarLinkLabel}
+                copyLabel={S.copyShort}
+                valueTestId="jar-link"
+              />
             </div>
           )}
 

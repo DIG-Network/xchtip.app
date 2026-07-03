@@ -1,8 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BuilderForm } from "./BuilderForm";
 import type { BuilderForm as Form } from "./useBuilder";
+
+// Auto-detect uses the network client — mock it so the form tests are offline + deterministic.
+vi.mock("@/lib/catSymbol", () => ({ lookupCatSymbol: vi.fn(async () => "SBX") }));
+
+const CAT = "ab".repeat(32);
 
 const baseForm: Form = {
   recipient: "",
@@ -12,6 +17,8 @@ const baseForm: Form = {
   color: "#7a3dff",
   presets: "",
   label: "",
+  variant: "button",
+  symbol: "",
   name: "",
 };
 
@@ -88,5 +95,33 @@ describe("BuilderForm", () => {
     setup({ scheme: "custom", color: "notahex" });
     const swatch = screen.getByTestId("input-color-swatch") as HTMLInputElement;
     expect(swatch.value).toBe("#7a3dff");
+  });
+
+  it("changes the widget style variant via radios", async () => {
+    const user = userEvent.setup();
+    const { setField } = setup();
+    await user.click(screen.getByTestId("variant-card"));
+    expect(setField).toHaveBeenCalledWith("variant", "card");
+    await user.click(screen.getByTestId("variant-compact"));
+    expect(setField).toHaveBeenCalledWith("variant", "compact");
+  });
+
+  it("shows the token-symbol field for a CAT and lets the user override it", async () => {
+    const user = userEvent.setup();
+    const { setField } = setup({ assetChoice: "cat", catId: CAT });
+    const symbolInput = screen.getByTestId("input-symbol");
+    expect(symbolInput).toBeInTheDocument();
+    await user.type(symbolInput, "X");
+    expect(setField).toHaveBeenCalledWith("symbol", "X");
+  });
+
+  it("auto-detects + shows a suggested symbol for a valid CAT id (override blank)", async () => {
+    setup({ assetChoice: "cat", catId: CAT, symbol: "" });
+    await waitFor(() => expect(screen.getByTestId("symbol-status")).toHaveTextContent("SBX"));
+  });
+
+  it("hides the token-symbol field for XCH", () => {
+    setup({ assetChoice: "xch" });
+    expect(screen.queryByTestId("input-symbol")).not.toBeInTheDocument();
   });
 });

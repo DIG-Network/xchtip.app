@@ -295,52 +295,47 @@ a:hover {
   gap: 4px;
 }
 
-/* the live preview button — larger + a scheme-hued glow, plus a soft reflection */
-.preview-stage {
+/* the live preview — the REAL widget mounted here. Grayed + inert until a valid recipient. */
+.live-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 8px 8px 26px;
+  position: relative;
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+.live-widget[data-active="false"] {
+  opacity: 0.5;
+  filter: grayscale(0.85);
+  pointer-events: none;
+}
+.live-widget-mount {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 8px 26px;
-  position: relative;
+  min-height: 52px;
 }
-.tip-btn-preview {
-  position: relative;
+/* Disabled placeholder button so the stage isn't empty before a recipient is entered. */
+.live-widget[data-active="false"] .live-widget-mount::before {
+  content: "♥ Tip";
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  cursor: default;
+  gap: 8px;
   padding: 15px 30px;
-  border: 0;
   border-radius: var(--radius-pill);
-  font-family: var(--font);
   font-weight: 600;
   font-size: 17px;
-  letter-spacing: 0.005em;
-  transition:
-    transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
-    box-shadow 0.35s ease,
-    background 0.35s ease;
+  color: var(--paper-dim);
+  background: var(--ink-3);
+  border: 1px dashed var(--line-2);
 }
-.tip-btn-preview:hover {
-  transform: translateY(-2px);
-}
-/* the button's reflection on the plinth floor */
-.tip-btn-preview::after {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: -22px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--stage-glow);
-  opacity: 0.28;
-  filter: blur(11px);
-  transition: background 0.45s ease;
-}
-.tip-btn-heart {
-  font-size: 16px;
-  line-height: 1;
+.live-widget-hint {
+  margin: 16px 0 0;
+  font-size: 0.8rem;
+  color: var(--paper-faint);
+  text-align: center;
 }
 .stage-caption {
   margin: 26px 0 0;
@@ -569,6 +564,40 @@ legend.field-label {
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--paper);
+}
+/* A heading + an inline action (e.g. "Visit") on one row. */
+.output-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.visit-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line-2);
+  background: var(--ink-3);
+  color: var(--paper);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.12s ease;
+}
+.visit-link::after {
+  content: "↗";
+  font-size: 0.9em;
+}
+.visit-link:hover {
+  border-color: var(--gold);
+  color: var(--gold-hi);
+  transform: translateY(-1px);
 }
 .output-help {
   margin: 0;

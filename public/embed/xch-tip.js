@@ -20,6 +20,8 @@
  *     data-amount-presets="1,5,25"           (optional preset amounts, whole units of the asset)
  *     data-align="center"                    (optional: center|left|right; default center)
  *     data-size="md"                         (optional: md|lg; lg = a prominent tip-page button)
+ *     data-variant="button"                  (optional: button|compact|card; the widget style)
+ *     data-symbol="DIG"                      (optional: display symbol for a CAT; overrides auto)
  *     data-wc-project-id="<your projectId>"  (optional — defaults to xchtip.app's)
  *     data-target="#my-container"            (optional CSS selector to mount into; default: inline)
  *     async></script>
@@ -130,16 +132,48 @@
     return out.length ? out : null;
   }
   function defaultPresets(asset) { return asset.kind === "xch" ? [0.1, 0.5, 1] : [1, 5, 25]; }
-  function assetUnitLabel(asset) {
+  // The canonical $DIG CAT tail (mirrors src/lib/constants.ts) — used to pick the DIG symbol + mark.
+  var DIG_ASSET_ID = "a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81";
+  function isDigAsset(asset) { return asset.kind === "cat" && asset.assetId === DIG_ASSET_ID; }
+  // The display symbol for an asset. A CAT uses the explicit override (data-symbol) if given, else
+  // "$DIG" for the canonical DIG tail, else a neutral "CAT" (the builder can auto-detect + pass one in).
+  function assetUnitLabel(asset, symbolOverride) {
     if (asset.kind === "xch") return "XCH";
+    var s = String(symbolOverride == null ? "" : symbolOverride).trim();
+    if (s) return s;
+    if (isDigAsset(asset)) return "$DIG";
     return "CAT";
+  }
+
+  // ── Brand glyphs (inline, self-contained SVG; currentColor so they inherit the button text). ──────
+  // XCH → a Chia leaf mark; $DIG → the DIG "D" mark; anything else → the heart. Tiny single-path SVGs
+  // so the embed stays dependency-free and the glyph scales with the button.
+  var GLYPH_HEART = '<span class="xt-heart" aria-hidden="true">♥</span>';
+  function glyphChiaLeaf() {
+    return '<svg class="xt-glyph" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" fill="currentColor">' +
+      '<path d="M12 2C7 6 4 10 4 14.5A7.5 7.5 0 0 0 11.5 22c.3 0 .5-.2.5-.5V12c0-.3.2-.5.5-.5s.5.2.5.5v9.5c0 .3.2.5.5.5A7.5 7.5 0 0 0 20 14.5C20 10 17 6 12 2z"/></svg>';
+  }
+  function glyphDig() {
+    return '<svg class="xt-glyph" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" fill="currentColor">' +
+      '<path d="M5 4h6a8 8 0 0 1 0 16H5V4zm3.2 3.1v9.8H11a4.9 4.9 0 0 0 0-9.8H8.2z"/></svg>';
+  }
+  // Choose the leading glyph for a config: Chia leaf for XCH, DIG mark for the DIG CAT, else heart.
+  // A custom color scheme always uses the heart (it's a personal accent, not a brand asset).
+  function glyphFor(asset, scheme) {
+    if (scheme === "custom") return GLYPH_HEART;
+    if (asset.kind === "xch") return glyphChiaLeaf();
+    if (isDigAsset(asset)) return glyphDig();
+    return GLYPH_HEART;
   }
   function amountToBaseUnits(asset, amount) {
     if (asset.kind === "xch") return Math.round(Number(amount) * XCH_MOJOS_PER_XCH);
     return Math.round(Number(amount) * CAT_BASE_UNITS);
   }
-  function defaultLabel(asset) {
+  function defaultLabel(asset, symbolOverride) {
     if (asset.kind === "xch") return "Tip in XCH";
+    if (isDigAsset(asset)) return "Tip in DIG";
+    var s = String(symbolOverride == null ? "" : symbolOverride).trim();
+    if (s) return "Tip in " + s;
     return "Send a tip";
   }
   function escapeHtml(s) {
@@ -154,6 +188,12 @@
   // Button size: "lg" for a dedicated tip PAGE (bigger button); default "md" everywhere else.
   function parseSize(raw) {
     return String(raw == null ? "" : raw).trim().toLowerCase() === "lg" ? "lg" : "md";
+  }
+  // Widget style variant: "button" (default), "compact" (smaller inline pill), or "card" (a full
+  // tip card with the recipient + inline amount chips). Any other value → "button".
+  function parseVariant(raw) {
+    var v = String(raw == null ? "" : raw).trim().toLowerCase();
+    return v === "compact" || v === "card" ? v : "button";
   }
 
   // decode a bech32m Chia address to its 32-byte puzzle hash hex (mirrors src/lib/bech32m.ts). Returns
@@ -221,17 +261,23 @@
     if (!asset) {
       return { ok: false, reason: 'The tip widget needs data-asset="xch" or a 64-hex CAT asset id.' };
     }
+    var color = normHex(a.color);
+    // A custom accent color takes precedence and means the "custom" scheme (heart glyph, no brand).
+    var scheme = color ? "custom" : (a.scheme === "purple" ? "purple" : "green");
+    var symbol = String(a.symbol == null ? "" : a.symbol).trim();
     return {
       ok: true,
       recipientPh: recipientPh,
       recipientAddress: String(a.recipient).trim(),
       asset: asset,
-      scheme: a.scheme === "purple" ? "purple" : "green",
-      color: normHex(a.color),
+      scheme: scheme,
+      color: color,
+      symbol: symbol || null,
       presets: parsePresets(a.presets, asset.kind === "xch") || defaultPresets(asset),
-      label: (a.label && String(a.label).trim()) || defaultLabel(asset),
+      label: (a.label && String(a.label).trim()) || defaultLabel(asset, symbol),
       align: parseAlign(a.align),
       size: parseSize(a.size),
+      variant: parseVariant(a.variant),
     };
   }
 
@@ -250,8 +296,24 @@
       ".xt-btn:focus-visible{outline:2px solid #000;outline-offset:2px}",
       /* data-size=lg: a prominent button for a dedicated tip PAGE (additive; default size unchanged). */
       ".xt-btn.xt-lg{gap:11px;padding:15px 30px;font-size:17px}",
-      ".xt-btn.xt-lg .xt-heart{font-size:17px}",
+      ".xt-btn.xt-lg .xt-heart,.xt-btn.xt-lg .xt-glyph{font-size:17px}",
+      /* data-variant=compact: a smaller inline pill. */
+      ".xt-btn.xt-compact{gap:6px;padding:7px 14px;font-size:13px}",
+      ".xt-btn.xt-compact .xt-heart,.xt-btn.xt-compact .xt-glyph{font-size:13px}",
       ".xt-heart{font-size:15px;line-height:1}",
+      ".xt-glyph{display:inline-block;width:1em;height:1em;line-height:1;flex:0 0 auto;vertical-align:-.125em}",
+      ".xt-btn-label{display:inline-block}",
+      /* data-variant=card: a self-contained tip card wrapping the button. */
+      ".xt-card{display:inline-block;box-sizing:border-box;position:relative;overflow:hidden;text-align:center;",
+      "max-width:320px;width:100%;padding:22px 22px 20px;border-radius:16px;background:#12241f;color:#eef4f0;",
+      "border:1px solid #1e3630;box-shadow:0 18px 50px rgba(0,0,0,.4);",
+      "font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}",
+      ".xt-card-bar{position:absolute;top:0;left:0;right:0;height:4px}",
+      ".xt-card-eyebrow{margin:2px 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--xt-accent,#57e39a)}",
+      ".xt-card-title{margin:0 0 8px;font-size:18px;font-weight:700;color:#fff}",
+      ".xt-card-addr{margin:0 auto 16px;font-family:ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;font-size:12px;color:#a6bcb3;word-break:break-all}",
+      ".xt-card .xt-btn{margin:0}",
+      ".xt-card-note{margin:14px 0 0;font-size:11.5px;line-height:1.5;color:#6f8880}",
       ".xt-scrim{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;",
       "background:rgba(11,10,18,.62);backdrop-filter:blur(3px);padding:20px;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}",
       ".xt-modal{position:relative;width:100%;max-width:380px;box-sizing:border-box;background:#fff;color:#1a1430;",
@@ -637,23 +699,46 @@
     var scheme = resolveScheme(cfg.scheme, cfg.color);
     injectStyles(scheme);
     var assetBase = widgetAssetBase() || "https://xchtip.app";
-    var unit = assetUnitLabel(cfg.asset);
+    var unit = assetUnitLabel(cfg.asset, cfg.symbol);
+    var glyph = glyphFor(cfg.asset, cfg.scheme);
 
     var mountTarget = null;
     if (scriptEl.dataset.target) { try { mountTarget = document.querySelector(scriptEl.dataset.target); } catch (_) {} }
 
+    // The trigger button — its class encodes size + variant so the CSS styles each variant. The
+    // leading glyph is brand-aware (Chia leaf / DIG mark / heart). The card variant wraps the button
+    // in a small card with the recipient + a one-line pitch (still opening the same tip flow on click).
     var btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "xt-btn" + (cfg.size === "lg" ? " xt-lg" : "");
+    btn.className = "xt-btn" + (cfg.size === "lg" ? " xt-lg" : "") + (cfg.variant === "compact" ? " xt-compact" : "");
     btn.setAttribute("aria-haspopup", "dialog");
     btn.style.background = "linear-gradient(135deg," + scheme.from + " 0%," + scheme.to + " 100%)";
     btn.style.color = scheme.text;
     btn.style.boxShadow = "0 6px 18px " + scheme.shadow;
-    btn.innerHTML = '<span class="xt-heart" aria-hidden="true">♥</span>' + escapeHtml(cfg.label);
+    btn.innerHTML = glyph + '<span class="xt-btn-label">' + escapeHtml(cfg.label) + "</span>";
 
     var wrap = document.createElement("div");
     wrap.className = "xt-wrap" + (cfg.align === "left" ? " xt-align-left" : cfg.align === "right" ? " xt-align-right" : "");
-    wrap.appendChild(btn);
+
+    if (cfg.variant === "card") {
+      var card = document.createElement("div");
+      card.className = "xt-card";
+      card.style.setProperty("--xt-accent", scheme.from);
+      var shortAddr = cfg.recipientAddress.length > 16
+        ? cfg.recipientAddress.slice(0, 8) + "…" + cfg.recipientAddress.slice(-7)
+        : cfg.recipientAddress;
+      card.innerHTML =
+        '<div class="xt-card-bar" style="background:linear-gradient(90deg,' + scheme.from + "," + scheme.to + ')"></div>' +
+        '<div class="xt-card-eyebrow">Tip in ' + escapeHtml(unit) + "</div>" +
+        '<div class="xt-card-title">Support this creator</div>' +
+        '<div class="xt-card-addr" title="' + escapeHtml(cfg.recipientAddress) + '">' + escapeHtml(shortAddr) + "</div>";
+      card.appendChild(btn);
+      card.insertAdjacentHTML("beforeend", '<div class="xt-card-note">On-chain, wallet to wallet. You keep 100%.</div>');
+      wrap.appendChild(card);
+    } else {
+      wrap.appendChild(btn);
+    }
+
     if (mountTarget) mountTarget.appendChild(wrap);
     else if (scriptEl.parentNode) scriptEl.parentNode.insertBefore(wrap, scriptEl.nextSibling);
     else document.body.appendChild(wrap);
@@ -826,6 +911,8 @@
       presets: el.dataset.amountPresets || el.dataset.presets,
       align: el.dataset.align,
       size: el.dataset.size,
+      variant: el.dataset.variant,
+      symbol: el.dataset.symbol,
     });
     if (!cfg.ok) {
       injectStyles();

@@ -28,6 +28,19 @@ export interface TipConfig {
   presets: number[] | null;
   /** Optional custom button label. */
   label: string | null;
+  /** The widget style variant (`button` default | `compact` | `card`). */
+  variant: WidgetVariant;
+  /** Optional display symbol for a CAT (overrides auto-detection); null for XCH / default. */
+  symbol: string | null;
+}
+
+/** The selectable widget style. */
+export type WidgetVariant = "button" | "compact" | "card";
+
+/** Normalize a raw variant selector to a WidgetVariant (default `button`). */
+export function parseVariant(value: unknown): WidgetVariant {
+  const v = String(value == null ? "" : value).trim().toLowerCase();
+  return v === "compact" || v === "card" ? v : "button";
 }
 
 /** The result of validating raw inputs into a TipConfig. */
@@ -137,6 +150,8 @@ export function validateConfig(input: {
   color?: unknown;
   presets?: unknown;
   label?: unknown;
+  variant?: unknown;
+  symbol?: unknown;
 }): ValidationResult {
   const errors: ValidationErrors = {};
 
@@ -169,8 +184,16 @@ export function validateConfig(input: {
       color: color === false ? null : color,
       presets: parsePresets(input.presets),
       label: normalizeLabel(input.label),
+      variant: parseVariant(input.variant),
+      symbol: normalizeSymbol(input.symbol),
     },
   };
+}
+
+// normalizeSymbol — a trimmed non-empty CAT display symbol, or null.
+function normalizeSymbol(raw: unknown): string | null {
+  const s = String(raw == null ? "" : raw).trim();
+  return s === "" ? null : s;
 }
 
 // normalizeLabel — a trimmed non-empty label, or null (the widget then uses its default).
@@ -232,6 +255,12 @@ export function buildEmbedSnippet(config: TipConfig, origin: string = SITE_ORIGI
   if (config.label) {
     attrs += ` data-label="${escapeHtmlAttr(config.label)}"`;
   }
+  if (config.symbol) {
+    attrs += ` data-symbol="${escapeHtmlAttr(config.symbol)}"`;
+  }
+  if (config.variant && config.variant !== "button") {
+    attrs += ` data-variant="${escapeHtmlAttr(config.variant)}"`;
+  }
   return `<script${attrs} async></script>`;
 }
 
@@ -256,6 +285,8 @@ export interface QueryParams {
   color: string | null;
   presets: string | null;
   label: string | null;
+  variant: string | null;
+  symbol: string | null;
   raw: boolean;
 }
 
@@ -279,6 +310,8 @@ export function parseQueryParams(search: string | URLSearchParams): QueryParams 
     color: p.get("color"),
     presets: p.get("presets"),
     label: p.get("label"),
+    variant: p.get("variant"),
+    symbol: p.get("symbol"),
     raw,
   };
 }
@@ -291,6 +324,8 @@ export function hasBuilderParams(q: QueryParams): boolean {
     q.scheme != null ||
     q.color != null ||
     q.presets != null ||
-    q.label != null
+    q.label != null ||
+    q.variant != null ||
+    q.symbol != null
   );
 }

@@ -78,6 +78,8 @@ describe("BuilderPanel", () => {
           color: "#7a3dff",
           presets: "",
           label: "",
+          variant: "button",
+          symbol: "",
           name: "",
         }}
       />,

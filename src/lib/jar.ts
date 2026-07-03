@@ -36,6 +36,8 @@ export interface JarConfig {
   presets: number[] | null;
   /** Custom tip-button label, or null for the asset default. */
   label: string | null;
+  /** Optional display symbol for a CAT (overrides auto-detection), or null. */
+  symbol: string | null;
   /** Display name shown on the jar page heading, or null. */
   name: string | null;
 }
@@ -59,6 +61,7 @@ export function jarPath(config: JarConfig): string {
   if (config.scheme === "custom" && config.color) p.set("color", config.color.toLowerCase());
   if (config.presets && config.presets.length) p.set("presets", config.presets.join(","));
   if (config.label) p.set("label", config.label);
+  if (config.symbol) p.set("symbol", config.symbol);
   if (config.name) p.set("name", config.name);
   const q = p.toString();
   return `/jar/${config.recipient.toLowerCase()}${q ? `?${q}` : ""}`;
@@ -95,6 +98,7 @@ export function parseJarPath(pathname: string, search: string | URLSearchParams)
     color: q.get("color") ?? undefined,
     presets: q.get("presets") ?? undefined,
     label: q.get("label") ?? undefined,
+    symbol: q.get("symbol") ?? undefined,
   });
   if (!result.ok) {
     const messages = [result.errors.recipient, result.errors.asset, result.errors.color].filter(Boolean);
@@ -111,6 +115,7 @@ export function parseJarPath(pathname: string, search: string | URLSearchParams)
       color: result.config.color,
       presets: result.config.presets,
       label: result.config.label,
+      symbol: result.config.symbol,
       name: name === "" ? null : name,
     },
   };

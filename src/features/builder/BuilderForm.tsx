@@ -4,7 +4,8 @@
 // picker), presets, label, and the two one-click presets. No data fetching, no derivation here.
 
 import type { BuilderForm as Form, AssetChoice } from "./useBuilder";
-import type { ValidationErrors } from "@/lib/embed";
+import type { ValidationErrors, WidgetVariant } from "@/lib/embed";
+import { useCatSymbol } from "./useCatSymbol";
 import { S } from "@/lib/strings";
 
 export interface BuilderFormProps {
@@ -16,6 +17,8 @@ export interface BuilderFormProps {
 }
 
 export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPreset }: BuilderFormProps) {
+  // Auto-detect the CAT symbol for an "Other CAT" asset (a suggestion; the manual field overrides).
+  const catSymbol = useCatSymbol(form.catId, form.assetChoice === "cat");
   return (
     <form className="builder-form" onSubmit={(e) => e.preventDefault()} noValidate aria-label="Tip widget builder">
       {/* One-click presets */}
@@ -100,6 +103,33 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
               autoComplete="off"
               spellCheck={false}
             />
+
+            {/* Token symbol — auto-detected from the asset id, overridable. Loading + detected states. */}
+            <label htmlFor="symbol" className="field-label">
+              {S.symbolLabel}
+            </label>
+            <p id="symbol-help" className="field-help">
+              {S.symbolHelp}
+            </p>
+            <input
+              id="symbol"
+              type="text"
+              className="field-input"
+              data-testid="input-symbol"
+              value={form.symbol}
+              placeholder={catSymbol.detected ?? S.symbolPlaceholder}
+              onChange={(e) => setField("symbol", e.target.value)}
+              aria-describedby="symbol-help symbol-status"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <p id="symbol-status" className="field-help" role="status" data-testid="symbol-status">
+              {catSymbol.detecting
+                ? S.symbolDetecting
+                : !form.symbol.trim() && catSymbol.detected
+                  ? `${S.symbolDetected}${catSymbol.detected}`
+                  : ""}
+            </p>
           </div>
         )}
         {errors.asset && (
@@ -194,6 +224,33 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
           spellCheck={false}
         />
       </div>
+
+      {/* Widget style variant */}
+      <fieldset className="field">
+        <legend className="field-label">{S.variantLabel}</legend>
+        <p className="field-help">{S.variantHelp}</p>
+        <div className="radio-row" role="radiogroup" aria-label={S.variantLabel}>
+          {(
+            [
+              ["button", S.variantButton],
+              ["compact", S.variantCompact],
+              ["card", S.variantCard],
+            ] as [WidgetVariant, string][]
+          ).map(([value, text]) => (
+            <label key={value} className="radio-chip">
+              <input
+                type="radio"
+                name="variant"
+                value={value}
+                checked={form.variant === value}
+                onChange={() => setField("variant", value)}
+                data-testid={`variant-${value}`}
+              />
+              <span>{text}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       {/* Label */}
       <div className="field">
