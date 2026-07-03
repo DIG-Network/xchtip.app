@@ -170,8 +170,9 @@ Behavior:
 
 A tip jar is a standalone, self-contained landing page for ONE recipient. It is **deterministic and
 backend-free**: every setting rides in the URL, so the same config always maps to the same page and
-the page is 100% reconstructable from the link alone (served via the CloudFront SPA fallback — a deep
-link to `/jar/…` returns `index.html`, which reads the path).
+the page is 100% reconstructable from the link alone (a deep link to `/jar/…` is served its own
+dedicated CloudFront behavior — §11 — which returns the SPA's `index.html` with a personalized
+`<head>`; the client reads the path once it loads).
 
 Canonical URL form — parameters appear in this FIXED order, and defaults are OMITTED so equivalent
 configs always mint the identical URL:
@@ -467,6 +468,14 @@ neither is invocable except through this distribution:
 Both are built (`npm ci && npm run build` inside each `lambda/*` package) BEFORE `terraform apply`,
 which zips each `dist/` directly (`terraform/og.tf`, `terraform/jar-meta.tf`). See
 `runbooks/deploy.md`.
+
+SPA client-side routing is resolved by a viewer-request CloudFront Function on the default cache
+behavior (`terraform/cloudfront-function.js`): any request path with no dotted file extension (a
+client-side route) is rewritten to `/index.html` AT THE EDGE, before it reaches the S3 origin. The
+distribution has NO distribution-wide `custom_error_response` mapping — that would catch a non-2xx
+from EVERY origin (S3 and both Lambda origins alike) and mask it as a 200 SPA page, hiding a genuine
+OAC/auth failure on `/og` or `/jar/*` behind what looks like a working (but wrong) response. A real
+error from any origin MUST surface as a real error.
 
 ## 12. Accessibility + machine-friendliness
 

@@ -34,6 +34,8 @@ jobs:
         run: npm run typecheck
       - name: unit tests + coverage (gated ≥80%)
         run: npm run test:coverage
+      - name: CloudFront viewer-request function regression tests (SPA fallback + /embed.txt)
+        run: node --test terraform/cloudfront-function.test.mjs
       - name: build (SPA + SEO gate + WC projectId injection)
         run: npm run build
       - name: install Playwright browsers

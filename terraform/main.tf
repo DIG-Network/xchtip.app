@@ -303,8 +303,8 @@ resource "aws_cloudfront_distribution" "site" {
   }
 
   # #221 item 2 — GET /jar/<recipient>?... -> the static SPA shell with a PERSONALIZED <head>
-  # (jar-meta.tf). Takes priority over the default behavior's 403/404->index.html SPA fallback, so
-  # a crawler unfurling a jar link sees the per-recipient card without ever needing to run JS.
+  # (jar-meta.tf). Takes priority (ordered_cache_behavior) over the default behavior, so a crawler
+  # unfurling a jar link sees the per-recipient card without ever needing to run JS.
   ordered_cache_behavior {
     path_pattern           = "/jar/*"
     target_origin_id       = local.jar_meta_origin_id
@@ -315,19 +315,13 @@ resource "aws_cloudfront_distribution" "site" {
     compress               = true
   }
 
-  # SPA routing: any non-asset path (deep links, /?params) serves index.html (the SPA reads the URL).
-  custom_error_response {
-    error_code            = 403
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 10
-  }
-  custom_error_response {
-    error_code            = 404
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 10
-  }
+  # SPA routing is handled by the viewer-request CloudFront Function (embed_txt, attached to the
+  # default_cache_behavior above) rewriting extensionless paths to /index.html AT THE EDGE, before
+  # the request ever reaches an origin — see cloudfront-function.js. There is DELIBERATELY NO
+  # distribution-wide `custom_error_response` here: that used to catch 403/404 from EVERY origin
+  # (S3 AND the /og + /jar/* Lambda origins) and rewrite it to a 200 /index.html, which silently
+  # masked genuine OAC/auth failures on the Lambda origins as an innocuous-looking SPA page (#221
+  # live-broken OG cards). A real error from any origin now surfaces as a real error.
 
   restrictions {
     geo_restriction {

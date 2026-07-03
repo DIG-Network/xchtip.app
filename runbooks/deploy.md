@@ -158,5 +158,35 @@ curl -s "https://xchtip.app/jar/xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs
   | grep -Eo '<title>[^<]*</title>|og:image" content="[^"]*"'
 ```
 
+### If /og or /jar/* ever serve index.html instead of the real response
+
+`/og` and `/jar/*` returning the SPA `index.html` (200, `text/html`, `Server: AmazonS3`) instead of
+the image / personalized HTML means CloudFront could not get a good response from the Lambda origin.
+**This is NOT a transient IAM-propagation thing to wait out** — a prior version of this note claimed
+it "self-heals in a few minutes"; in practice it did not clear after 20+ minutes and needed an actual
+fix (#221 live-broken OG cards). The distribution has NO `custom_error_response` (see main.tf) for
+exactly this reason: a non-2xx from the Lambda origin must surface as a real error, not get silently
+rewritten to a 200 SPA page that hides the failure.
+
+Diagnose in order:
+1. `curl -sD- "https://xchtip.app/og?recipient=xch1x&asset=xch&scheme=green"` — check the actual
+   status code and `X-Cache` header now that nothing masks it.
+2. Check `/aws/lambda/xchtip-og-image` (or `-jar-meta`) CloudWatch Logs for an invocation matching the
+   request time. NO invocation logged means CloudFront never got an authorized request through to the
+   Function URL (an OAC/SigV4/permission problem, upstream of the function code) — verify the
+   Lambda's resource policy (`aws lambda get-policy --function-name xchtip-og-image`) grants
+   `cloudfront.amazonaws.com` `lambda:InvokeFunctionUrl` with `SourceArn` = this distribution's ARN,
+   and the OAC (`aws cloudfront get-origin-access-control`) is `signing_behavior=always`,
+   `signing_protocol=sigv4`, `origin_access_control_origin_type=lambda`, and is actually attached to
+   the origin (`aws cloudfront get-distribution` → `Origins.Items[].OriginAccessControlId`).
+3. An invocation IS logged but with an error → the Lambda code/deps are the problem (e.g. a missing
+   font or the wrong `@resvg/resvg-js` platform binary for `nodejs20.x`/`x86_64` — rebuild per the
+   BUILD PREREQUISITE above, on a linux/x64 host).
+4. To isolate the Lambda code from the OAC/CloudFront layer entirely, invoke it directly with a
+   synthetic Function-URL-shaped event (bypasses Function URL auth, exercises only the handler):
+   `aws lambda invoke --function-name xchtip-og-image --cli-binary-format raw-in-base64-out --payload '{"rawPath":"/og","rawQueryString":"recipient=xch1x&asset=xch&scheme=green","queryStringParameters":{"recipient":"xch1x","asset":"xch","scheme":"green"},"requestContext":{"http":{"method":"GET"}}}' out.json`
+   — a `200`/`image/png` response here with a clean CloudWatch log confirms the Lambda itself is fine
+   and the break is purely in the CloudFront ↔ Function-URL path.
+
 Before DNS resolves you can test against the CloudFront domain
 (`https://<cloudfront_domain_name>/`) with a Host header of `xchtip.app`.

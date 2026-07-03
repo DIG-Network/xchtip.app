@@ -1,12 +1,26 @@
-// CloudFront Function (viewer-request) for xchtip.app.
+// CloudFront Function (viewer-request) for xchtip.app, attached to the DEFAULT cache behavior only
+// (/og, /jar/*, /assets/*, /embed/* are carved out to their own ordered_cache_behaviors in main.tf
+// and never reach this function).
 //
-// Serves GET /embed.txt?<builder params> as a real text/plain response computed at the edge — the
-// exact embed <script> snippet a caller would copy, so a tool/agent can `curl` it with no JS and no
-// scraping. Mirrors src/lib/embed.ts (the tested single source of truth); keep them in agreement.
+// Two responsibilities:
+//   1. Serves GET /embed.txt?<builder params> as a real text/plain response computed at the edge —
+//      the exact embed <script> snippet a caller would copy, so a tool/agent can `curl` it with no
+//      JS and no scraping. Mirrors src/lib/embed.ts (the tested single source of truth); keep them
+//      in agreement.
+//   2. SPA-fallback rewrite: every real file the default behavior's S3 origin serves has a file
+//      extension (index.html, favicon.svg, robots.txt, sitemap.xml, llms.txt, og.png, site.webmanifest,
+//      icon-*.png — see public/). Any OTHER path (a client-side route, or a stale/typo'd deep link) is
+//      rewritten HERE, at the edge, to /index.html so the SPA shell loads and React can take over —
+//      BEFORE the request ever reaches S3. This replaces the old distribution-wide
+//      `custom_error_response` (403/404 -> 200 /index.html): that mapping applied to the WHOLE
+//      distribution regardless of which origin produced the error, so it also silently swallowed
+//      genuine errors from the /og and /jar/* Lambda origins (an OAC/auth failure got masked as a
+//      200 SPA page instead of surfacing as the real error). Doing the SPA rewrite proactively at the
+//      edge means S3 (almost) never needs to 403, and only-real-file 403/404s (e.g. a truly missing
+//      /favicon.ico) now correctly surface as errors instead of being masked.
 //
-// For any OTHER path this function passes the request through unchanged (returns `request`), so the
-// SPA + assets behave normally. CloudFront Functions run a constrained JS runtime (ES5.1-ish) — this
-// code stays within it (no let/const-only features assumed, no unsupported APIs).
+// CloudFront Functions run a constrained JS runtime (ES5.1-ish) — this code stays within it (no
+// let/const-only features assumed, no unsupported APIs).
 
 var CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 
@@ -116,10 +130,25 @@ function textResponse(status, body) {
   };
 }
 
+// Any real static file served by the default behavior's S3 origin has a dotted extension
+// (index.html, favicon.svg, robots.txt, …). A path with no extension (and isn't bare "/", which
+// CloudFront's default_root_object already resolves to index.html at the origin) is a client-side
+// route or a stale deep link — rewrite it to /index.html so the SPA renders instead of the origin
+// having to 403/404 a missing key.
+var HAS_EXTENSION_RE = /\.[a-zA-Z0-9]+$/;
+
 function handler(event) {
   var request = event.request;
-  if (request.uri !== "/embed.txt") return request;
 
+  if (request.uri === "/embed.txt") return handleEmbedTxt(request);
+
+  if (request.uri !== "/" && !HAS_EXTENSION_RE.test(request.uri)) {
+    request.uri = "/index.html";
+  }
+  return request;
+}
+
+function handleEmbedTxt(request) {
   var qs = request.querystring || {};
   var recipient = qv(qs, "recipient");
   var asset = qv(qs, "asset");
