@@ -58,7 +58,7 @@ export const hi: Partial<Messages> = {
   visitButton: "जाएँ",
   copyShort: "कॉपी करें",
 
-  feeNote: "0.1% नेटवर्क शुल्क xchtip.app को जाता है; बाकी सीधे प्राप्तकर्ता को जाता है।",
+  feeNote: "0.1% शुल्क xchtip.app का समर्थन करता है; साथ ही एक छोटा XCH नेटवर्क शुल्क भी लगता है — बाकी सीधे प्राप्तकर्ता को जाता है।",
 
   previewHeading: "लाइव पूर्वावलोकन",
   snippetHeading: "एम्बेड स्निपेट",

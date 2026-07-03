@@ -58,7 +58,7 @@ export const ko: Partial<Messages> = {
   visitButton: "방문",
   copyShort: "복사",
 
-  feeNote: "0.1%의 네트워크 수수료는 xchtip.app로 가고, 나머지는 모두 받는 사람에게 바로 전달됩니다.",
+  feeNote: "0.1%의 수수료는 xchtip.app을 지원하는 데 사용되며, 여기에 소액의 XCH 네트워크 수수료가 추가로 발생합니다 — 나머지는 모두 받는 사람에게 바로 전달됩니다.",
 
   previewHeading: "실시간 미리보기",
   snippetHeading: "삽입 코드",

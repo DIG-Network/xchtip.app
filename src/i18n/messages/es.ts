@@ -58,7 +58,7 @@ export const es: Partial<Messages> = {
   visitButton: "Visitar",
   copyShort: "Copiar",
 
-  feeNote: "Una comisión de red del 0,1 % va a xchtip.app; el resto va directo al destinatario.",
+  feeNote: "Una comisión del 0,1 % apoya a xchtip.app, más una pequeña comisión de red de XCH; el resto va directo al destinatario.",
 
   previewHeading: "Vista previa en vivo",
   snippetHeading: "Fragmento para integrar",

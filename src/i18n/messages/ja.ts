@@ -58,7 +58,7 @@ export const ja: Partial<Messages> = {
   visitButton: "開く",
   copyShort: "コピー",
 
-  feeNote: "0.1% のネットワーク手数料は xchtip.app へ、残りはすべて受取先へ直接届きます。",
+  feeNote: "0.1%の手数料が xchtip.app を支えます。これに加えて少額の XCH ネットワーク手数料がかかり、残りはすべて受取先へ直接届きます。",
 
   previewHeading: "リアルタイムプレビュー",
   snippetHeading: "埋め込みスニペット",

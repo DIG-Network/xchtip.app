@@ -58,7 +58,7 @@ export const tr: Partial<Messages> = {
   visitButton: "Ziyaret et",
   copyShort: "Kopyala",
 
-  feeNote: "%0,1'lik bir ağ ücreti xchtip.app'e gider; gerisi doğrudan alıcıya gider.",
+  feeNote: "%0,1'lik bir ücret xchtip.app'i destekler; buna ek olarak küçük bir XCH ağ ücreti alınır — gerisi doğrudan alıcıya gider.",
 
   previewHeading: "Canlı önizleme",
   snippetHeading: "Yerleştirme parçacığı",

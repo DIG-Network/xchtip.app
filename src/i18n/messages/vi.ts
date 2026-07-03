@@ -58,7 +58,7 @@ export const vi: Partial<Messages> = {
   visitButton: "Truy cập",
   copyShort: "Sao chép",
 
-  feeNote: "Phí mạng 0,1% dành cho xchtip.app; phần còn lại đến thẳng người nhận.",
+  feeNote: "Phí 0,1% dùng để hỗ trợ xchtip.app, cộng thêm một khoản phí mạng XCH nhỏ — phần còn lại đến thẳng người nhận.",
 
   previewHeading: "Xem trước trực tiếp",
   snippetHeading: "Đoạn mã nhúng",

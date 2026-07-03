@@ -58,7 +58,7 @@ export const id: Partial<Messages> = {
   visitButton: "Kunjungi",
   copyShort: "Salin",
 
-  feeNote: "Biaya jaringan 0,1% masuk ke xchtip.app; sisanya langsung ke penerima.",
+  feeNote: "Biaya 0,1% mendukung xchtip.app, ditambah sedikit biaya jaringan XCH — sisanya langsung ke penerima.",
 
   previewHeading: "Pratinjau langsung",
   snippetHeading: "Cuplikan sematan",

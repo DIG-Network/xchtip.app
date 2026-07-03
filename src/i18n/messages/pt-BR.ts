@@ -58,7 +58,7 @@ export const ptBR: Partial<Messages> = {
   visitButton: "Visitar",
   copyShort: "Copiar",
 
-  feeNote: "Uma taxa de rede de 0,1% vai para o xchtip.app; o restante vai direto ao destinatário.",
+  feeNote: "Uma taxa de 0,1% apoia o xchtip.app, mais uma pequena taxa de rede XCH — o restante vai direto ao destinatário.",
 
   previewHeading: "Prévia ao vivo",
   snippetHeading: "Trecho para incorporar",

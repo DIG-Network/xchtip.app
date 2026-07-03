@@ -58,7 +58,7 @@ export const zhTW: Partial<Messages> = {
   visitButton: "前往",
   copyShort: "複製",
 
-  feeNote: "0.1% 的網路費用歸 xchtip.app；其餘全部直達收款人。",
+  feeNote: "0.1% 的費用用於支持 xchtip.app，另加少量 XCH 網路費用——其餘全部直達收款人。",
 
   previewHeading: "即時預覽",
   snippetHeading: "嵌入程式碼",

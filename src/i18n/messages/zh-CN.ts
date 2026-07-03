@@ -58,7 +58,7 @@ export const zhCN: Partial<Messages> = {
   visitButton: "访问",
   copyShort: "复制",
 
-  feeNote: "0.1% 的网络费用归 xchtip.app；其余全部直达收款人。",
+  feeNote: "0.1% 的费用用于支持 xchtip.app，另加少量 XCH 网络费用——其余全部直达收款人。",
 
   previewHeading: "实时预览",
   snippetHeading: "嵌入代码",

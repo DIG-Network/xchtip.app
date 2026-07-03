@@ -58,7 +58,7 @@ export const de: Partial<Messages> = {
   visitButton: "Öffnen",
   copyShort: "Kopieren",
 
-  feeNote: "Eine Netzwerkgebühr von 0,1 % geht an xchtip.app; der Rest geht direkt an den Empfänger.",
+  feeNote: "Eine Gebühr von 0,1 % unterstützt xchtip.app, zuzüglich einer kleinen XCH-Netzwerkgebühr – der Rest geht direkt an den Empfänger.",
 
   previewHeading: "Live-Vorschau",
   snippetHeading: "Einbettungs-Snippet",

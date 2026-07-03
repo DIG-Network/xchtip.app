@@ -80,7 +80,7 @@ export const en = {
   visitButton: "Visit",
   copyShort: "Copy",
 
-  feeNote: "A 0.1% network fee goes to xchtip.app; the rest goes straight to the recipient.",
+  feeNote: "A 0.1% fee supports xchtip.app; plus a small XCH network fee — the rest goes straight to the recipient.",
 
   previewHeading: "Live preview",
   snippetHeading: "Embed snippet",

@@ -58,7 +58,7 @@ export const ru: Partial<Messages> = {
   visitButton: "Открыть",
   copyShort: "Копировать",
 
-  feeNote: "Комиссия сети 0,1% идёт на xchtip.app; остальное поступает напрямую получателю.",
+  feeNote: "Комиссия 0,1% идёт на поддержку xchtip.app, плюс небольшая комиссия сети XCH — остальное поступает напрямую получателю.",
 
   previewHeading: "Живой предпросмотр",
   snippetHeading: "Код для встраивания",
