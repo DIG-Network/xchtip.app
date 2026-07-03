@@ -72,10 +72,9 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
 
 ## STILL OPEN — for a future session / orchestrator
 
-- [ ] **CAT multi-address selection** — the CAT path still selects coins at a single inner address
-      (senderCatPh). Like the XCH fix, select across all the wallet's CAT coins for the asset with
-      per-coin inner-key recovery. (XCH multi-address is fixed; CAT works when the CAT is at the
-      primary address — same limitation the hub has.)
+- [x] **CAT multi-address selection** — DONE (e80d323, deployed): every CAT coin resolves its OWN
+      inner key (own reveal validated by outer-hash, else the XCH-derived key map); works for
+      addresses holding ONLY the CAT (no XCH); per-coin signing in the ring; verified vs real wasm.
 - [ ] **Widget iframe isolation** (WC session shared across embedding sites) — see design note above.
 
 ## OPEN (2026-07-02, even later)
