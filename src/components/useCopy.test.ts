@@ -2,7 +2,7 @@
 // blocked clipboard is swallowed (never throws, `copied` stays false) so the UI never breaks.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { useCopy } from "./useCopy";
 
 beforeEach(() => {
