@@ -111,6 +111,7 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
       <JarWidget config={config} />
 
       <p className="jar-note">{S.jarNote}</p>
+      <p className="jar-fee">{S.feeNote}</p>
 
       {/* Why Chia — the honest value story (low fees, fast, self-custodial). */}
       <ul className="jar-benefits" data-testid="jar-benefits">

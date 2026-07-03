@@ -171,13 +171,16 @@ On button click the widget:
    reuses a persisted session on the same origin across page loads (WC localStorage is origin-scoped;
    cross-domain reuse is not possible). The connect prompt shows the xchtip.app brand.
 2. Lets the visitor pick a preset or custom amount.
-3. Builds the unsigned coin spends CLIENT-SIDE via `chia_wallet_sdk_wasm`:
+3. Builds the unsigned coin spends CLIENT-SIDE via `chia_wallet_sdk_wasm`, applying the protocol fee
+   (§8a):
    - **XCH**: source the wallet's XCH coins (`chip0002_getAssetCoins`, assetId null), select enough
-     to cover the amount, and build a standard spend creating a coin to the recipient puzzle hash
-     (plus change back to the sender). No coinset round-trip is required beyond broadcast.
+     to cover the amount, and build a standard spend creating a coin to the recipient puzzle hash for
+     the NET amount, a coin to the fee address for the fee, and change back to the sender. No coinset
+     round-trip is required beyond broadcast.
    - **CAT**: source the wallet's CAT coins for the asset id, and build a CAT ring spend with lineage
-     proofs (parent puzzle+solution fetched from coinset), creating a CAT coin to the recipient
-     puzzle hash (plus change). This is the proven hub $DIG-tip path, generalized to any asset id.
+     proofs (parent puzzle+solution fetched from coinset), creating a CAT coin to the recipient puzzle
+     hash for the NET amount, a CAT coin to the fee address for the fee, and change. This is the proven
+     hub $DIG-tip path, generalized to any asset id.
 4. Requests a signature via `chip0002_signCoinSpends` (partialSign) and broadcasts the assembled
    spend bundle to Chia mainnet via `https://api.coinset.org/push_tx`.
 
@@ -185,6 +188,20 @@ The `chia_wallet_sdk_wasm` glue + `_bg.wasm` are SELF-HOSTED on the xchtip.app o
 `/embed/vendor/` and instantiated by hand (the wasm-bindgen bundler step performed at runtime:
 compile → map every wasm import module to the glue → instantiate → `__wbg_set_wasm`). The widget MUST
 NOT rely on a CDN wrapper that drops `__wbg_set_wasm`.
+
+## 8a. Protocol fee
+
+Every tip carries a **0.1% protocol fee** paid to the xchtip.app fee address
+`xch1kxdp5hsu34e2ku8p4e6f3ap27dw8fvhjghxe88dcve8n77zwekhsemh66h`, in the SAME asset as the tip.
+
+- The fee is `floor(baseUnits / 1000)` in the asset's base units. The recipient receives the
+  remainder (`baseUnits − fee`).
+- If a tip is too small to carry a whole-base-unit fee (`fee == 0`) — or a fee would leave the
+  recipient with nothing — NO fee coin is created and the recipient receives the entire tip.
+- The fee output is a first-class coin created on the first selected coin's conditions (a CAT coin of
+  the same asset for a CAT tip). It is signed + broadcast atomically with the recipient output.
+- The fee is DISCLOSED to the tipper: the tip modal shows a subtle "Includes a 0.1% network fee to
+  xchtip.app" line, and the builder + jar page carry the same disclosure.
 
 ## 9. WalletConnect projectId injection
 

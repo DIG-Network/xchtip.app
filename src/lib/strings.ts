@@ -69,6 +69,9 @@ export const S = {
   visitButton: "Visit",
   copyShort: "Copy",
 
+  // Protocol fee disclosure (subtle)
+  feeNote: "A 0.1% network fee goes to xchtip.app; the rest goes straight to the recipient.",
+
   // Output
   previewHeading: "Live preview",
   snippetHeading: "Embed snippet",
@@ -106,7 +109,7 @@ export const S = {
   jarEyebrow: "Send a tip",
   jarHeadingNamed: "Tip {name}",
   jarHeadingGeneric: "Send a tip",
-  jarSub: "On-chain, wallet to wallet — the recipient keeps 100%. Paid in",
+  jarSub: "On-chain, wallet to wallet — straight to the recipient. Paid in",
   jarTo: "To",
   jarCopyAddress: "Copy the full address",
   jarAmountsLabel: "Suggested amounts",

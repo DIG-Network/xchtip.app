@@ -40,6 +40,7 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
           <LiveWidgetPreview snippet={derived.ok ? derived.snippet : null} />
         </div>
         <p className="stage-caption">{derived.ok ? S.stageCaption : S.stageCaptionDisabled}</p>
+        <p className="stage-fee">{S.feeNote}</p>
       </section>
 
       <div className="builder-panel">

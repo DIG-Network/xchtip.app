@@ -26,6 +26,10 @@
  *     data-target="#my-container"            (optional CSS selector to mount into; default: inline)
  *     async></script>
  *
+ * FEE: a 0.1% protocol fee on each tip is routed to the xchtip.app fee address (same asset), created
+ * as a coin alongside the recipient output in the same signed spend; the recipient gets the rest. The
+ * tipper is shown a subtle disclosure. Tips too small to carry a whole-base-unit fee pay no fee.
+ *
  * PROVENANCE: this widget is a GENERALIZED port of the proven hub.dig.net tip widget
  * (public/embed/dig-tip.js). That widget solved self-hosted wasm loading (esm.sh's wrapper drops
  * __wbg_set_wasm, so the wasm-bindgen glue + _bg.wasm are SELF-HOSTED and instantiated by hand),
@@ -60,6 +64,21 @@
   var COINSET = "https://api.coinset.org";
   var XCH_MOJOS_PER_XCH = 1000000000000; // 1 XCH = 1e12 mojos
   var CAT_BASE_UNITS = 1000; // CATs in the ecosystem use 3 decimals (1 unit = 1000 base units)
+
+  // Protocol fee: 0.1% of every tip is routed to the xchtip.app fee address (same asset as the tip).
+  // The recipient receives the remainder. The fee is floor(baseUnits/1000); if a tip is too small to
+  // carry a >=1-base-unit fee, NO fee coin is created (the recipient gets the whole tip).
+  var FEE_ADDRESS = "xch1kxdp5hsu34e2ku8p4e6f3ap27dw8fvhjghxe88dcve8n77zwekhsemh66h";
+  var FEE_BPS = 1; // 1 per 1000 = 0.1%
+  var FEE_DENOM = 1000;
+  // splitFee(total) -> { fee, net } in base units (BigInt). fee = floor(total/1000); net = total-fee.
+  function splitFee(totalBaseUnits) {
+    var total = BigInt(totalBaseUnits);
+    var fee = (total * BigInt(FEE_BPS)) / BigInt(FEE_DENOM);
+    if (fee < 0n) fee = 0n;
+    if (fee >= total) fee = 0n; // never leave the recipient with nothing
+    return { fee: fee, net: total - fee };
+  }
 
   // The WC method set the widget needs (a subset of the CHIP-0002/chia set).
   var WC_METHODS = ["chia_getAddress", "chip0002_getAssetCoins", "chip0002_signCoinSpends"];
@@ -337,6 +356,7 @@
       ".xt-action[disabled]{opacity:.5;cursor:not-allowed}",
       ".xt-secondary{border:1.5px solid #e6e1f2;color:#3a3450}",
       ".xt-note{margin:14px 0 0;font-size:12px;color:#9a93ad;text-align:center;line-height:1.5}",
+      ".xt-fee{margin:12px 0 0;font-size:11px;color:#b3adc0;text-align:center;line-height:1.4}",
       ".xt-note a{text-decoration:none}",
       ".xt-qr{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0 2px}",
       ".xt-qr canvas{width:200px;height:200px;border-radius:12px;background:#fff;border:1px solid #eee}",
@@ -545,6 +565,10 @@
     if (sum < need) throw new Error("Not enough XCH: need " + (Number(need) / XCH_MOJOS_PER_XCH) + " XCH, have " + (Number(sum) / XCH_MOJOS_PER_XCH) + " XCH.");
     var change = sum - need;
 
+    // 0.1% protocol fee → the fee address; the recipient gets the remainder. No fee coin if too small.
+    var split = splitFee(need);
+    var feePh = addressToPuzzleHash(FEE_ADDRESS);
+
     for (var j = 0; j < selected.length; j++) {
       var e = selected[j];
       var coin = new chia.Coin(
@@ -554,7 +578,8 @@
       );
       var conditions = [];
       if (j === 0) {
-        conditions.push(clvm.createCoin(chia.fromHex(recipient), need, clvm.nil()));
+        conditions.push(clvm.createCoin(chia.fromHex(recipient), split.net, clvm.nil()));
+        if (split.fee > 0n && feePh) conditions.push(clvm.createCoin(chia.fromHex(feePh), split.fee, clvm.nil()));
         if (change > 0n) conditions.push(clvm.createCoin(senderPhBytes, change, clvm.nil()));
       }
       var delegated = clvm.delegatedSpend(conditions);
@@ -635,7 +660,15 @@
       if (j === 0) {
         var recipientPhBytes = chia.fromHex(recipient);
         var memoProgram = clvm.list([clvm.atom(recipientPhBytes)]);
-        conditions.push(clvm.createCoin(recipientPhBytes, need, memoProgram));
+        // 0.1% protocol fee → the fee address (a CAT coin of the same asset). Recipient gets the rest.
+        var catSplit = splitFee(need);
+        var catFeePh = addressToPuzzleHash(FEE_ADDRESS);
+        conditions.push(clvm.createCoin(recipientPhBytes, catSplit.net, memoProgram));
+        if (catSplit.fee > 0n && catFeePh) {
+          var feePhBytes = chia.fromHex(catFeePh);
+          var feeMemo = clvm.list([clvm.atom(feePhBytes)]);
+          conditions.push(clvm.createCoin(feePhBytes, catSplit.fee, feeMemo));
+        }
         if (change > 0n) conditions.push(clvm.createCoin(chia.fromHex(sender.innerPh), change));
       }
       var delegated = clvm.delegatedSpend(conditions);
@@ -733,7 +766,7 @@
         '<div class="xt-card-title">Support this creator</div>' +
         '<div class="xt-card-addr" title="' + escapeHtml(cfg.recipientAddress) + '">' + escapeHtml(shortAddr) + "</div>";
       card.appendChild(btn);
-      card.insertAdjacentHTML("beforeend", '<div class="xt-card-note">On-chain, wallet to wallet. You keep 100%.</div>');
+      card.insertAdjacentHTML("beforeend", '<div class="xt-card-note">On-chain, wallet to wallet. Includes a 0.1% fee to xchtip.app.</div>');
       wrap.appendChild(card);
     } else {
       wrap.appendChild(btn);
@@ -795,7 +828,8 @@
           '<p class="xt-sub">Send ' + unit + ' straight to the recipient’s wallet — on-chain, no middleman.</p>' +
           '<div class="xt-amounts">' + chips + "</div>" + customRow +
           '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">Cancel</button>' +
-          '<button class="xt-action" style="' + accentStyle() + '" data-act="confirm"' + (amt > 0 ? "" : " disabled") + ">Send " + (amt > 0 ? amountLabel(amt) : unit) + " ♥</button></div>";
+          '<button class="xt-action" style="' + accentStyle() + '" data-act="confirm"' + (amt > 0 ? "" : " disabled") + ">Send " + (amt > 0 ? amountLabel(amt) : unit) + " ♥</button></div>" +
+          '<p class="xt-fee">Includes a 0.1% network fee to xchtip.app.</p>';
       } else if (state.status === "preparing") {
         body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">Preparing your ' + amountLabel(currentAmount()) + " tip…</p></div>";
       } else if (state.status === "sign") {

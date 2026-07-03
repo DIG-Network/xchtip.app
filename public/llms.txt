@@ -86,7 +86,9 @@ The generated snippet is a single self-contained script tag served from `https:/
 
 The widget is fully self-contained: on click it opens its own WalletConnect session, lets the visitor
 pick an amount, builds the spend client-side (XCH = a plain standard spend; a CAT = a CAT spend for
-that asset id), signs via the wallet, and broadcasts to Chia mainnet. The embed asset and its wasm
+that asset id), signs via the wallet, and broadcasts to Chia mainnet. A 0.1% network fee on each tip
+goes to the xchtip.app fee address; the recipient receives the remainder (disclosed in the widget).
+The embed asset and its wasm
 are served with permissive CORS (`Access-Control-Allow-Origin: *`) so it loads from any page on any
 domain, and the site imposes no frame/embedding restrictions.
 

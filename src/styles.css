@@ -343,6 +343,16 @@ a:hover {
   font-size: 0.82rem;
   color: var(--paper-faint);
 }
+/* Subtle fee disclosure under the stage / on the jar page. */
+.stage-fee,
+.jar-fee {
+  margin: 8px auto 0;
+  max-width: 46ch;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--paper-faint);
+  opacity: 0.85;
+}
 .stage-caption code {
   font-family: var(--mono);
   color: var(--paper-dim);
