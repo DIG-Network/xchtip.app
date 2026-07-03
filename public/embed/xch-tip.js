@@ -582,20 +582,29 @@
     return res.json().catch(function () { return {}; });
   }
   function fix0x(h) { return h && !String(h).startsWith("0x") ? "0x" + h : h; }
-  // Coin amounts from the wasm are BigInt; the WC request params + the coinset /push_tx body are
-  // JSON-serialized, and JSON.stringify THROWS on a BigInt ("Do not know how to serialize a BigInt").
-  // Normalize amounts to a JS Number here (the single choke point both spend paths flow through) —
-  // Chia coin amounts in a tip are well within Number's safe integer range.
+  // Coin amounts from the wasm are BigInt → Number (JSON.stringify throws on BigInt).
   function toNum(v) { return typeof v === "bigint" ? Number(v) : Number(v); }
+  // The wasm CoinSpend returns parentCoinInfo / puzzleHash / puzzleReveal / solution as BYTE objects
+  // (Uint8Array), not strings. The wallet's chip0002_signCoinSpends + coinset /push_tx require HEX
+  // STRINGS — a raw byte object serializes to `{}` and the wallet rejects it ("Expected string,
+  // received object"). Coerce any bytes-like value to a 0x-prefixed lowercase hex string here.
+  function toHexStr(v) {
+    if (v == null) return v;
+    if (typeof v === "string") return fix0x(v);
+    if (v instanceof Uint8Array) return "0x" + bytesToHex(v);
+    if (typeof v.toHex === "function") { try { return fix0x(v.toHex()); } catch (_) {} }
+    if (typeof v.length === "number") { try { return "0x" + bytesToHex(v); } catch (_) {} } // array-like
+    return v;
+  }
   function coinSpendToWallet(cs) {
     return {
       coin: {
-        parent_coin_info: cs.coin.parent_coin_info != null ? cs.coin.parent_coin_info : cs.coin.parentCoinInfo,
-        puzzle_hash: cs.coin.puzzle_hash != null ? cs.coin.puzzle_hash : cs.coin.puzzleHash,
+        parent_coin_info: toHexStr(cs.coin.parent_coin_info != null ? cs.coin.parent_coin_info : cs.coin.parentCoinInfo),
+        puzzle_hash: toHexStr(cs.coin.puzzle_hash != null ? cs.coin.puzzle_hash : cs.coin.puzzleHash),
         amount: toNum(cs.coin.amount),
       },
-      puzzle_reveal: cs.puzzle_reveal != null ? cs.puzzle_reveal : cs.puzzleReveal,
-      solution: cs.solution,
+      puzzle_reveal: toHexStr(cs.puzzle_reveal != null ? cs.puzzle_reveal : cs.puzzleReveal),
+      solution: toHexStr(cs.solution),
     };
   }
 
@@ -908,28 +917,19 @@
     var state = { status: "idle", topic: null, amount: cfg.presets[0] || 1, useCustom: false, prepared: null, error: null, uri: null, customAmount: "", balance: null };
 
     // Fetch the connected wallet's spendable balance for the tip asset (whole units), for display on
-    // the amount screen so the tipper sees what they hold. Best-effort: null on any failure. Uses
-    // chip0002_getAssetBalance when the wallet supports it, else sums getAssetCoins.
+    // the amount screen so the tipper sees what they hold. Best-effort: null on any failure. Sums
+    // chip0002_getAssetCoins (the method already in the negotiated WC set — NOT getAssetBalance, which
+    // Sage rejects as unsupported).
     async function fetchBalance() {
       try {
-        var params = cfg.asset.kind === "xch" ? { type: null, assetId: null } : { type: "cat", assetId: cfg.asset.assetId };
-        var perUnit = cfg.asset.kind === "xch" ? XCH_MOJOS_PER_XCH : CAT_BASE_UNITS;
-        var base = null;
-        try {
-          var bal = await wallet.request("chip0002_getAssetBalance", params);
-          if (bal != null) {
-            var conf = (typeof bal === "object") ? (bal.spendable != null ? bal.spendable : bal.confirmed) : bal;
-            if (conf != null) base = BigInt(conf);
-          }
-        } catch (_) { base = null; }
-        if (base == null) {
-          var entries = (await wallet.request("chip0002_getAssetCoins", { type: params.type, assetId: params.assetId, includedLocked: false, offset: 0, limit: 200 })) || [];
-          var coins = Array.isArray(entries) ? entries : (entries.coins || []);
-          var sum = 0n;
-          for (var i = 0; i < coins.length; i++) { try { sum += BigInt(coins[i].coin.amount); } catch (_) {} }
-          base = sum;
-        }
-        state.balance = Number(base) / perUnit;
+        var isXch = cfg.asset.kind === "xch";
+        var perUnit = isXch ? XCH_MOJOS_PER_XCH : CAT_BASE_UNITS;
+        var params = isXch ? { type: null, assetId: null } : { type: "cat", assetId: cfg.asset.assetId };
+        var entries = (await wallet.request("chip0002_getAssetCoins", { type: params.type, assetId: params.assetId, includedLocked: false, offset: 0, limit: 200 })) || [];
+        var coins = Array.isArray(entries) ? entries : (entries.coins || []);
+        var sum = 0n;
+        for (var i = 0; i < coins.length; i++) { try { sum += BigInt(coins[i].coin.amount); } catch (_) {} }
+        state.balance = Number(sum) / perUnit;
       } catch (_) { state.balance = null; }
       if (scrim && state.status === "pick") render();
     }
