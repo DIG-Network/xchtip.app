@@ -7,8 +7,10 @@ Chia wallet (WalletConnect → Sage) and tip on-chain, wallet to wallet — non-
 - **Builder:** https://xchtip.app/
 - **Tip page (per recipient):** https://xchtip.app/jar/&lt;recipient&gt; — a standalone, shareable
   landing page with a working tip button (deterministic, backend-free: every setting lives in the URL).
-  The page themes to the selected scheme end-to-end (a $DIG jar reads purple, HOA orange, …) and
-  shows that asset's logo/glyph next to its name — see SPEC.md §6a.
+  The WHOLE page themes to the selected scheme — background, card, wells, chips, borders, and
+  muted text are all shades of the scheme hue (a $DIG jar reads purple end-to-end, HOA warm orange,
+  XCH green) — and the asset's logo renders as a prominent ~100px hero medallion under the intro
+  copy — see SPEC.md §4 + §6a.
 - **Embed script:** https://xchtip.app/embed/xch-tip.js
 - **Embed preview (for integrators):** https://xchtip.app/embed-preview?recipient=…&asset=…&scheme=…&name=…&logo=…
   — a chromeless, iframe-friendly route rendering ONLY the live widget for the given params (see SPEC.md §6b);
@@ -36,8 +38,8 @@ The normative contract (embed data-attributes, query-param API, widget wire beha
    plain text in the SPA, and `/embed.txt?...` returns it as a real `text/plain` response. A third
    party (e.g. hub.dig.net) can also iframe `/embed-preview?...` for a live, isolated widget preview.
 5. **Customize the mark.** An optional `logo=<https:// or data:image/* URL>` shows a custom coin/
-   brand mark wherever the asset is named (the button's leading glyph, the jar page's "Paid in
-   `<asset>`" line) — instead of the built-in Chia leaf / DIG / HOA mark. Rendered only as a hardened
+   brand mark wherever the asset's mark appears (the button's leading glyph, the jar page's coin
+   hero medallion) — instead of the built-in Chia leaf / DIG / HOA mark. Rendered only as a hardened
    `<img>`; an invalid URL scheme or a load failure falls back to the built-in mark.
 6. **Report a bug.** A floating 🐞 button (bottom-right, via the shared `@dignetwork/components`
    `<BugReportButton>`) is available on the builder and every tip-jar page, letting a visitor file a
@@ -83,7 +85,8 @@ See [`runbooks/local.md`](runbooks/local.md) for full local setup and
   mapping, centralized copy.
 - `src/features/builder/` — the builder hook + form + live preview + copyable output + tip-page link.
 - `src/features/jar/` — the deterministic per-recipient tip-jar landing page (`/jar/<recipient>`),
-  themed to the selected scheme end-to-end with the asset's logo/glyph shown next to its name.
+  themed WHOLE-PAGE to the selected scheme's derived surface palette, with the asset's logo as a
+  prominent hero medallion.
 - `src/features/embedPreview/` — the chromeless `/embed-preview` route (an iframe target for
   integrators, e.g. the hub's Developer-tab live preview).
 - `src/features/raw/` — the machine-readable raw mode.

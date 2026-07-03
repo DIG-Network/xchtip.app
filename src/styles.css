@@ -949,7 +949,37 @@ legend.field-label {
 }
 
 /* ============================================================= Tip-jar landing page ===== */
-/* The recipient's standalone, deterministic tip page — one spotlit card, centered. */
+/* The recipient's standalone, deterministic tip page — one spotlit card, centered.
+
+   WHOLE-PAGE scheme theming: JarPage sets the `--jar-*` palette (schemeCssVars, lib/schemes.ts)
+   on <body> and adds .jar-page. This block re-points the site's BASE tokens at that palette, so
+   every existing rule (header, card, wells, chips, hairlines, muted text, links, focus) re-themes
+   to shades of the selected scheme with no per-rule forking — a purple jar reads purple
+   end-to-end (dark-violet base + violet-tinted surfaces), an orange jar warm amber-black, XCH
+   green. Fallbacks keep the original site tokens if the vars are ever absent. The accent-text
+   tints (--jar-accent-text*) are lightness-pinned AA-safe by construction (schemes.test.ts). */
+body.jar-page {
+  --ink: var(--jar-bg, #0b1512);
+  --ink-2: var(--jar-surface, #0f1d19);
+  --ink-3: var(--jar-surface-raised, #12241f);
+  --well: var(--jar-well, #081210);
+  --line: var(--jar-border, #1e3630);
+  --line-2: var(--jar-border-strong, #2a4b42);
+  --paper-dim: var(--jar-text-muted, #a6bcb3);
+  --paper-faint: var(--jar-text-faint, #6f8880);
+  --gold: var(--jar-accent-text, #f5b642);
+  --gold-hi: var(--jar-accent-text-hi, #ffcf6a);
+  --gold-soft: var(--jar-accent-soft, rgba(245, 182, 66, 0.14));
+  --gold-line: var(--jar-accent-line, rgba(245, 182, 66, 0.42));
+  /* --focus resolves var(--gold) at :root, so it must be re-pointed explicitly here. */
+  --focus: var(--jar-accent-text, #f5b642);
+  background-color: var(--ink);
+  /* The ambient field re-tinted to the scheme (base body rule hardcodes mint/gold washes). */
+  background-image:
+    radial-gradient(1100px 700px at 78% -8%, var(--jar-ambient, rgba(87, 227, 154, 0.06)), transparent 60%),
+    radial-gradient(900px 600px at 6% 4%, var(--jar-ambient-2, rgba(245, 182, 66, 0.05)), transparent 55%);
+}
+
 .jar-brand-link {
   display: inline-flex;
   align-items: baseline;
@@ -966,9 +996,9 @@ legend.field-label {
   flex-direction: column;
   align-items: center;
 }
-/* Themed to the SELECTED scheme's palette (green/purple/orange/custom) via --jar-accent/-2/--jar-glow,
-   set inline from the SAME resolveScheme() the builder stage + the widget itself paint with
-   (JarPage.tsx) — a DIG jar reads purple end-to-end, an HOA jar orange end-to-end, XCH green. */
+/* The card paints with the remapped base tokens (see body.jar-page above) plus the accent vars
+   (--jar-accent/-2/--jar-glow) for its top-edge bar + ambient glow — all from the ONE shared
+   resolveScheme() palette. */
 .jar-card {
   width: 100%;
   text-align: center;
@@ -1022,21 +1052,44 @@ legend.field-label {
   color: var(--paper-dim);
   font-size: 1.02rem;
 }
-/* The asset name + its coin logo/glyph (AssetGlyph), shown together in the "Paid in <asset>" line. */
-.jar-asset-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  vertical-align: -0.15em;
-}
-.jar-asset-glyph {
-  display: inline-flex;
-  color: var(--jar-accent, var(--gold));
-  flex: 0 0 auto;
-}
+/* The asset name in the "Paid in <asset>" line — plain emphasized text; the coin's real logo is
+   the hero medallion below (.jar-coin), not a tiny inline glyph. */
 .jar-asset {
   color: var(--paper);
   font-weight: 600;
+}
+
+/* The coin hero — the asset's logo as a prominent, centered medallion under the intro copy:
+   a scheme-tinted well disc with a soft accent halo, holding the ~100px mark (built-in SVG marks
+   scale crisply via currentColor; a custom logo URL renders in the hardened <img>; the emoji/text
+   fallback fills the same footprint via font-size). */
+.jar-coin {
+  width: 132px;
+  height: 132px;
+  margin: 2px auto 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background:
+    radial-gradient(circle at 50% 34%, var(--jar-glow, var(--gold-soft)), transparent 76%),
+    var(--well);
+}
+.jar-coin-mark {
+  width: 100px;
+  height: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jar-accent, var(--gold));
+  /* Emoji (🍊) and text-initial fallbacks fill the same ~100px footprint tastefully. */
+  font-size: 72px;
+  line-height: 1;
+}
+img.jar-coin-mark {
+  object-fit: contain;
+  border-radius: 18px;
 }
 
 /* Optional display name — the prominent, human-readable recipient identity, shown directly above

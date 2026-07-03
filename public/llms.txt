@@ -36,7 +36,7 @@ Parameters:
 - `name` (optional) — a recipient display name (e.g. a handle or store label). Shown on the tip page
   above the address and on the `card`/`banner` widget variants; sanitized and capped at 64 characters.
 - `logo` (optional) — a custom logo/mark URL shown instead of the built-in DIG/HOA/XCH mark, wherever
-  the asset is named (the button's leading glyph, the tip page's "Paid in `<asset>`" line). MUST be
+  the asset's mark appears (the button's leading glyph, the tip page's coin hero medallion). MUST be
   an `https://` URL or a `data:image/{png,jpg,jpeg,gif,webp,svg+xml};base64,` URL; any other scheme
   is dropped (falls back to the built-in mark). A load failure also falls back to the built-in mark.
 - `raw` (optional) — `1`/`true` → return the snippet as plain text only (raw mode).
@@ -72,9 +72,11 @@ defaults omitted): `asset=<64-hex CAT id>` (omit for XCH), `scheme=purple`, `col
 `presets=1,5,25`, `label=<text>`, `name=<display name>`, `logo=<url>`. Each jar URL is its own SEO
 page (unique title, description, canonical, Open Graph) so a shared link previews well.
 
-The page THEMES to the selected scheme end-to-end (not a fixed color): a `$DIG` jar reads purple,
-an `HOA` jar orange, XCH green, a custom `color` tints the same surfaces. It also shows that asset's
-logo/glyph (or a custom `logo=` mark) next to the asset name.
+The WHOLE page THEMES to the selected scheme (not a fixed color): the background, card, wells,
+chips, borders, and muted text are all dark shades of the scheme hue — a `$DIG` jar reads purple
+end-to-end, an `HOA` jar warm orange, XCH green, a custom `color` tints the same surfaces from its
+own hue. The asset's logo (or a custom `logo=` mark) renders as a prominent hero medallion under
+the intro copy.
 
 Example: `https://xchtip.app/jar/xch1...?asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
 

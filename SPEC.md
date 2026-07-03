@@ -53,6 +53,17 @@ A scheme drives the button + modal accent:
 
 An invalid/absent scheme selector MUST fall back to `green` (the button always renders).
 
+**Derived surface palette (full-page theming).** Every scheme — named or custom — additionally
+resolves a FULL surface palette (`surfaces` on the resolved scheme; `deriveSurfaces()` +
+`schemeCssVars()` in `src/lib/schemes.ts`): the page background, the card/well/chip surfaces, the
+hairline borders, and the muted/faint text tints, all as dark, desaturated SHADES of the scheme hue
+(hue held constant; surface saturation capped at 40% and scaled by the accent's own saturation;
+lightness pinned per layer, `well < bg < surface < surfaceRaised < border < borderStrong`). Text
+tints are lightness-pinned high enough that WCAG AA (≥4.5:1) holds on their surfaces for ANY accent
+hue — contrast-safe by construction, unit-tested (`schemes.test.ts`). Hosted pages (the tip jar,
+§6a) theme their ENTIRE surface with this palette; the widget itself paints only with the accent
+values above, which stay byte-compatible with the widget's inlined copy.
+
 ## 5. Embed data-attribute contract (the widget wire)
 
 The generated snippet is a single self-contained script tag:
@@ -106,15 +117,15 @@ Attribute semantics:
 - `data-locale` — the widget UI language (a BCP-47 tag). Default: the visitor's browser language,
   resolved to one of the 14 supported locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr,
   vi, id, hi) with per-string English fallback. The tip page passes its active locale through.
-- **Brand glyph / logo (§"Custom logo" below):** the button's leading mark, and the mark shown
-  next to the asset name on the jar page, follow ONE precedence resolved by `resolveAssetGlyph`
+- **Brand glyph / logo (§"Custom logo" below):** the button's leading mark, and the coin hero
+  medallion on the jar page (§6a), follow ONE precedence resolved by `resolveAssetGlyph`
   (`src/lib/assetGlyph.ts` on the site; `glyphFor`/`buildGlyphNode` in the widget) — a custom
   `data-logo`/`logo` (if present and valid) ALWAYS wins; otherwise a Chia leaf for XCH, the DIG mark
   for the $DIG CAT, the 🍊 mark for the HOA CAT, or a heart for a custom-color scheme or any other
   CAT with no logo.
 - `data-logo` — an OPTIONAL custom logo/mark URL, shown INSTEAD of the built-in DIG/HOA/XCH mark
-  wherever the asset is named (the button's leading glyph, the jar page's "Paid in `<asset>`"
-  line). MUST be an `https://` URL or a `data:image/{png,jpg,jpeg,gif,webp,svg+xml};base64,` URL —
+  wherever the asset's mark appears (the button's leading glyph, the jar page's coin hero
+  medallion). MUST be an `https://` URL or a `data:image/{png,jpg,jpeg,gif,webp,svg+xml};base64,` URL —
   any other scheme (`javascript:`, plain `http:`, `file:`, `blob:`, …) is silently dropped (falls
   back to the built-in mark, never a hard error). Rendered ONLY as a plain `<img src>` (never
   inline HTML/SVG markup or a CSS background), hardened with `referrerpolicy="no-referrer"`,
@@ -194,20 +205,31 @@ The name is sanitized identically to `data-name` (§5): whitespace collapsed, co
 stripped, capped at 64 characters, rendered as inert text (never parsed as HTML). It also flows to
 the mounted widget as `data-name` and into the page title/description/Open Graph.
 
-**Theming (whole-page, per selected scheme).** The jar page's own chrome — NOT just the mounted
-widget — themes to the resolved scheme's palette (§4), via the SAME `resolveScheme()` the widget
-paints with (`src/lib/schemes.ts`, the one shared source): the card's top-edge accent bar, its
-ambient glow, the "Send a tip" eyebrow color, and the recipient-address chip's hover border/copy-icon
-accent all derive from the active scheme. A `$DIG` jar (`scheme=purple`) reads purple end-to-end; an
-`HOA` jar (`scheme=orange`) reads orange end-to-end; XCH (`scheme=green`, the default) reads green;
-a custom accent (`color=`) tints the same surfaces. The page is NEVER a fixed color regardless of
-the asset.
+**Theming (whole-page, per selected scheme).** The ENTIRE jar page — not just accents — is shades
+of the resolved scheme's derived surface palette (§4): the page background is a deep, dark,
+desaturated shade of the scheme hue; the card, TO/address well, and amount-preset chips are
+elevated shades of the same hue; the hairline borders/dividers and the muted/faint text are
+hue-tinted; and the accent details (top-edge bar, ambient glow, eyebrow, copy icon, links/focus)
+carry the accent itself. Implementation: the page sets the `schemeCssVars()` `--jar-*` palette on
+`<body>` (plus a `jar-page` class), and a single `body.jar-page` token remap in `styles.css`
+re-points the site's base tokens (`--ink`/`--well`/`--line`/`--paper-dim`/…) at that palette — ONE
+shared source (`src/lib/schemes.ts`, the same `resolveScheme()` the widget paints with), no
+per-page fork. A `$DIG` jar (`scheme=purple`) reads purple end-to-end (dark-violet base); an `HOA`
+jar (`scheme=orange`) reads warm amber-black; XCH (`scheme=green`, the default) reads green; a
+custom accent (`color=`) tints the same surfaces from its own hue. The page is NEVER a fixed color
+regardless of the asset, and text keeps WCAG AA contrast on every tinted surface (§4). The
+invalid-jar error state themes to the green default (the same fail-safe as `resolveScheme`).
 
-**Coin logo/glyph.** Next to the asset name in the "Paid in `<asset>`" line, the page shows that
-asset's mark — resolved by the SAME precedence as the widget's own button glyph (§5 "Brand glyph /
-logo"): a custom `logo=` URL (if present and valid) wins; otherwise the Chia leaf (XCH), the DIG
-mark ($DIG), the 🍊 mark (HOA), or a graceful text-initial fallback for an unknown CAT with no logo
-(NEVER a broken image).
+**Coin hero mark.** The asset's logo renders as a PROMINENT, centered hero medallion (a ~100px
+mark on a scheme-tinted disc) directly under the intro copy ("Send a tip" heading + the "Paid in
+`<asset>`" line) and above the recipient identity/address. The "Paid in `<asset>`" line itself is
+plain text (no inline glyph — the medallion owns the mark). The mark is resolved by the SAME
+precedence as the widget's own button glyph (§5 "Brand glyph / logo"): a custom `logo=` URL (if
+present and valid) wins, rendered in the hardened `<img>` (§5 data-logo; `object-fit: contain`,
+rounded, fixed 100×100 box, `onerror` → fallback); otherwise the Chia leaf (XCH), the DIG mark
+($DIG), the 🍊 mark (HOA), or a graceful text-initial fallback for an unknown CAT with no logo
+(NEVER a broken image). The medallion is decorative (`aria-hidden`) — the asset is already named
+in the adjacent text.
 
 ## 6b. Embed-preview route (`/embed-preview`)
 

@@ -9,13 +9,13 @@
 // preconfigured from the parsed JarConfig, so the page is the WORKING widget on a hosted surface —
 // not a mock. An invalid link renders a clean, deterministic error with a route back to the builder.
 
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { JarParseResult, JarConfig } from "@/lib/jar";
 import { jarUrl } from "@/lib/jar";
 import { assetSymbol, defaultPresetsFor } from "@/lib/embed";
 import { mountEmbedWidget } from "@/lib/embedMount";
 import { applyMeta } from "@/lib/meta";
-import { resolveScheme } from "@/lib/schemes";
+import { resolveScheme, schemeCssVars } from "@/lib/schemes";
 import { useCopy } from "@/components/useCopy";
 import { AssetGlyph } from "@/components/AssetGlyph";
 import { SITE_ORIGIN } from "@/lib/constants";
@@ -36,6 +36,33 @@ export interface JarPageProps {
 
 export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
   const t = useT();
+
+  // Theme the WHOLE page — background, header, card surfaces, borders, muted text — to the
+  // selected scheme's derived surface palette (lib/schemes.ts, the SAME resolveScheme() the
+  // builder's stage glow and the widget itself paint with): a DIG jar reads purple end-to-end
+  // (dark-violet base + violet-tinted surfaces), an HOA jar warm orange, XCH green. The vars go
+  // on <body> so the `body.jar-page` token remap in styles.css re-points the site's base tokens
+  // (--ink/--well/--line/--paper-dim/…) at them — every surface re-themes, no per-rule forking.
+  // The invalid-jar error page themes to the green default (fail-safe, matches resolveScheme).
+  const resolved = useMemo(
+    () =>
+      resolveScheme(
+        result.ok ? (result.config.scheme === "custom" ? result.config.color : result.config.scheme) : null,
+      ),
+    [result],
+  );
+  useEffect(() => {
+    const body = document.body;
+    const vars = schemeCssVars(resolved);
+    body.classList.add("jar-page");
+    for (const [name, value] of Object.entries(vars)) body.style.setProperty(name, value);
+    return () => {
+      // Restore a clean body on unmount so SPA navigation never leaks the tint elsewhere.
+      body.classList.remove("jar-page");
+      for (const name of Object.keys(vars)) body.style.removeProperty(name);
+    };
+  }, [resolved]);
+
   return (
     <>
       <a href="#jar" className="skip-link">
@@ -86,20 +113,6 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   const heading = displayName ? t("jarHeadingNamed").replace("{name}", displayName) : t("jarHeadingGeneric");
   const amounts = config.presets && config.presets.length ? config.presets : defaultPresetsFor(config.asset);
 
-  // Theme the WHOLE page to the selected scheme's palette (green/purple/orange/custom) — the SAME
-  // resolveScheme the builder's stage glow and the widget itself paint with (lib/schemes.ts is the
-  // one shared source), so a DIG jar reads purple end-to-end, an HOA jar orange end-to-end, etc.
-  // Exposed as CSS custom properties consumed by .jar-card's accent/glow/top-edge rules.
-  const resolved = useMemo(
-    () => resolveScheme(config.scheme === "custom" ? config.color : config.scheme),
-    [config.scheme, config.color],
-  );
-  const jarStyle = {
-    "--jar-accent": resolved.gradientFrom,
-    "--jar-accent-2": resolved.gradientTo,
-    "--jar-glow": resolved.shadow,
-  } as CSSProperties;
-
   // Per-page SEO/social meta (§6.6) — each jar URL is its own shareable page, so it gets its own
   // deterministic title + description + canonical + Open Graph, restored on unmount so SPA
   // navigation never leaves a stale card. All derived from the URL (no backend).
@@ -113,25 +126,24 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   }, [config, origin, displayName, symbol, t]);
 
   return (
-    <div className="jar-card" data-testid="jar-card" style={jarStyle}>
+    <div className="jar-card" data-testid="jar-card">
       <p className="jar-eyebrow">{t("jarEyebrow")}</p>
       <h1 className="jar-heading">{heading}</h1>
       <p className="jar-sub">
         {t("jarSub")}{" "}
-        <span className="jar-asset-chip">
-          <AssetGlyph
-            asset={config.asset}
-            symbol={symbol}
-            logo={config.logo}
-            className="jar-asset-glyph"
-            size={18}
-          />
-          <span data-testid="jar-asset" className="jar-asset">
-            {symbol}
-          </span>
+        <span data-testid="jar-asset" className="jar-asset">
+          {symbol}
         </span>
         .
       </p>
+
+      {/* The coin hero mark — the asset's logo as a prominent, centered medallion under the intro
+          copy (custom `logo` URL > built-in DIG/HOA/XCH mark > text initial — the SAME
+          resolveAssetGlyph precedence as everywhere else). Decorative: the asset is already named
+          in the "Paid in <asset>" line above, so the block is aria-hidden. */}
+      <div className="jar-coin" data-testid="jar-coin" aria-hidden="true">
+        <AssetGlyph asset={config.asset} symbol={symbol} logo={config.logo} className="jar-coin-mark" size={100} />
+      </div>
 
       {/* Optional display name — the prominent, human-readable recipient identity, shown ABOVE the
           full address. It is rendered as a React text node (inert; never parsed as HTML) and was
