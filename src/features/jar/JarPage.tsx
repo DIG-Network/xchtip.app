@@ -11,25 +11,26 @@
 
 import { useEffect, useRef } from "react";
 import type { JarParseResult, JarConfig } from "@/lib/jar";
-import { jarAssetAttr } from "@/lib/jar";
+import { jarAssetAttr, jarUrl } from "@/lib/jar";
 import { assetSymbol, defaultPresetsFor } from "@/lib/embed";
 import { shortenMiddle } from "@/lib/format";
+import { applyMeta } from "@/lib/meta";
 import { useCopy } from "@/components/useCopy";
-import { EMBED_PATH } from "@/lib/constants";
+import { SITE_ORIGIN, EMBED_PATH } from "@/lib/constants";
 import { S } from "@/lib/strings";
 
 export interface JarPageProps {
   /** The parsed jar route result (valid config, or an error). */
   result: JarParseResult;
   /**
-   * Origin for absolute links, accepted for API symmetry with the other route components + tests.
-   * The tip page itself is origin-agnostic (the embed asset + the "home" link are root-relative, so
-   * a short-link host serves it identically), so this is currently unused by the render.
+   * Origin for the per-page canonical + Open Graph URL (defaults to production; injectable for
+   * tests). The tip page's OWN links (the embed asset, the "home" link) are root-relative so a
+   * short-link host serves it identically — origin is used ONLY for the absolute social/SEO URL.
    */
   origin?: string;
 }
 
-export function JarPage({ result }: JarPageProps) {
+export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
   return (
     <>
       <a href="#jar" className="skip-link">
@@ -51,7 +52,7 @@ export function JarPage({ result }: JarPageProps) {
 
       <main id="jar" className="jar-main">
         {result.ok ? (
-          <JarBody config={result.config} />
+          <JarBody config={result.config} origin={origin} />
         ) : (
           <JarError reason={result.error} />
         )}
@@ -68,18 +69,23 @@ export function JarPage({ result }: JarPageProps) {
 }
 
 // ── The valid jar: identity + suggested amounts + the live widget + the Chia story. ──────────────
-function JarBody({ config }: { config: JarConfig }) {
+function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   const symbol = assetSymbol(config.asset);
   const displayName = config.name?.trim() || null;
   const heading = displayName ? S.jarHeadingNamed.replace("{name}", displayName) : S.jarHeadingGeneric;
   const amounts = config.presets && config.presets.length ? config.presets : defaultPresetsFor(config.asset);
 
-  // Deterministic page title (no backend) — reflects the name + asset so a shared link previews well.
+  // Per-page SEO/social meta (§6.6) — each jar URL is its own shareable page, so it gets its own
+  // deterministic title + description + canonical + Open Graph, restored on unmount so SPA
+  // navigation never leaves a stale card. All derived from the URL (no backend).
   useEffect(() => {
-    document.title = displayName
-      ? `Tip ${displayName} in ${symbol} · xchtip.app`
-      : `Send a ${symbol} tip · xchtip.app`;
-  }, [displayName, symbol]);
+    const title = displayName
+      ? S.jarMetaTitleNamed.replace("{name}", displayName).replace("{asset}", symbol)
+      : S.jarMetaTitleGeneric.replace("{asset}", symbol);
+    const who = displayName ? displayName : S.jarMetaWhoGeneric;
+    const description = S.jarMetaDescription.replace("{who}", who).replace("{asset}", symbol);
+    return applyMeta({ title, description, canonical: jarUrl(config, origin) });
+  }, [config, origin, displayName, symbol]);
 
   return (
     <div className="jar-card" data-testid="jar-card">

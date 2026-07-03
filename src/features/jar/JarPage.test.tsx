@@ -84,6 +84,21 @@ describe("JarPage — valid jar", () => {
     expect(document.title).toContain("Alice");
     expect(document.title).toContain("$DIG");
   });
+
+  it("sets a per-page canonical + Open Graph tags for the deterministic jar URL", () => {
+    renderJar(`/jar/${XCH_ADDR}`, `asset=${DIG_ASSET_ID}&scheme=purple&name=Alice`);
+    const canonical = document.head.querySelector('link[rel="canonical"]')!;
+    expect(canonical.getAttribute("href")).toBe(
+      `https://xchtip.test/jar/${XCH_ADDR}?asset=${DIG_ASSET_ID}&scheme=purple&name=Alice`,
+    );
+    expect(document.head.querySelector('meta[property="og:title"]')!.getAttribute("content")).toContain(
+      "Alice",
+    );
+    expect(document.head.querySelector('meta[property="og:url"]')!.getAttribute("content")).toContain(
+      "/jar/",
+    );
+    expect(document.head.querySelector('meta[name="description"]')!.getAttribute("content")).toBeTruthy();
+  });
 });
 
 describe("JarPage — invalid jar", () => {

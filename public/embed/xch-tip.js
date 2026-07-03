@@ -19,6 +19,7 @@
  *     data-label="Tip"                       (optional button label)
  *     data-amount-presets="1,5,25"           (optional preset amounts, whole units of the asset)
  *     data-align="center"                    (optional: center|left|right; default center)
+ *     data-size="md"                         (optional: md|lg; lg = a prominent tip-page button)
  *     data-wc-project-id="<your projectId>"  (optional — defaults to xchtip.app's)
  *     data-target="#my-container"            (optional CSS selector to mount into; default: inline)
  *     async></script>
@@ -150,6 +151,10 @@
     var v = String(raw == null ? "" : raw).trim().toLowerCase();
     return v === "left" || v === "right" ? v : "center";
   }
+  // Button size: "lg" for a dedicated tip PAGE (bigger button); default "md" everywhere else.
+  function parseSize(raw) {
+    return String(raw == null ? "" : raw).trim().toLowerCase() === "lg" ? "lg" : "md";
+  }
 
   // decode a bech32m Chia address to its 32-byte puzzle hash hex (mirrors src/lib/bech32m.ts). Returns
   // the puzzle-hash hex or null. The widget spends TO this puzzle hash.
@@ -226,6 +231,7 @@
       presets: parsePresets(a.presets, asset.kind === "xch") || defaultPresets(asset),
       label: (a.label && String(a.label).trim()) || defaultLabel(asset),
       align: parseAlign(a.align),
+      size: parseSize(a.size),
     };
   }
 
@@ -238,13 +244,16 @@
       ".xt-wrap.xt-align-left{text-align:left}.xt-wrap.xt-align-right{text-align:right}",
       ".xt-btn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;width:auto;max-width:100%;",
       "margin:5px;white-space:nowrap;vertical-align:middle;cursor:pointer;padding:10px 20px;border-radius:999px;",
-      "font-family:'Space Grotesk',system-ui,-apple-system,sans-serif;font-size:15px;font-weight:600;color:#fff;",
+      "font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:600;color:#fff;",
       "transition:transform .12s ease,box-shadow .12s ease}",
       ".xt-btn:hover{transform:translateY(-1px)}",
       ".xt-btn:focus-visible{outline:2px solid #000;outline-offset:2px}",
+      /* data-size=lg: a prominent button for a dedicated tip PAGE (additive; default size unchanged). */
+      ".xt-btn.xt-lg{gap:11px;padding:15px 30px;font-size:17px}",
+      ".xt-btn.xt-lg .xt-heart{font-size:17px}",
       ".xt-heart{font-size:15px;line-height:1}",
       ".xt-scrim{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;",
-      "background:rgba(11,10,18,.62);backdrop-filter:blur(3px);padding:20px;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}",
+      "background:rgba(11,10,18,.62);backdrop-filter:blur(3px);padding:20px;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}",
       ".xt-modal{position:relative;width:100%;max-width:380px;box-sizing:border-box;background:#fff;color:#1a1430;",
       "border-radius:18px;padding:26px 24px 24px;box-shadow:0 30px 70px rgba(0,0,0,.45);overflow:hidden}",
       ".xt-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}",
@@ -615,7 +624,7 @@
 
     var btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "xt-btn";
+    btn.className = "xt-btn" + (cfg.size === "lg" ? " xt-lg" : "");
     btn.setAttribute("aria-haspopup", "dialog");
     btn.style.background = "linear-gradient(135deg," + scheme.from + " 0%," + scheme.to + " 100%)";
     btn.style.color = scheme.text;
@@ -796,6 +805,7 @@
       label: el.dataset.label,
       presets: el.dataset.amountPresets || el.dataset.presets,
       align: el.dataset.align,
+      size: el.dataset.size,
     });
     if (!cfg.ok) {
       injectStyles();

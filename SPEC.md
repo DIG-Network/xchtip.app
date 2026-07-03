@@ -62,6 +62,7 @@ The generated snippet is a single self-contained script tag:
         data-amount-presets="1,5,25"                   OPTIONAL (whole units of the asset)
         data-label="Tip"                               OPTIONAL (button label)
         data-align="center" | "left" | "right"         OPTIONAL (default center)
+        data-size="md" | "lg"                          OPTIONAL (default md; lg = prominent tip-page button)
         data-wc-project-id="<projectId>"               OPTIONAL (defaults to xchtip.app's, build-injected)
         data-target="<css selector>"                   OPTIONAL (mount container; default: inline)
         async></script>
@@ -79,6 +80,8 @@ Attribute semantics:
   CAT: `1,5,25`).
 - `data-label` — a custom button label. Default: `Tip in XCH` for XCH, `Send a tip` for a CAT.
 - `data-align` — button alignment within its block wrapper. Default `center`.
+- `data-size` — button size: `md` (default) or `lg` (a larger, more prominent button for a dedicated
+  tip page). Any other value → `md`.
 - `data-wc-project-id` — a WalletConnect (Reown) projectId. Absent → the widget uses xchtip.app's own
   projectId, baked into the deployed asset at build time. If NO projectId is available at all, the
   button explains the missing id on click.

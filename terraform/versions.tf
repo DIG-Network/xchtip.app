@@ -11,6 +11,11 @@ terraform {
       source  = "hashicorp/aws"
       version = ">= 5.0"
     }
+    # Zips the shortener Lambda source (terraform/shortener.tf → archive_file).
+    archive = {
+      source  = "hashicorp/archive"
+      version = ">= 2.4"
+    }
   }
 
   backend "s3" {

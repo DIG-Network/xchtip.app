@@ -99,6 +99,13 @@ export const S = {
   jarBenefit3Title: "You stay in control",
   jarBenefit3Body: "You sign every tip in your own wallet. Nothing leaves without your approval.",
   jarFooterCta: "Make your own tip page →",
+  // Per-page SEO/social meta (each jar URL is its own shareable page). {name}/{asset}/{who} filled in.
+  jarMetaTitleNamed: "Tip {name} in {asset} · xchtip.app",
+  jarMetaTitleGeneric: "Send a {asset} tip · xchtip.app",
+  jarMetaWhoGeneric: "this recipient",
+  jarMetaDescription:
+    "Send {who} a tip in {asset} on Chia — on-chain, wallet to wallet, no account and no platform cut. " +
+    "Connect a Chia wallet and the tip goes straight to their wallet.",
   jarErrorTitle: "This tip link isn't valid.",
   jarErrorBody:
     "The address or settings in this link are incomplete or malformed, so there's nothing to tip to. " +
