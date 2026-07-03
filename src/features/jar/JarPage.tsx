@@ -13,7 +13,6 @@ import { useEffect, useRef } from "react";
 import type { JarParseResult, JarConfig } from "@/lib/jar";
 import { jarAssetAttr, jarUrl } from "@/lib/jar";
 import { assetSymbol, defaultPresetsFor } from "@/lib/embed";
-import { shortenMiddle } from "@/lib/format";
 import { applyMeta } from "@/lib/meta";
 import { useCopy } from "@/components/useCopy";
 import { SITE_ORIGIN, EMBED_PATH } from "@/lib/constants";
@@ -136,7 +135,8 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   );
 }
 
-// The recipient identity chip: an elegant middle-truncation that copies the FULL address on click.
+// The recipient identity chip: shows the FULL address (never truncated — truncation would let an
+// attacker pass off a lookalike address that matches the visible head+tail) and copies it on click.
 function JarAddress({ recipient }: { recipient: string }) {
   const t = useT();
   const { copied, copy } = useCopy(recipient);
@@ -151,7 +151,7 @@ function JarAddress({ recipient }: { recipient: string }) {
       aria-label={`${t("jarCopyAddress")}: ${recipient}`}
     >
       <span className="jar-address-to">{t("jarTo")}</span>
-      <code>{shortenMiddle(recipient)}</code>
+      <code className="jar-address-full">{recipient}</code>
       <span className="jar-address-copy" aria-hidden="true">
         {copied ? "✓" : "⧉"}
       </span>

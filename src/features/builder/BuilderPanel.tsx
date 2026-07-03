@@ -56,62 +56,77 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
           />
         </section>
 
-        <section className="builder-output" aria-label="Share and embed options">
+        <section className="builder-output" aria-label="Ways to share your tip button">
           <p className="eyebrow">{t("embedEyebrow")}</p>
 
-          {/* Simplest path first: a ready-to-share hosted tip page (no embedding needed). */}
-          {derived.ok && derived.jarLink && (
-            <div className="output-block">
-              <div className="output-heading-row">
-                <h2 className="output-heading">{t("jarLinkHeading")}</h2>
-                <a
-                  className="visit-link"
-                  href={derived.jarLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="jar-visit"
-                >
-                  {t("visitButton")}
-                </a>
+          {/* TWO equally-prominent audience paths so a non-developer and a developer each see, at a
+              glance, the option meant for them. Path 1 (everyone) = a hosted tip page; Path 2
+              (developers) = the embed snippet. Both are shown up-front, side by side on wide screens. */}
+          <div className="path-grid">
+            {/* Path 1 — the tip PAGE (for anyone). Marked primary: the no-code path. */}
+            <div className="path-card path-card-primary" data-testid="path-page">
+              <div className="path-head">
+                <span className="path-audience">{t("pathPageAudience")}</span>
+                <h2 className="path-title">{t("pathPageTitle")}</h2>
               </div>
-              <p className="output-help">{t("jarLinkHelp")}</p>
-              <CopyField
-                value={derived.jarLink}
-                label={t("jarLinkLabel")}
-                copyLabel={t("copyShort")}
-                valueTestId="jar-link"
-              />
+              <p className="path-desc">{t("pathPageDesc")}</p>
+              {derived.ok && derived.jarLink ? (
+                <>
+                  <CopyField
+                    value={derived.jarLink}
+                    label={t("jarLinkLabel")}
+                    copyLabel={t("copyShort")}
+                    valueTestId="jar-link"
+                  />
+                  <a
+                    className="path-cta"
+                    href={derived.jarLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="jar-visit"
+                  >
+                    {t("visitButton")}
+                  </a>
+                  <ShortLink target={derived.jarLink} />
+                </>
+              ) : (
+                <p className="output-empty" role="status" data-testid="page-blocked">
+                  {t("fixErrors")}
+                </p>
+              )}
             </div>
-          )}
 
-          {/* Optional: shorten it to a *.xchtip.app link (hidden if the service isn't configured). */}
-          {derived.ok && derived.jarLink && <ShortLink target={derived.jarLink} />}
-
-          <div className="output-block">
-            <h2 className="output-heading">{t("snippetHeading")}</h2>
-            <p className="output-help">{t("snippetHelp")}</p>
-            {derived.ok && derived.snippet ? (
-              <CopyField
-                value={derived.snippet}
-                label={t("snippetHeading")}
-                multiline
-                valueTestId="snippet-output"
-              />
-            ) : (
-              <p className="output-empty" role="status" data-testid="snippet-blocked">
-                {t("fixErrors")}
-              </p>
-            )}
+            {/* Path 2 — the EMBED snippet (for developers). */}
+            <div className="path-card" data-testid="path-embed">
+              <div className="path-head">
+                <span className="path-audience">{t("pathEmbedAudience")}</span>
+                <h2 className="path-title">{t("pathEmbedTitle")}</h2>
+              </div>
+              <p className="path-desc">{t("pathEmbedDesc")}</p>
+              {derived.ok && derived.snippet ? (
+                <>
+                  <CopyField
+                    value={derived.snippet}
+                    label={t("snippetHeading")}
+                    multiline
+                    valueTestId="snippet-output"
+                  />
+                  {derived.builderLink && derived.rawLink && (
+                    <details className="path-more">
+                      <summary>{t("linkHeading")}</summary>
+                      <p className="output-help">{t("linkHelp")}</p>
+                      <CopyField value={derived.builderLink} label={t("linkHeading")} valueTestId="builder-link" />
+                      <CopyField value={derived.rawLink} label={t("rawLinkLabel")} valueTestId="raw-link" />
+                    </details>
+                  )}
+                </>
+              ) : (
+                <p className="output-empty" role="status" data-testid="snippet-blocked">
+                  {t("fixErrors")}
+                </p>
+              )}
+            </div>
           </div>
-
-          {derived.ok && derived.builderLink && derived.rawLink && (
-            <div className="output-block">
-              <h2 className="output-heading">{t("linkHeading")}</h2>
-              <p className="output-help">{t("linkHelp")}</p>
-              <CopyField value={derived.builderLink} label={t("linkHeading")} valueTestId="builder-link" />
-              <CopyField value={derived.rawLink} label={t("rawLinkLabel")} valueTestId="raw-link" />
-            </div>
-          )}
         </section>
       </div>
     </>

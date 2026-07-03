@@ -622,6 +622,105 @@ legend.field-label {
   font-weight: 700;
   color: var(--paper);
 }
+/* Two audience paths (tip page = everyone, embed = developers), both prominent at a glance. */
+.path-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.path-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--ink);
+}
+/* The no-code path leads: a subtle gold frame + wash so a non-developer's eye lands here first. */
+.path-card-primary {
+  border-color: var(--gold-line);
+  background: linear-gradient(180deg, var(--gold-soft), transparent 60%), var(--ink);
+}
+.path-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.path-audience {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--gold);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+.path-card:not(.path-card-primary) .path-audience {
+  color: var(--paper-dim);
+  background: var(--ink-3);
+  border: 1px solid var(--line-2);
+}
+.path-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--paper);
+}
+.path-desc {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+/* The tip-page "Visit" is a full primary CTA (the main action for a non-developer). */
+.path-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 11px 22px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  color: #1a1205;
+  background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+  box-shadow: 0 6px 18px var(--gold-soft);
+  transition:
+    transform 0.12s ease,
+    filter 0.15s ease;
+}
+.path-cta::after {
+  content: "↗";
+}
+.path-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  color: #1a1205;
+}
+.path-more {
+  margin-top: 2px;
+}
+.path-more summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--paper-dim);
+  padding: 4px 0;
+}
+.path-more summary:hover {
+  color: var(--gold);
+}
+.path-more[open] summary {
+  margin-bottom: 8px;
+}
+
 /* A heading + an inline action (e.g. "Visit") on one row. */
 .output-heading-row {
   display: flex;
@@ -889,15 +988,17 @@ legend.field-label {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   margin: 0 auto 26px;
-  padding: 9px 15px;
-  border-radius: var(--radius-pill);
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--well);
   max-width: 100%;
+  position: relative;
   transition:
     border-color 0.15s ease,
     background 0.15s ease;
@@ -913,10 +1014,15 @@ legend.field-label {
   text-transform: uppercase;
   color: var(--paper-faint);
 }
-.jar-address code {
+.jar-address code,
+.jar-address-full {
   font-family: var(--mono);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
   color: var(--paper);
+  /* Show the FULL address — wrap it, never truncate (anti-spoofing). */
+  word-break: break-all;
+  text-align: center;
 }
 .jar-address-copy {
   color: var(--gold);

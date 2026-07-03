@@ -44,7 +44,15 @@ export const en = {
   stageCaption: "Live preview — this is exactly what your visitors will see.",
   stageCaptionDisabled: "Enter a recipient address to activate your live tip button.",
   configureEyebrow: "Configure",
-  embedEyebrow: "Embed",
+  embedEyebrow: "Share it",
+
+  // Two audience paths (both offered up-front, equally prominent)
+  pathPageTitle: "Share your tip page",
+  pathPageAudience: "For anyone",
+  pathPageDesc: "A ready-made page with your tip button — just share the link. No website needed.",
+  pathEmbedTitle: "Embed on your site",
+  pathEmbedAudience: "For developers",
+  pathEmbedDesc: "Drop one line of HTML anywhere to show the tip button on your own site.",
 
   variantLabel: "Widget style",
   variantHelp: "How the tip widget looks where it's embedded.",

@@ -21,14 +21,12 @@ beforeEach(() => {
 });
 
 describe("JarPage — valid jar", () => {
-  it("renders the recipient identity: truncated address that copies the full one", async () => {
+  it("renders the recipient identity: the FULL address (never truncated) + copies it", async () => {
     const user = userEvent.setup();
     renderJar(`/jar/${XCH_ADDR}`);
     const chip = screen.getByTestId("jar-address");
-    // Elegant middle truncation, never the raw 62-char dump.
-    expect(chip.textContent).toContain("xch1qyqs");
-    expect(chip.textContent).toContain("s0wg4qq");
-    expect(chip.textContent!.length).toBeLessThan(30);
+    // The full address must be shown — truncation would enable lookalike-address spoofing.
+    expect(chip.textContent).toContain(XCH_ADDR);
     await user.click(chip);
     expect(await navigator.clipboard.readText()).toBe(XCH_ADDR);
   });
