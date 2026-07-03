@@ -17,6 +17,7 @@ export const tr: Partial<Messages> = {
   assetLabel: "Varlık",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Diğer CAT",
   catIdLabel: "CAT varlık id'si",
   catIdHelp: "Bahşiş verilecek CAT'in 64 karakterlik onaltılık varlık id'si.",
@@ -24,6 +25,7 @@ export const tr: Partial<Messages> = {
   schemeLabel: "Renk şeması",
   schemeGreen: "Yeşil (XCH)",
   schemePurple: "Mor ($DIG)",
+  schemeOrange: "Turuncu (HOA)",
   schemeCustom: "Özel renk",
   colorLabel: "Vurgu rengi",
   colorHelp: "Herhangi bir 6 haneli onaltılık renk (örn. #7a3dff).",
@@ -34,6 +36,7 @@ export const tr: Partial<Messages> = {
 
   presetXchButton: "Ön ayar: XCH (yeşil)",
   presetDigButton: "Ön ayar: $DIG (mor)",
+  presetHoaButton: "Ön ayar: HOA (turuncu)",
 
   stageCaption: "Canlı önizleme — ziyaretçilerinin göreceği tam olarak budur.",
   stageCaptionDisabled: "Canlı bahşiş düğmeni etkinleştirmek için bir alıcı adresi gir.",

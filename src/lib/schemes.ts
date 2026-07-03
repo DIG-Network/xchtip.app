@@ -1,9 +1,10 @@
 // schemes.ts — the named color schemes + custom-accent handling for the tip widget.
 //
-// A scheme drives the button + modal accent. Two named schemes ship as one-click presets:
+// A scheme drives the button + modal accent. Three named schemes ship as one-click presets:
 //   • green  — the default XCH scheme (Chia's green).
 //   • purple — the DIG brand scheme (gradient #7a3dff→#ff00de over a dark #16131f card),
 //              matching the DIG brand tokens used in hub.dig.net (dig-tip.js).
+//   • orange — the HOA brand scheme (a warm orange gradient), paired with the 🍊 mark.
 // A "custom" scheme is any 6-hex accent color the builder user picks; the widget derives a
 // gradient + shadow from it. This module is PURE (no DOM) so it is unit-testable and inlined
 // verbatim into the standalone embed snippet.
@@ -23,7 +24,7 @@ export interface ResolvedScheme {
 }
 
 /** The named schemes the builder offers as presets (plus `custom` for a picked accent). */
-export type SchemeName = "green" | "purple" | "custom";
+export type SchemeName = "green" | "purple" | "orange" | "custom";
 
 /** The XCH default: Chia green. */
 export const GREEN_SCHEME: ResolvedScheme = {
@@ -43,9 +44,19 @@ export const PURPLE_SCHEME: ResolvedScheme = {
   shadow: "rgba(122,61,255,.34)",
 };
 
+/** The HOA default: a warm orange gradient (the HOA 🍊 brand scheme). */
+export const ORANGE_SCHEME: ResolvedScheme = {
+  name: "orange",
+  gradientFrom: "#ff8c1a",
+  gradientTo: "#e05a00",
+  text: "#ffffff",
+  shadow: "rgba(255,140,26,.34)",
+};
+
 const NAMED_SCHEMES: Record<Exclude<SchemeName, "custom">, ResolvedScheme> = {
   green: GREEN_SCHEME,
   purple: PURPLE_SCHEME,
+  orange: ORANGE_SCHEME,
 };
 
 /** True for a `#rrggbb` or `rrggbb` 6-hex color string (case-insensitive). */
@@ -62,7 +73,7 @@ export function normalizeHexColor(value: unknown): string | null {
 
 /** True for one of the built-in named scheme keys. */
 export function isNamedScheme(value: unknown): value is Exclude<SchemeName, "custom"> {
-  return value === "green" || value === "purple";
+  return value === "green" || value === "purple" || value === "orange";
 }
 
 // darken — shift each RGB channel toward black by `amount` (0..1). Used to derive a gradient

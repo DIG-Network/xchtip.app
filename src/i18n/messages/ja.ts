@@ -17,6 +17,7 @@ export const ja: Partial<Messages> = {
   assetLabel: "アセット",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "その他の CAT",
   catIdLabel: "CAT アセット id",
   catIdHelp: "チップに使う CAT の 64 文字の 16 進数アセット id です。",
@@ -24,6 +25,7 @@ export const ja: Partial<Messages> = {
   schemeLabel: "配色",
   schemeGreen: "グリーン（XCH）",
   schemePurple: "パープル（$DIG）",
+  schemeOrange: "オレンジ（HOA）",
   schemeCustom: "カスタムカラー",
   colorLabel: "アクセントカラー",
   colorHelp: "任意の 6 桁の 16 進数カラー（例: #7a3dff）。",
@@ -34,6 +36,7 @@ export const ja: Partial<Messages> = {
 
   presetXchButton: "プリセット: XCH（グリーン）",
   presetDigButton: "プリセット: $DIG（パープル）",
+  presetHoaButton: "プリセット: HOA（オレンジ）",
 
   stageCaption: "リアルタイムプレビュー——訪問者に見えるのはまさにこれです。",
   stageCaptionDisabled: "受取先アドレスを入力すると、リアルタイムのチップボタンが有効になります。",

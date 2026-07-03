@@ -23,6 +23,7 @@ export const en = {
   assetLabel: "Asset",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Other CAT",
   catIdLabel: "CAT asset id",
   catIdHelp: "64-character hex asset id of the CAT to tip in.",
@@ -30,6 +31,7 @@ export const en = {
   schemeLabel: "Color scheme",
   schemeGreen: "Green (XCH)",
   schemePurple: "Purple ($DIG)",
+  schemeOrange: "Orange (HOA)",
   schemeCustom: "Custom color",
   colorLabel: "Accent color",
   colorHelp: "Any 6-digit hex color (e.g. #7a3dff).",
@@ -40,6 +42,7 @@ export const en = {
 
   presetXchButton: "Preset: XCH (green)",
   presetDigButton: "Preset: $DIG (purple)",
+  presetHoaButton: "Preset: HOA (orange)",
 
   stageCaption: "Live preview — this is exactly what your visitors will see.",
   stageCaptionDisabled: "Enter a recipient address to activate your live tip button.",

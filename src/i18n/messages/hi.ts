@@ -17,6 +17,7 @@ export const hi: Partial<Messages> = {
   assetLabel: "एसेट",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "अन्य CAT",
   catIdLabel: "CAT एसेट id",
   catIdHelp: "जिस CAT में टिप देना है उसका 64-अक्षर वाला हेक्स एसेट id।",
@@ -24,6 +25,7 @@ export const hi: Partial<Messages> = {
   schemeLabel: "रंग योजना",
   schemeGreen: "हरा (XCH)",
   schemePurple: "बैंगनी ($DIG)",
+  schemeOrange: "नारंगी (HOA)",
   schemeCustom: "कस्टम रंग",
   colorLabel: "एक्सेंट रंग",
   colorHelp: "कोई भी 6-अंकों वाला हेक्स रंग (जैसे #7a3dff)।",
@@ -34,6 +36,7 @@ export const hi: Partial<Messages> = {
 
   presetXchButton: "प्रीसेट: XCH (हरा)",
   presetDigButton: "प्रीसेट: $DIG (बैंगनी)",
+  presetHoaButton: "प्रीसेट: HOA (नारंगी)",
 
   stageCaption: "लाइव पूर्वावलोकन — आपके आगंतुक ठीक यही देखेंगे।",
   stageCaptionDisabled: "अपना लाइव टिप बटन सक्रिय करने के लिए प्राप्तकर्ता का पता दर्ज करें।",

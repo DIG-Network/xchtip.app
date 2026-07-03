@@ -66,6 +66,17 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
     expect(results.violations).toEqual([]);
   });
 
+  test("tip-jar page has zero axe violations (HOA orange)", async ({ page }) => {
+    const HOA = "e816ee18ce2337c4128449bc539fbbe2ecfdd2098c4e7cab4667e223c3bdc23d";
+    await page.goto(`/jar/${XCH}?asset=${HOA}&scheme=orange&name=Neighborhood+HOA`);
+    await expect(page.getByTestId("jar-widget")).toBeVisible();
+    await expect(page.getByTestId("jar-asset")).toContainText("HOA");
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
   test("tip-jar invalid link has zero axe violations", async ({ page }) => {
     await page.goto("/jar/xch1notvalid");
     await expect(page.getByTestId("jar-error")).toBeVisible();

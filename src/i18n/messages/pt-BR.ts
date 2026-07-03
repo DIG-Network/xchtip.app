@@ -17,6 +17,7 @@ export const ptBR: Partial<Messages> = {
   assetLabel: "Ativo",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Outro CAT",
   catIdLabel: "id do ativo CAT",
   catIdHelp: "id do ativo hexadecimal de 64 caracteres do CAT usado na gorjeta.",
@@ -24,6 +25,7 @@ export const ptBR: Partial<Messages> = {
   schemeLabel: "Esquema de cores",
   schemeGreen: "Verde (XCH)",
   schemePurple: "Roxo ($DIG)",
+  schemeOrange: "Laranja (HOA)",
   schemeCustom: "Cor personalizada",
   colorLabel: "Cor de destaque",
   colorHelp: "Qualquer cor hexadecimal de 6 dígitos (ex.: #7a3dff).",
@@ -34,6 +36,7 @@ export const ptBR: Partial<Messages> = {
 
   presetXchButton: "Predefinido: XCH (verde)",
   presetDigButton: "Predefinido: $DIG (roxo)",
+  presetHoaButton: "Predefinido: HOA (laranja)",
 
   stageCaption: "Prévia ao vivo — é exatamente o que seus visitantes vão ver.",
   stageCaptionDisabled: "Digite um endereço de destinatário para ativar seu botão de gorjeta ao vivo.",

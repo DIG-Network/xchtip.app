@@ -4,6 +4,8 @@ import {
   parseAsset,
   assetToAttr,
   isDigAsset,
+  isHoaAsset,
+  defaultLabelFor,
   defaultPresetsFor,
   parsePresets,
   assetSymbol,
@@ -17,7 +19,7 @@ import {
   DISPLAY_NAME_MAX_LENGTH,
   type TipConfig,
 } from "./embed";
-import { DIG_ASSET_ID } from "./constants";
+import { DIG_ASSET_ID, HOA_ASSET_ID } from "./constants";
 
 const XCH = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
 const CAT = "b".repeat(64);
@@ -66,10 +68,19 @@ describe("assetToAttr / isDigAsset / defaultPresetsFor", () => {
     expect(isDigAsset({ kind: "cat", assetId: CAT })).toBe(false);
     expect(isDigAsset({ kind: "xch" })).toBe(false);
   });
+  it("detects the HOA asset", () => {
+    expect(isHoaAsset({ kind: "cat", assetId: HOA_ASSET_ID })).toBe(true);
+    expect(isHoaAsset({ kind: "cat", assetId: CAT })).toBe(false);
+    expect(isHoaAsset({ kind: "xch" })).toBe(false);
+  });
   it("shows the display symbol per asset", () => {
     expect(assetSymbol({ kind: "xch" })).toBe("XCH");
     expect(assetSymbol({ kind: "cat", assetId: DIG_ASSET_ID })).toBe("$DIG");
+    expect(assetSymbol({ kind: "cat", assetId: HOA_ASSET_ID })).toBe("HOA");
     expect(assetSymbol({ kind: "cat", assetId: CAT })).toBe("CAT");
+  });
+  it("uses a HOA-specific default label", () => {
+    expect(defaultLabelFor({ kind: "cat", assetId: HOA_ASSET_ID })).toBe("Tip in HOA");
   });
   it("uses XCH defaults for xch, DIG defaults for CATs", () => {
     expect(defaultPresetsFor({ kind: "xch" })).toEqual([0.1, 0.5, 1]);
@@ -178,6 +189,11 @@ describe("validateConfig", () => {
     const r = validateConfig({ recipient: XCH, asset: "xch", scheme: "rainbow" });
     expect(r.ok && r.config.scheme).toBe("green");
   });
+
+  it("accepts the orange named scheme (HOA)", () => {
+    const r = validateConfig({ recipient: XCH, asset: HOA_ASSET_ID, scheme: "orange" });
+    expect(r.ok && r.config.scheme).toBe("orange");
+  });
 });
 
 describe("buildEmbedSnippet", () => {
@@ -214,6 +230,12 @@ describe("buildEmbedSnippet", () => {
     const s = buildEmbedSnippet({ ...base, asset: { kind: "cat", assetId: DIG_ASSET_ID }, scheme: "purple" });
     expect(s).toContain(`data-asset="${DIG_ASSET_ID}"`);
     expect(s).toContain('data-scheme="purple"');
+  });
+
+  it("emits the HOA asset id + orange for a HOA snippet", () => {
+    const s = buildEmbedSnippet({ ...base, asset: { kind: "cat", assetId: HOA_ASSET_ID }, scheme: "orange" });
+    expect(s).toContain(`data-asset="${HOA_ASSET_ID}"`);
+    expect(s).toContain('data-scheme="orange"');
   });
 
   it("includes presets + label when present", () => {

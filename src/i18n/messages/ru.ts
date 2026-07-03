@@ -17,6 +17,7 @@ export const ru: Partial<Messages> = {
   assetLabel: "Актив",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Другой CAT",
   catIdLabel: "id актива CAT",
   catIdHelp: "64-символьный шестнадцатеричный id актива CAT для чаевых.",
@@ -24,6 +25,7 @@ export const ru: Partial<Messages> = {
   schemeLabel: "Цветовая схема",
   schemeGreen: "Зелёная (XCH)",
   schemePurple: "Фиолетовая ($DIG)",
+  schemeOrange: "Оранжевая (HOA)",
   schemeCustom: "Свой цвет",
   colorLabel: "Акцентный цвет",
   colorHelp: "Любой 6-значный шестнадцатеричный цвет (например, #7a3dff).",
@@ -34,6 +36,7 @@ export const ru: Partial<Messages> = {
 
   presetXchButton: "Пресет: XCH (зелёный)",
   presetDigButton: "Пресет: $DIG (фиолетовый)",
+  presetHoaButton: "Пресет: HOA (оранжевый)",
 
   stageCaption: "Живой предпросмотр — именно это увидят ваши посетители.",
   stageCaptionDisabled: "Введите адрес получателя, чтобы активировать живую кнопку чаевых.",

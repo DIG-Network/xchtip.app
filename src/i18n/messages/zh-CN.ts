@@ -17,6 +17,7 @@ export const zhCN: Partial<Messages> = {
   assetLabel: "资产",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "其他 CAT",
   catIdLabel: "CAT 资产 id",
   catIdHelp: "要打赏的 CAT 的 64 位十六进制资产 id。",
@@ -24,6 +25,7 @@ export const zhCN: Partial<Messages> = {
   schemeLabel: "配色方案",
   schemeGreen: "绿色（XCH）",
   schemePurple: "紫色（$DIG）",
+  schemeOrange: "橙色（HOA）",
   schemeCustom: "自定义颜色",
   colorLabel: "强调色",
   colorHelp: "任意 6 位十六进制颜色（例如 #7a3dff）。",
@@ -34,6 +36,7 @@ export const zhCN: Partial<Messages> = {
 
   presetXchButton: "预设：XCH（绿色）",
   presetDigButton: "预设：$DIG（紫色）",
+  presetHoaButton: "预设：HOA（橙色）",
 
   stageCaption: "实时预览——这正是访客将看到的样子。",
   stageCaptionDisabled: "输入收款地址以激活你的实时打赏按钮。",

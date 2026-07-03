@@ -6,6 +6,7 @@ import {
   resolveScheme,
   GREEN_SCHEME,
   PURPLE_SCHEME,
+  ORANGE_SCHEME,
 } from "./schemes";
 
 describe("isHexColor", () => {
@@ -30,9 +31,10 @@ describe("normalizeHexColor", () => {
 });
 
 describe("isNamedScheme", () => {
-  it("accepts green and purple", () => {
+  it("accepts green, purple and orange", () => {
     expect(isNamedScheme("green")).toBe(true);
     expect(isNamedScheme("purple")).toBe(true);
+    expect(isNamedScheme("orange")).toBe(true);
   });
   it("rejects custom / hex / junk", () => {
     expect(isNamedScheme("custom")).toBe(false);
@@ -49,6 +51,12 @@ describe("resolveScheme", () => {
     expect(resolveScheme("purple")).toEqual(PURPLE_SCHEME);
     expect(PURPLE_SCHEME.gradientFrom).toBe("#7a3dff");
     expect(PURPLE_SCHEME.gradientTo).toBe("#ff00de");
+  });
+  it("resolves the orange named scheme (HOA brand)", () => {
+    expect(resolveScheme("orange")).toEqual(ORANGE_SCHEME);
+    expect(ORANGE_SCHEME.name).toBe("orange");
+    expect(ORANGE_SCHEME.gradientFrom).toMatch(/^#[0-9a-f]{6}$/);
+    expect(ORANGE_SCHEME.gradientTo).toMatch(/^#[0-9a-f]{6}$/);
   });
   it("builds a custom scheme from a hex accent with a derived gradient + shadow", () => {
     const s = resolveScheme("#7a3dff");

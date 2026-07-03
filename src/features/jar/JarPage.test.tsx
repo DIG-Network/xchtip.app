@@ -7,7 +7,7 @@ import { renderIntl as render } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import { JarPage } from "./JarPage";
 import { parseJarPath } from "@/lib/jar";
-import { DIG_ASSET_ID } from "@/lib/constants";
+import { DIG_ASSET_ID, HOA_ASSET_ID } from "@/lib/constants";
 
 const XCH_ADDR = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
 
@@ -85,6 +85,14 @@ describe("JarPage — valid jar", () => {
     renderJar(`/jar/${XCH_ADDR}`, "name=Alice");
     const script = screen.getByTestId("jar-widget").querySelector("script")!;
     expect(script.getAttribute("data-name")).toBe("Alice");
+  });
+
+  it("renders the HOA preset: the HOA symbol + orange widget scheme", () => {
+    renderJar(`/jar/${XCH_ADDR}`, `asset=${HOA_ASSET_ID}&scheme=orange`);
+    expect(screen.getByTestId("jar-asset").textContent).toContain("HOA");
+    const script = screen.getByTestId("jar-widget").querySelector("script")!;
+    expect(script.getAttribute("data-asset")).toBe(HOA_ASSET_ID);
+    expect(script.getAttribute("data-scheme")).toBe("orange");
   });
 
   it("falls back to a generic heading without a name", () => {

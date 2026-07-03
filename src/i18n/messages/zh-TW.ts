@@ -17,6 +17,7 @@ export const zhTW: Partial<Messages> = {
   assetLabel: "資產",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "其他 CAT",
   catIdLabel: "CAT 資產 id",
   catIdHelp: "要打賞的 CAT 的 64 位十六進位資產 id。",
@@ -24,6 +25,7 @@ export const zhTW: Partial<Messages> = {
   schemeLabel: "配色方案",
   schemeGreen: "綠色（XCH）",
   schemePurple: "紫色（$DIG）",
+  schemeOrange: "橙色（HOA）",
   schemeCustom: "自訂顏色",
   colorLabel: "強調色",
   colorHelp: "任何 6 位十六進位顏色（例如 #7a3dff）。",
@@ -34,6 +36,7 @@ export const zhTW: Partial<Messages> = {
 
   presetXchButton: "預設：XCH（綠色）",
   presetDigButton: "預設：$DIG（紫色）",
+  presetHoaButton: "預設：HOA（橙色）",
 
   stageCaption: "即時預覽——這正是訪客將看到的樣子。",
   stageCaptionDisabled: "輸入收款地址以啟用你的即時打賞按鈕。",

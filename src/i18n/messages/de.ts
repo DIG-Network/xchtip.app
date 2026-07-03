@@ -17,6 +17,7 @@ export const de: Partial<Messages> = {
   assetLabel: "Asset",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Anderer CAT",
   catIdLabel: "CAT-Asset-id",
   catIdHelp: "64-stellige hexadezimale Asset-id des CAT, in dem das Trinkgeld gegeben wird.",
@@ -24,6 +25,7 @@ export const de: Partial<Messages> = {
   schemeLabel: "Farbschema",
   schemeGreen: "Grün (XCH)",
   schemePurple: "Violett ($DIG)",
+  schemeOrange: "Orange (HOA)",
   schemeCustom: "Eigene Farbe",
   colorLabel: "Akzentfarbe",
   colorHelp: "Beliebige 6-stellige Hexfarbe (z. B. #7a3dff).",
@@ -34,6 +36,7 @@ export const de: Partial<Messages> = {
 
   presetXchButton: "Vorgabe: XCH (grün)",
   presetDigButton: "Vorgabe: $DIG (violett)",
+  presetHoaButton: "Vorgabe: HOA (orange)",
 
   stageCaption: "Live-Vorschau — genau das sehen deine Besucher.",
   stageCaptionDisabled: "Gib eine Empfängeradresse ein, um deinen Live-Trinkgeld-Button zu aktivieren.",

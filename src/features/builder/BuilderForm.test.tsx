@@ -27,6 +27,7 @@ function setup(overrides: Partial<Form> = {}, errors = {}) {
   const setField = vi.fn();
   const applyXchPreset = vi.fn();
   const applyDigPreset = vi.fn();
+  const applyHoaPreset = vi.fn();
   render(
     <BuilderForm
       form={{ ...baseForm, ...overrides }}
@@ -34,9 +35,10 @@ function setup(overrides: Partial<Form> = {}, errors = {}) {
       setField={setField}
       applyXchPreset={applyXchPreset}
       applyDigPreset={applyDigPreset}
+      applyHoaPreset={applyHoaPreset}
     />,
   );
-  return { setField, applyXchPreset, applyDigPreset };
+  return { setField, applyXchPreset, applyDigPreset, applyHoaPreset };
 }
 
 describe("BuilderForm", () => {
@@ -47,13 +49,15 @@ describe("BuilderForm", () => {
     expect(setField).toHaveBeenCalledWith("recipient", "x");
   });
 
-  it("fires the preset callbacks", async () => {
+  it("fires the preset callbacks (XCH, $DIG, HOA)", async () => {
     const user = userEvent.setup();
-    const { applyXchPreset, applyDigPreset } = setup();
+    const { applyXchPreset, applyDigPreset, applyHoaPreset } = setup();
     await user.click(screen.getByTestId("preset-xch"));
     await user.click(screen.getByTestId("preset-dig"));
+    await user.click(screen.getByTestId("preset-hoa"));
     expect(applyXchPreset).toHaveBeenCalled();
     expect(applyDigPreset).toHaveBeenCalled();
+    expect(applyHoaPreset).toHaveBeenCalled();
   });
 
   it("changes the asset choice via radios", async () => {
@@ -61,6 +65,15 @@ describe("BuilderForm", () => {
     const { setField } = setup();
     await user.click(screen.getByTestId("asset-dig"));
     expect(setField).toHaveBeenCalledWith("assetChoice", "dig");
+    await user.click(screen.getByTestId("asset-hoa"));
+    expect(setField).toHaveBeenCalledWith("assetChoice", "hoa");
+  });
+
+  it("offers the orange scheme (HOA) via a radio", async () => {
+    const user = userEvent.setup();
+    const { setField } = setup();
+    await user.click(screen.getByTestId("scheme-orange"));
+    expect(setField).toHaveBeenCalledWith("scheme", "orange");
   });
 
   it("shows the catId field only for the cat choice", () => {

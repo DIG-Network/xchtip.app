@@ -21,8 +21,11 @@ An asset is one of:
   64-character lowercase hex id. An optional `0x` prefix MUST be stripped; the id MUST be lowercased.
 
 The canonical **$DIG** CAT asset id is
-`a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81` (Chia mainnet). Implementations
-MUST use this exact value for the $DIG preset and MUST NOT invent it.
+`a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81` (Chia mainnet). The canonical
+**HOA** CAT asset id is `e816ee18ce2337c4128449bc539fbbe2ecfdd2098c4e7cab4667e223c3bdc23d` (Chia
+mainnet). Implementations MUST use these exact values for the $DIG and HOA presets and MUST NOT
+invent them. $DIG, HOA, and any other CAT are all handled by the same generalized CAT path; the
+presets are convenience shortcuts, and the custom-CAT input accepts any 64-hex asset id.
 
 Decimals (for amount → base-unit conversion): XCH = 12 (1 XCH = 10¹² mojos); ecosystem CATs = 3
 (1 unit = 1000 base units). The widget converts a display amount to base units accordingly.
@@ -44,6 +47,7 @@ A scheme drives the button + modal accent:
 
 - `green` — the default XCH scheme. Gradient `#3ab54a` → `#1f8f3a`, white text.
 - `purple` — the $DIG brand scheme. Gradient `#7a3dff` → `#ff00de`, white text.
+- `orange` — the HOA brand scheme. Gradient `#ff8c1a` → `#e05a00`, white text.
 - `custom` — any 6-hex accent color. The gradient end is the accent darkened ~22%; the button glow is
   the accent at α = 0.34.
 
@@ -77,7 +81,7 @@ Attribute semantics:
 - `data-recipient` (REQUIRED) — the recipient bech32m address (§3). Missing/invalid → the widget
   renders an inert, honest error in place of the button (never a tip to nowhere).
 - `data-asset` (REQUIRED) — `xch` or a 64-hex CAT id (§2). Missing/invalid → inert error.
-- `data-scheme` — `green` (default) or `purple`. Any other value → `green`.
+- `data-scheme` — `green` (default), `purple`, or `orange`. Any other value → `green`.
 - `data-color` — a 6-hex accent (custom scheme). When present it takes precedence over `data-scheme`.
 - `data-amount-presets` — comma-separated positive amounts in whole units of the asset. Invalid
   entries are dropped; an empty/all-invalid list falls back to the asset defaults (XCH: `0.1,0.5,1`;
@@ -90,7 +94,8 @@ Attribute semantics:
   `pill` (ghost/outline), `inline` (minimal text link), `banner` (full-width bar with a pitch), or
   `card` (a self-contained tip card with the recipient + pitch). Any other value → `button`.
 - `data-symbol` — a display symbol for a CAT (e.g. `DIG`), shown on the button + amounts. Overrides
-  auto-detection; XCH is always `XCH`, the canonical DIG tail is `$DIG`, other CATs default to `CAT`.
+  auto-detection; XCH is always `XCH`, the canonical DIG tail is `$DIG`, the canonical HOA tail is
+  `HOA`, other CATs default to `CAT`.
 - `data-name` — an OPTIONAL recipient DISPLAY NAME (e.g. a handle or store label). The widget shows
   it as the title of the `card` and `banner` variants; the jar page renders it prominently above the
   recipient address. It is HARD-sanitized on ingest — whitespace runs collapse to a single space, all
@@ -101,7 +106,8 @@ Attribute semantics:
   resolved to one of the 14 supported locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr,
   vi, id, hi) with per-string English fallback. The tip page passes its active locale through.
 - **Brand glyph:** the button's leading glyph is chosen from the asset/scheme — a Chia leaf for XCH,
-  the DIG mark for the $DIG CAT, and a heart for a custom-color scheme or any other CAT.
+  the DIG mark for the $DIG CAT, the 🍊 mark for the HOA CAT, and a heart for a custom-color scheme
+  or any other CAT.
 - `data-wc-project-id` — a WalletConnect (Reown) projectId. Absent → the widget uses xchtip.app's own
   projectId, baked into the deployed asset at build time. If NO projectId is available at all, the
   button explains the missing id on click.
@@ -118,7 +124,7 @@ The builder page (`/`) accepts these query parameters:
 |-------------|--------------------------------------------------------------------------|
 | `recipient` | recipient bech32m Chia address (§3)                                      |
 | `asset`     | `xch` or a 64-hex CAT id (§2)                                            |
-| `scheme`    | `green` \| `purple` \| a 6-hex color (treated as custom)                  |
+| `scheme`    | `green` \| `purple` \| `orange` \| a 6-hex color (treated as custom)      |
 | `color`     | a 6-hex custom accent; overrides `scheme`                                |
 | `presets`   | comma-separated amounts                                                  |
 | `label`     | custom button label                                                     |

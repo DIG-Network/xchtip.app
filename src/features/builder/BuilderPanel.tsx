@@ -20,7 +20,7 @@ export interface BuilderPanelProps {
 
 export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
   const t = useT();
-  const { form, derived, setField, applyXchPreset, applyDigPreset } = useBuilder(initialForm, origin);
+  const { form, derived, setField, applyXchPreset, applyDigPreset, applyHoaPreset } = useBuilder(initialForm, origin);
 
   // Signature moment: the plinth's spotlight + the button's reflection take the ACTIVE scheme's hue,
   // so choosing green / purple / a custom color literally re-lights the stage. Derived from the same
@@ -53,6 +53,7 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
             setField={setField}
             applyXchPreset={applyXchPreset}
             applyDigPreset={applyDigPreset}
+            applyHoaPreset={applyHoaPreset}
           />
         </section>
 

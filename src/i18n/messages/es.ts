@@ -17,6 +17,7 @@ export const es: Partial<Messages> = {
   assetLabel: "Activo",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Otro CAT",
   catIdLabel: "id de activo CAT",
   catIdHelp: "id de activo hexadecimal de 64 caracteres del CAT con el que dar propina.",
@@ -24,6 +25,7 @@ export const es: Partial<Messages> = {
   schemeLabel: "Esquema de color",
   schemeGreen: "Verde (XCH)",
   schemePurple: "Morado ($DIG)",
+  schemeOrange: "Naranja (HOA)",
   schemeCustom: "Color personalizado",
   colorLabel: "Color de acento",
   colorHelp: "Cualquier color hexadecimal de 6 dígitos (p. ej. #7a3dff).",
@@ -34,6 +36,7 @@ export const es: Partial<Messages> = {
 
   presetXchButton: "Predefinido: XCH (verde)",
   presetDigButton: "Predefinido: $DIG (morado)",
+  presetHoaButton: "Predefinido: HOA (naranja)",
 
   stageCaption: "Vista previa en vivo: esto es exactamente lo que verán tus visitantes.",
   stageCaptionDisabled: "Introduce una dirección de destinatario para activar tu botón de propinas en vivo.",

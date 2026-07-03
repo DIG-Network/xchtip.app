@@ -23,9 +23,11 @@ Parameters:
 - `recipient` (required) — the recipient's Chia bech32m address, e.g. `xch1...` (mainnet). Validated:
   a correct bech32m checksum, an `xch`/`txch` HRP, and a 32-byte puzzle hash.
 - `asset` (required) — `xch` for native XCH, OR a 64-character hex CAT asset id for a CAT tip
-  (case-insensitive, an optional `0x` prefix is stripped).
-- `scheme` (optional) — `green` (default; the XCH scheme) or `purple` (the $DIG brand scheme). A
-  6-hex color value here is also accepted and treated as a custom accent.
+  (case-insensitive, an optional `0x` prefix is stripped). Presets: `$DIG`
+  (`a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81`) and `HOA`
+  (`e816ee18ce2337c4128449bc539fbbe2ecfdd2098c4e7cab4667e223c3bdc23d`).
+- `scheme` (optional) — `green` (default; the XCH scheme), `purple` (the $DIG brand scheme), or
+  `orange` (the HOA brand scheme). A 6-hex color value here is also accepted and treated as a custom accent.
 - `color` (optional) — a custom 6-hex accent color, e.g. `#7a3dff`. Overrides `scheme` (sets custom).
 - `presets` (optional) — comma-separated preset amounts in whole units of the asset, e.g. `1,5,25`.
 - `label` (optional) — a custom button label.
@@ -76,7 +78,7 @@ The generated snippet is a single self-contained script tag served from `https:/
 <script src="https://xchtip.app/embed/xch-tip.js"
         data-recipient="xch1..."
         data-asset="xch"                 (or a 64-hex CAT asset id)
-        data-scheme="green"              (green | purple)
+        data-scheme="green"              (green | purple | orange)
         data-color="#7a3dff"             (optional custom accent; overrides data-scheme)
         data-amount-presets="1,5,25"     (optional)
         data-label="Tip"                 (optional)

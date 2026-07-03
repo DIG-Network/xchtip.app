@@ -15,8 +15,9 @@ The normative contract (embed data-attributes, query-param API, widget wire beha
 
 ## What it does
 
-1. **Build.** The React app validates a recipient (bech32m Chia address), an asset (`xch` or a 64-hex
-   CAT id), and a color scheme (green / purple / custom accent), then generates a copyable embed
+1. **Build.** The React app validates a recipient (bech32m Chia address), an asset (`xch`, a preset
+   CAT — $DIG or HOA — or any 64-hex CAT id), and a color scheme (green / purple / orange / custom
+   accent), then generates a copyable embed
    snippet + a live button preview + a shareable pre-fill link.
 2. **Embed.** The snippet loads `embed/xch-tip.js` — a self-contained widget derived from the proven
    hub.dig.net tip widget. On click it opens its own WalletConnect session, the visitor picks an
@@ -37,6 +38,8 @@ https://xchtip.app/embed.txt?recipient=xch1...&asset=<...>&scheme=<...>&name=<..
 ```
 
 $DIG CAT asset id: `a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81`.
+HOA CAT asset id: `e816ee18ce2337c4128449bc539fbbe2ecfdd2098c4e7cab4667e223c3bdc23d`.
+Presets: XCH (green), $DIG (purple), HOA (orange 🍊); any other CAT via the custom asset-id input.
 
 ## Develop
 

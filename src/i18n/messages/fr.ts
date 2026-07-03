@@ -17,6 +17,7 @@ export const fr: Partial<Messages> = {
   assetLabel: "Actif",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "Autre CAT",
   catIdLabel: "id d'actif CAT",
   catIdHelp: "id d'actif hexadécimal de 64 caractères du CAT avec lequel donner un pourboire.",
@@ -24,6 +25,7 @@ export const fr: Partial<Messages> = {
   schemeLabel: "Palette de couleurs",
   schemeGreen: "Vert (XCH)",
   schemePurple: "Violet ($DIG)",
+  schemeOrange: "Orange (HOA)",
   schemeCustom: "Couleur personnalisée",
   colorLabel: "Couleur d'accent",
   colorHelp: "N'importe quelle couleur hexadécimale à 6 chiffres (p. ex. #7a3dff).",
@@ -34,6 +36,7 @@ export const fr: Partial<Messages> = {
 
   presetXchButton: "Préréglage : XCH (vert)",
   presetDigButton: "Préréglage : $DIG (violet)",
+  presetHoaButton: "Préréglage : HOA (orange)",
 
   stageCaption: "Aperçu en direct — c'est exactement ce que verront vos visiteurs.",
   stageCaptionDisabled: "Saisissez une adresse de destinataire pour activer votre bouton de pourboire en direct.",

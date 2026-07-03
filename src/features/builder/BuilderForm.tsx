@@ -14,9 +14,10 @@ export interface BuilderFormProps {
   setField: <K extends keyof Form>(key: K, value: Form[K]) => void;
   applyXchPreset: () => void;
   applyDigPreset: () => void;
+  applyHoaPreset: () => void;
 }
 
-export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPreset }: BuilderFormProps) {
+export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPreset, applyHoaPreset }: BuilderFormProps) {
   const t = useT();
   // Auto-detect the CAT symbol for an "Other CAT" asset (a suggestion; the manual field overrides).
   const catSymbol = useCatSymbol(form.catId, form.assetChoice === "cat");
@@ -29,6 +30,9 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
         </button>
         <button type="button" className="preset-btn preset-dig" onClick={applyDigPreset} data-testid="preset-dig">
           {t("presetDigButton")}
+        </button>
+        <button type="button" className="preset-btn preset-hoa" onClick={applyHoaPreset} data-testid="preset-hoa">
+          {t("presetHoaButton")}
         </button>
       </div>
 
@@ -68,6 +72,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
             [
               ["xch", t("assetXch")],
               ["dig", t("assetDig")],
+              ["hoa", t("assetHoa")],
               ["cat", t("assetCustomCat")],
             ] as [AssetChoice, string][]
           ).map(([value, text]) => (
@@ -148,6 +153,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
             [
               ["green", t("schemeGreen")],
               ["purple", t("schemePurple")],
+              ["orange", t("schemeOrange")],
               ["custom", t("schemeCustom")],
             ] as [Form["scheme"], string][]
           ).map(([value, text]) => (

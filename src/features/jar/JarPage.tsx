@@ -190,7 +190,7 @@ function JarWidget({ config, locale }: { config: JarConfig; origin?: string; loc
     script.setAttribute("data-recipient", config.recipient);
     script.setAttribute("data-asset", jarAssetAttr(config));
     if (config.scheme === "custom" && config.color) script.setAttribute("data-color", config.color);
-    else if (config.scheme === "purple") script.setAttribute("data-scheme", "purple");
+    else if (config.scheme === "purple" || config.scheme === "orange") script.setAttribute("data-scheme", config.scheme);
     else script.setAttribute("data-scheme", "green");
     if (config.presets && config.presets.length) {
       script.setAttribute("data-amount-presets", config.presets.join(","));

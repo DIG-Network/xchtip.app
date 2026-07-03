@@ -39,6 +39,8 @@
   --xch-b: #1f8f3a;
   --dig-a: #7a3dff;
   --dig-b: #ff00de;
+  --hoa-a: #ff8c1a;
+  --hoa-b: #e05a00;
 
   --focus: var(--gold);
   --radius: 18px;
@@ -468,6 +470,10 @@ a:hover {
 .preset-dig {
   background: linear-gradient(135deg, var(--dig-a), var(--dig-b));
   box-shadow: 0 4px 16px rgba(122, 61, 255, 0.3);
+}
+.preset-hoa {
+  background: linear-gradient(135deg, var(--hoa-a), var(--hoa-b));
+  box-shadow: 0 4px 16px rgba(255, 140, 26, 0.3);
 }
 .preset-btn:hover {
   filter: brightness(1.08);

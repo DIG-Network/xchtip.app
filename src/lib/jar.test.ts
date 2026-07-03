@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from "vitest";
 import { jarPath, jarUrl, parseJarPath, isJarPath, type JarConfig } from "./jar";
-import { DIG_ASSET_ID } from "./constants";
+import { DIG_ASSET_ID, HOA_ASSET_ID } from "./constants";
 
 const XCH_ADDR = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
 
@@ -32,6 +32,12 @@ describe("jarPath — canonical generation", () => {
   it("a CAT asset rides in the canonical query", () => {
     expect(jarPath(baseConfig({ asset: { kind: "cat", assetId: DIG_ASSET_ID }, scheme: "purple" }))).toBe(
       `/jar/${XCH_ADDR}?asset=${DIG_ASSET_ID}&scheme=purple`,
+    );
+  });
+
+  it("a HOA asset rides with the orange scheme in the canonical query", () => {
+    expect(jarPath(baseConfig({ asset: { kind: "cat", assetId: HOA_ASSET_ID }, scheme: "orange" }))).toBe(
+      `/jar/${XCH_ADDR}?asset=${HOA_ASSET_ID}&scheme=orange`,
     );
   });
 
@@ -82,6 +88,7 @@ describe("parseJarPath — round-trip + validation", () => {
     const shapes: JarConfig[] = [
       baseConfig(),
       baseConfig({ asset: { kind: "cat", assetId: DIG_ASSET_ID }, scheme: "purple" }),
+      baseConfig({ asset: { kind: "cat", assetId: HOA_ASSET_ID }, scheme: "orange" }),
       baseConfig({ scheme: "custom", color: "#7a3dff" }),
       baseConfig({ presets: [0.1, 0.5, 1], label: "Tip me", name: "Café Zoë" }),
     ];

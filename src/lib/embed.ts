@@ -7,7 +7,7 @@
 // no network, no globals) so it is unit-tested in isolation and is the single source of truth for
 // the embed data-attribute contract (mirrored by public/embed/xch-tip.js at runtime).
 
-import { SITE_ORIGIN, EMBED_PATH, DIG_ASSET_ID, DEFAULT_DIG_PRESETS, DEFAULT_XCH_PRESETS } from "./constants";
+import { SITE_ORIGIN, EMBED_PATH, DIG_ASSET_ID, HOA_ASSET_ID, DEFAULT_DIG_PRESETS, DEFAULT_XCH_PRESETS } from "./constants";
 import { isChiaAddress } from "./bech32m";
 import { isNamedScheme, normalizeHexColor, type SchemeName } from "./schemes";
 
@@ -108,6 +108,11 @@ export function isDigAsset(asset: Asset): boolean {
   return asset.kind === "cat" && asset.assetId === DIG_ASSET_ID;
 }
 
+/** True when the asset is the canonical HOA CAT. */
+export function isHoaAsset(asset: Asset): boolean {
+  return asset.kind === "cat" && asset.assetId === HOA_ASSET_ID;
+}
+
 /** The default presets for an asset (whole units): $DIG uses [1,5,25]; other CATs [1,5,25]; XCH [0.1,0.5,1]. */
 export function defaultPresetsFor(asset: Asset): number[] {
   return asset.kind === "xch" ? DEFAULT_XCH_PRESETS.slice() : DEFAULT_DIG_PRESETS.slice();
@@ -117,13 +122,15 @@ export function defaultPresetsFor(asset: Asset): number[] {
 export function defaultLabelFor(asset: Asset): string {
   if (asset.kind === "xch") return "Tip in XCH";
   if (isDigAsset(asset)) return "Tip in DIG";
+  if (isHoaAsset(asset)) return "Tip in HOA";
   return "Send a tip";
 }
 
-/** The short display symbol for an asset: `XCH`, `$DIG`, or `CAT` (a generic CAT). */
+/** The short display symbol for an asset: `XCH`, `$DIG`, `HOA`, or `CAT` (a generic CAT). */
 export function assetSymbol(asset: Asset): string {
   if (asset.kind === "xch") return "XCH";
   if (isDigAsset(asset)) return "$DIG";
+  if (isHoaAsset(asset)) return "HOA";
   return "CAT";
 }
 
@@ -285,8 +292,8 @@ export function buildEmbedSnippet(config: TipConfig, origin: string = SITE_ORIGI
   // Scheme: emit the custom accent as data-color when custom, else the named scheme as data-scheme.
   if (config.scheme === "custom" && config.color) {
     attrs += ` data-color="${escapeHtmlAttr(config.color)}"`;
-  } else if (config.scheme === "purple") {
-    attrs += ` data-scheme="purple"`;
+  } else if (config.scheme === "purple" || config.scheme === "orange") {
+    attrs += ` data-scheme="${config.scheme}"`;
   } else {
     attrs += ` data-scheme="green"`;
   }

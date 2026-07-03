@@ -9,7 +9,7 @@
 // are OMITTED so equivalent configs can never mint two different URLs:
 //   /jar/<recipient>                     recipient: lowercase bech32m xch address (path segment)
 //     ?asset=<catId>                     only when the asset is a CAT (omitted for XCH)
-//     &scheme=purple                     only for the named purple scheme (green is the default)
+//     &scheme=purple|orange              only for a named non-green scheme (green is the default)
 //     &color=%23rrggbb                   only for a custom accent (implies scheme=custom)
 //     &presets=<a,b,c>                   only when custom amount presets are set
 //     &label=<text>                      only when a custom button label is set
@@ -57,7 +57,7 @@ export function isJarPath(pathname: string): boolean {
 export function jarPath(config: JarConfig): string {
   const p = new URLSearchParams();
   if (config.asset.kind === "cat") p.set("asset", config.asset.assetId.toLowerCase());
-  if (config.scheme === "purple") p.set("scheme", "purple");
+  if (config.scheme === "purple" || config.scheme === "orange") p.set("scheme", config.scheme);
   if (config.scheme === "custom" && config.color) p.set("color", config.color.toLowerCase());
   if (config.presets && config.presets.length) p.set("presets", config.presets.join(","));
   if (config.label) p.set("label", config.label);

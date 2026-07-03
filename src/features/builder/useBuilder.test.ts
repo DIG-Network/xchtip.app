@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useBuilder, formFromQuery } from "./useBuilder";
-import { DIG_ASSET_ID } from "@/lib/constants";
+import { DIG_ASSET_ID, HOA_ASSET_ID } from "@/lib/constants";
 
 const XCH = "xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq";
 const ORIGIN = "https://xchtip.test";
@@ -21,6 +21,13 @@ describe("formFromQuery", () => {
     expect(f.scheme).toBe("purple");
     expect(f.presets).toBe("1,5");
     expect(f.label).toBe("Tip");
+  });
+
+  it("maps the HOA asset id to the hoa choice", () => {
+    const f = formFromQuery(`?recipient=${XCH}&asset=${HOA_ASSET_ID}&scheme=orange`);
+    expect(f.assetChoice).toBe("hoa");
+    expect(f.scheme).toBe("orange");
+    expect(f.catId).toBe("");
   });
 
   it("maps a non-DIG CAT id to the cat choice + catId field", () => {
@@ -84,6 +91,16 @@ describe("useBuilder", () => {
     expect(result.current.form.scheme).toBe("purple");
     expect(result.current.derived.snippet).toContain(`data-asset="${DIG_ASSET_ID}"`);
     expect(result.current.derived.snippet).toContain('data-scheme="purple"');
+  });
+
+  it("applyHoaPreset switches to the HOA asset + orange scheme", () => {
+    const { result } = renderHook(() => useBuilder(undefined, ORIGIN));
+    act(() => result.current.setField("recipient", XCH));
+    act(() => result.current.applyHoaPreset());
+    expect(result.current.form.assetChoice).toBe("hoa");
+    expect(result.current.form.scheme).toBe("orange");
+    expect(result.current.derived.snippet).toContain(`data-asset="${HOA_ASSET_ID}"`);
+    expect(result.current.derived.snippet).toContain('data-scheme="orange"');
   });
 
   it("applyXchPreset switches to xch + green", () => {

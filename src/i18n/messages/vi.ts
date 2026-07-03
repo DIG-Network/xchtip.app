@@ -17,6 +17,7 @@ export const vi: Partial<Messages> = {
   assetLabel: "Tài sản",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "CAT khác",
   catIdLabel: "id tài sản CAT",
   catIdHelp: "id tài sản thập lục phân 64 ký tự của CAT dùng để tip.",
@@ -24,6 +25,7 @@ export const vi: Partial<Messages> = {
   schemeLabel: "Bảng màu",
   schemeGreen: "Xanh lá (XCH)",
   schemePurple: "Tím ($DIG)",
+  schemeOrange: "Cam (HOA)",
   schemeCustom: "Màu tùy chỉnh",
   colorLabel: "Màu nhấn",
   colorHelp: "Bất kỳ mã màu thập lục phân 6 chữ số nào (ví dụ #7a3dff).",
@@ -34,6 +36,7 @@ export const vi: Partial<Messages> = {
 
   presetXchButton: "Cài sẵn: XCH (xanh lá)",
   presetDigButton: "Cài sẵn: $DIG (tím)",
+  presetHoaButton: "Cài sẵn: HOA (cam)",
 
   stageCaption: "Xem trước trực tiếp — đây chính xác là những gì khách của bạn sẽ thấy.",
   stageCaptionDisabled: "Nhập địa chỉ người nhận để kích hoạt nút tip trực tiếp của bạn.",

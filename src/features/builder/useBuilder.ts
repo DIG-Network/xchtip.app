@@ -14,17 +14,17 @@ import {
 } from "@/lib/embed";
 import { jarUrl } from "@/lib/jar";
 import { SITE_ORIGIN } from "@/lib/constants";
-import { DIG_ASSET_ID } from "@/lib/constants";
+import { DIG_ASSET_ID, HOA_ASSET_ID } from "@/lib/constants";
 
 /** The asset choice in the UI (a discriminated pick, distinct from the wire Asset). */
-export type AssetChoice = "xch" | "dig" | "cat";
+export type AssetChoice = "xch" | "dig" | "hoa" | "cat";
 
 /** The raw, editable builder form state (strings — the UI's own ephemeral state). */
 export interface BuilderForm {
   recipient: string;
   assetChoice: AssetChoice;
   catId: string;
-  scheme: "green" | "purple" | "custom";
+  scheme: "green" | "purple" | "orange" | "custom";
   color: string;
   presets: string;
   label: string;
@@ -64,6 +64,7 @@ const DEFAULT_FORM: BuilderForm = {
 function assetValue(choice: AssetChoice, catId: string): string {
   if (choice === "xch") return "xch";
   if (choice === "dig") return DIG_ASSET_ID;
+  if (choice === "hoa") return HOA_ASSET_ID;
   return catId.trim();
 }
 
@@ -103,12 +104,14 @@ export function formFromQuery(search: string | URLSearchParams): BuilderForm {
   if (q.symbol) form.symbol = q.symbol;
   if (q.name) form.name = q.name;
 
-  // Asset: xch | the DIG id | any other CAT id.
+  // Asset: xch | the DIG id | the HOA id | any other CAT id.
   const asset = (q.asset || "").trim().toLowerCase().replace(/^0x/, "");
   if (asset === "xch" || asset === "") {
     form.assetChoice = "xch";
   } else if (asset === DIG_ASSET_ID) {
     form.assetChoice = "dig";
+  } else if (asset === HOA_ASSET_ID) {
+    form.assetChoice = "hoa";
   } else {
     form.assetChoice = "cat";
     form.catId = asset;
@@ -121,6 +124,8 @@ export function formFromQuery(search: string | URLSearchParams): BuilderForm {
     form.color = colorLike.startsWith("#") ? colorLike : `#${colorLike}`;
   } else if (q.scheme === "purple") {
     form.scheme = "purple";
+  } else if (q.scheme === "orange") {
+    form.scheme = "orange";
   } else {
     form.scheme = "green";
   }
@@ -133,6 +138,7 @@ export interface UseBuilderResult {
   setField: <K extends keyof BuilderForm>(key: K, value: BuilderForm[K]) => void;
   applyXchPreset: () => void;
   applyDigPreset: () => void;
+  applyHoaPreset: () => void;
   reset: () => void;
 }
 
@@ -153,6 +159,10 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
 
   const applyDigPreset = useCallback(() => {
     setForm((prev) => ({ ...prev, assetChoice: "dig", catId: "", scheme: "purple" }));
+  }, []);
+
+  const applyHoaPreset = useCallback(() => {
+    setForm((prev) => ({ ...prev, assetChoice: "hoa", catId: "", scheme: "orange" }));
   }, []);
 
   const reset = useCallback(() => setForm({ ...DEFAULT_FORM }), []);
@@ -208,5 +218,5 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
     };
   }, [form, origin]);
 
-  return { form, derived, setField, applyXchPreset, applyDigPreset, reset };
+  return { form, derived, setField, applyXchPreset, applyDigPreset, applyHoaPreset, reset };
 }

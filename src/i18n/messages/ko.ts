@@ -17,6 +17,7 @@ export const ko: Partial<Messages> = {
   assetLabel: "자산",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "기타 CAT",
   catIdLabel: "CAT 자산 id",
   catIdHelp: "팁으로 보낼 CAT의 64자리 16진수 자산 id입니다.",
@@ -24,6 +25,7 @@ export const ko: Partial<Messages> = {
   schemeLabel: "색상 구성",
   schemeGreen: "초록 (XCH)",
   schemePurple: "보라 ($DIG)",
+  schemeOrange: "주황 (HOA)",
   schemeCustom: "사용자 지정 색상",
   colorLabel: "강조 색상",
   colorHelp: "임의의 6자리 16진수 색상 (예: #7a3dff).",
@@ -34,6 +36,7 @@ export const ko: Partial<Messages> = {
 
   presetXchButton: "프리셋: XCH (초록)",
   presetDigButton: "프리셋: $DIG (보라)",
+  presetHoaButton: "프리셋: HOA (주황)",
 
   stageCaption: "실시간 미리보기 — 방문자에게 보이는 그대로입니다.",
   stageCaptionDisabled: "받는 주소를 입력하면 실시간 팁 버튼이 활성화됩니다.",

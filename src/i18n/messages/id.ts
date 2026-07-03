@@ -17,6 +17,7 @@ export const id: Partial<Messages> = {
   assetLabel: "Aset",
   assetXch: "XCH",
   assetDig: "$DIG",
+  assetHoa: "HOA",
   assetCustomCat: "CAT lain",
   catIdLabel: "id aset CAT",
   catIdHelp: "id aset heksadesimal 64 karakter dari CAT yang dipakai untuk tip.",
@@ -24,6 +25,7 @@ export const id: Partial<Messages> = {
   schemeLabel: "Skema warna",
   schemeGreen: "Hijau (XCH)",
   schemePurple: "Ungu ($DIG)",
+  schemeOrange: "Oranye (HOA)",
   schemeCustom: "Warna khusus",
   colorLabel: "Warna aksen",
   colorHelp: "Warna heksadesimal 6 digit apa pun (mis. #7a3dff).",
@@ -34,6 +36,7 @@ export const id: Partial<Messages> = {
 
   presetXchButton: "Preset: XCH (hijau)",
   presetDigButton: "Preset: $DIG (ungu)",
+  presetHoaButton: "Preset: HOA (oranye)",
 
   stageCaption: "Pratinjau langsung — inilah persis yang akan dilihat pengunjung Anda.",
   stageCaptionDisabled: "Masukkan alamat penerima untuk mengaktifkan tombol tip langsung Anda.",

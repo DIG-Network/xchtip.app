@@ -14,7 +14,7 @@
  *     src="https://xchtip.app/embed/xch-tip.js"
  *     data-recipient="xch1…"                (REQUIRED: the recipient bech32m Chia address)
  *     data-asset="xch"                       (REQUIRED: "xch" OR a 64-hex CAT asset id)
- *     data-scheme="green"                    (optional: green | purple; default green)
+ *     data-scheme="green"                    (optional: green | purple | orange; default green)
  *     data-color="#7a3dff"                   (optional: a custom 6-hex accent — overrides scheme)
  *     data-label="Tip"                       (optional button label)
  *     data-amount-presets="1,5,25"           (optional preset amounts, whole units of the asset)
@@ -177,6 +177,7 @@
   var SCHEMES = {
     green: { from: "#3ab54a", to: "#1f8f3a", text: "#ffffff", shadow: "rgba(31,143,58,.34)" },
     purple: { from: "#7a3dff", to: "#ff00de", text: "#ffffff", shadow: "rgba(122,61,255,.34)" },
+    orange: { from: "#ff8c1a", to: "#e05a00", text: "#ffffff", shadow: "rgba(255,140,26,.34)" },
   };
   function normHex(v) {
     var s = String(v == null ? "" : v).trim().toLowerCase();
@@ -201,6 +202,7 @@
     var hex = normHex(color);
     if (hex) return { from: hex, to: darken(hex, 0.22), text: "#ffffff", shadow: rgbaFromHex(hex, 0.34) };
     if (schemeName === "purple") return SCHEMES.purple;
+    if (schemeName === "orange") return SCHEMES.orange;
     return SCHEMES.green;
   }
 
@@ -231,16 +233,19 @@
     return out.length ? out : null;
   }
   function defaultPresets(asset) { return asset.kind === "xch" ? [0.1, 0.5, 1] : [1, 5, 25]; }
-  // The canonical $DIG CAT tail (mirrors src/lib/constants.ts) — used to pick the DIG symbol + mark.
+  // The canonical $DIG + HOA CAT tails (mirror src/lib/constants.ts) — used to pick the symbol + mark.
   var DIG_ASSET_ID = "a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81";
+  var HOA_ASSET_ID = "e816ee18ce2337c4128449bc539fbbe2ecfdd2098c4e7cab4667e223c3bdc23d";
   function isDigAsset(asset) { return asset.kind === "cat" && asset.assetId === DIG_ASSET_ID; }
+  function isHoaAsset(asset) { return asset.kind === "cat" && asset.assetId === HOA_ASSET_ID; }
   // The display symbol for an asset. A CAT uses the explicit override (data-symbol) if given, else
-  // "$DIG" for the canonical DIG tail, else a neutral "CAT" (the builder can auto-detect + pass one in).
+  // "$DIG"/"HOA" for the canonical tails, else a neutral "CAT" (the builder can auto-detect + pass one in).
   function assetUnitLabel(asset, symbolOverride) {
     if (asset.kind === "xch") return "XCH";
     var s = String(symbolOverride == null ? "" : symbolOverride).trim();
     if (s) return s;
     if (isDigAsset(asset)) return "$DIG";
+    if (isHoaAsset(asset)) return "HOA";
     return "CAT";
   }
 
@@ -256,12 +261,16 @@
     return '<svg class="xt-glyph" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false" fill="currentColor">' +
       '<path d="M5 4h6a8 8 0 0 1 0 16H5V4zm3.2 3.1v9.8H11a4.9 4.9 0 0 0 0-9.8H8.2z"/></svg>';
   }
-  // Choose the leading glyph for a config: Chia leaf for XCH, DIG mark for the DIG CAT, else heart.
-  // A custom color scheme always uses the heart (it's a personal accent, not a brand asset).
+  // HOA's mark is the orange emoji (its brand logo). An emoji glyph (not an SVG) so it renders in the
+  // HOA brand color regardless of the button text color.
+  var GLYPH_ORANGE = '<span class="xt-heart" aria-hidden="true">🍊</span>';
+  // Choose the leading glyph for a config: Chia leaf for XCH, DIG mark for the DIG CAT, 🍊 for HOA,
+  // else heart. A custom color scheme always uses the heart (it's a personal accent, not a brand asset).
   function glyphFor(asset, scheme) {
     if (scheme === "custom") return GLYPH_HEART;
     if (asset.kind === "xch") return glyphChiaLeaf();
     if (isDigAsset(asset)) return glyphDig();
+    if (isHoaAsset(asset)) return GLYPH_ORANGE;
     return GLYPH_HEART;
   }
   function amountToBaseUnits(asset, amount) {
@@ -271,6 +280,7 @@
   function defaultLabel(asset, symbolOverride) {
     if (asset.kind === "xch") return "Tip in XCH";
     if (isDigAsset(asset)) return "Tip in DIG";
+    if (isHoaAsset(asset)) return "Tip in HOA";
     var s = String(symbolOverride == null ? "" : symbolOverride).trim();
     if (s) return "Tip in " + s;
     return "Send a tip";
@@ -377,7 +387,7 @@
     }
     var color = normHex(a.color);
     // A custom accent color takes precedence and means the "custom" scheme (heart glyph, no brand).
-    var scheme = color ? "custom" : (a.scheme === "purple" ? "purple" : "green");
+    var scheme = color ? "custom" : (a.scheme === "purple" ? "purple" : a.scheme === "orange" ? "orange" : "green");
     var symbol = String(a.symbol == null ? "" : a.symbol).trim();
     return {
       ok: true,
