@@ -70,6 +70,17 @@ resource "aws_lambda_permission" "jar_meta_cloudfront" {
   function_url_auth_type = "AWS_IAM"
 }
 
+# See the matching comment in og.tf (aws_lambda_permission.og_image_cloudfront_invoke_function) —
+# CloudFront's OAC-for-Lambda needs BOTH InvokeFunctionUrl AND InvokeFunction grants; this was the
+# root cause of #221's live-broken /jar/* card.
+resource "aws_lambda_permission" "jar_meta_cloudfront_invoke_function" {
+  statement_id  = "AllowCloudFrontInvokeFunction"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.jar_meta.function_name
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = aws_cloudfront_distribution.site.arn
+}
+
 resource "aws_cloudfront_origin_access_control" "jar_meta" {
   name                              = "${var.s3_bucket}-jar-meta-oac"
   description                       = "OAC for the /jar/* Lambda Function URL origin."

@@ -168,17 +168,34 @@ fix (#221 live-broken OG cards). The distribution has NO `custom_error_response`
 exactly this reason: a non-2xx from the Lambda origin must surface as a real error, not get silently
 rewritten to a 200 SPA page that hides the failure.
 
+**Root cause found in #221's live break**: a Lambda Function URL fronted by CloudFront OAC needs
+**TWO** resource-policy grants for `cloudfront.amazonaws.com` — `lambda:InvokeFunctionUrl` AND
+`lambda:InvokeFunction` (see
+[AWS's OAC-for-Lambda doc](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html)).
+`og.tf`/`jar-meta.tf` originally only granted `InvokeFunctionUrl`. Missing the second grant makes the
+Function URL's `AWS_IAM` authorizer reject every CloudFront-signed request with a blanket
+`{"Message":"Forbidden. For troubleshooting Function URL authorization issues, see: ..."}` — a
+403/JSON response with `x-amzn-ErrorType: AccessDeniedException`, returned by the Function URL
+authorizer itself BEFORE the function ever runs (so there's no CloudWatch invocation log at all — the
+function code is never reached). The fix is a second `aws_lambda_permission` resource per Lambda
+(statement id `AllowCloudFrontInvokeFunction`, action `lambda:InvokeFunction`, same principal +
+`SourceArn` condition, no `function_url_auth_type`) — see `og.tf` /
+`aws_lambda_permission.og_image_cloudfront_invoke_function` and the matching resource in
+`jar-meta.tf`.
+
 Diagnose in order:
 1. `curl -sD- "https://xchtip.app/og?recipient=xch1x&asset=xch&scheme=green"` — check the actual
-   status code and `X-Cache` header now that nothing masks it.
+   status code and `X-Cache` header now that nothing masks it. A `403` body of
+   `{"Message":"Forbidden. ..."}` is the missing-`lambda:InvokeFunction`-grant symptom above.
 2. Check `/aws/lambda/xchtip-og-image` (or `-jar-meta`) CloudWatch Logs for an invocation matching the
    request time. NO invocation logged means CloudFront never got an authorized request through to the
    Function URL (an OAC/SigV4/permission problem, upstream of the function code) — verify the
    Lambda's resource policy (`aws lambda get-policy --function-name xchtip-og-image`) grants
-   `cloudfront.amazonaws.com` `lambda:InvokeFunctionUrl` with `SourceArn` = this distribution's ARN,
-   and the OAC (`aws cloudfront get-origin-access-control`) is `signing_behavior=always`,
-   `signing_protocol=sigv4`, `origin_access_control_origin_type=lambda`, and is actually attached to
-   the origin (`aws cloudfront get-distribution` → `Origins.Items[].OriginAccessControlId`).
+   `cloudfront.amazonaws.com` BOTH `lambda:InvokeFunctionUrl` AND `lambda:InvokeFunction` with
+   `SourceArn` = this distribution's ARN, and the OAC (`aws cloudfront get-origin-access-control`) is
+   `signing_behavior=always`, `signing_protocol=sigv4`, `origin_access_control_origin_type=lambda`,
+   and is actually attached to the origin (`aws cloudfront get-distribution` →
+   `Origins.Items[].OriginAccessControlId`).
 3. An invocation IS logged but with an error → the Lambda code/deps are the problem (e.g. a missing
    font or the wrong `@resvg/resvg-js` platform binary for `nodejs20.x`/`x86_64` — rebuild per the
    BUILD PREREQUISITE above, on a linux/x64 host).

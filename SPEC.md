@@ -455,7 +455,11 @@ The CloudFront distribution is dualstack (A + AAAA), `http2and3`, `PriceClass_Al
 
 Two Lambda Function URLs sit behind dedicated CloudFront behaviors, each fronted by its own Origin
 Access Control (`origin_access_control_origin_type = "lambda"`, `AWS_IAM` function-URL auth) so
-neither is invocable except through this distribution:
+neither is invocable except through this distribution. Each Lambda's resource-based policy MUST grant
+`cloudfront.amazonaws.com` BOTH `lambda:InvokeFunctionUrl` AND `lambda:InvokeFunction` (with a
+`SourceArn` condition scoped to this distribution's ARN) — OAC-signed CloudFront requests need both;
+missing either one makes the Function URL's `AWS_IAM` authorizer reject every request with a blanket
+`403 Forbidden` before the function ever runs:
 
 - **`/og`** (§6c) — `lambda/og-image`, Node 20.x, bundled with esbuild (satori + `@resvg/resvg-js`;
   the native `@resvg/resvg-js-linux-x64-gnu` addon requires building on a linux/x64 host — CI does

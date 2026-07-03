@@ -66,6 +66,22 @@ resource "aws_lambda_permission" "og_image_cloudfront" {
   function_url_auth_type = "AWS_IAM"
 }
 
+# A SECOND, companion grant is REQUIRED alongside InvokeFunctionUrl above: AWS's OAC-for-Lambda docs
+# (private-content-restricting-access-to-lambda.html) list both `lambda:InvokeFunctionUrl` AND
+# `lambda:InvokeFunction` as needed for CloudFront's OAC-signed request to be authorized. Without
+# this second statement the Function URL's AWS_IAM authorizer rejects every CloudFront-signed
+# request with a blanket `{"Message":"Forbidden. ..."}` BEFORE the function ever runs (no
+# invocation, no CloudWatch log) — this was the root cause of the live-broken /og + /jar/* OG cards
+# (#221): the failure was hidden behind the distribution's old blanket 403->200 error masking
+# (removed — see main.tf) until it surfaced as a real, diagnosable error.
+resource "aws_lambda_permission" "og_image_cloudfront_invoke_function" {
+  statement_id  = "AllowCloudFrontInvokeFunction"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.og_image.function_name
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = aws_cloudfront_distribution.site.arn
+}
+
 resource "aws_cloudfront_origin_access_control" "og_image" {
   name                              = "${var.s3_bucket}-og-image-oac"
   description                       = "OAC for the /og Lambda Function URL origin."
