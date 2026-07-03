@@ -649,28 +649,6 @@
     return null;
   }
 
-  // Resolve the sender's synthetic pk + inner puzzle hash from the wallet's XCH STANDARD coins. The
-  // synthetic key is wallet-wide (same for XCH + every CAT), and XCH coins always reveal the bare
-  // standard p2 puzzle — so this is the reliable source for BOTH the XCH and CAT tip paths (the CAT
-  // coin's own puzzle may be the outer CAT wrapper, which does not uncurry to the pk). Mirrors the hub
-  // tip builder, which reads the key from getAssetCoins (XCH).
-  async function resolveSenderFromXch(wallet, chia, clvm) {
-    var entries = (await wallet.request("chip0002_getAssetCoins", { type: null, assetId: null, includedLocked: false, offset: 0, limit: 200 })) || [];
-    var coins = Array.isArray(entries) ? entries : (entries.coins || []);
-    function prOf(e) { return (e && (e.puzzle || e.puzzleReveal || e.puzzle_reveal)) || null; }
-    for (var k = 0; k < coins.length; k++) {
-      var pr = prOf(coins[k]);
-      if (!pr) continue;
-      var pkBytes = recoverSyntheticPk(chia, clvm, pr);
-      if (pkBytes && pkBytes.length === 48) {
-        var pk = chia.PublicKey.fromBytes(pkBytes);
-        var innerPhBytes = chia.standardPuzzleHash ? chia.standardPuzzleHash(pk) : clvm.standardPuzzle(pk).puzzleHash();
-        return { pk: pk, innerPh: strip0x(chia.toHex(innerPhBytes)) };
-      }
-    }
-    return null;
-  }
-
   // Build unsigned XCH coin spends sending `mojos` to `recipientPh`. Returns { coin_spends }.
   async function buildXchPayment(wallet, recipientPh, mojos) {
     var chia = await loadChia();
@@ -759,31 +737,62 @@
     var coins = Array.isArray(entries) ? entries : (entries.coins || []);
     if (!coins.length) throw new Error("Your wallet holds none of that token. Add it and try again.");
 
-    // The sender's synthetic key comes from the wallet's XCH standard coins (wallet-wide key; the CAT
-    // coin's own puzzle may be the outer CAT wrapper and does NOT uncurry to the pk). Requires the
-    // wallet to hold at least one XCH coin (also needed for the tx fee on chain).
-    var sender = await resolveSenderFromXch(wallet, chia, clvm);
-    if (!sender) throw new Error("Could not read your wallet's signing key. Make sure your wallet holds a little XCH, then try again.");
+    // Resolve EACH CAT coin's owning key — CATs may live at several HD addresses, so a single
+    // sender key would miss coins ("Not enough" despite a funded wallet — the multi-address bug).
+    // Two sources, both VALIDATED by recomputing the coin's CAT outer puzzle hash:
+    //   (a) the coin's own `puzzle` reveal (wallets that return the inner p2 reveal for CAT coins);
+    //   (b) a map of keys recovered from the wallet's XCH standard coins → their CAT outer hashes
+    //       (the hub's proven strategy, generalized to every recoverable key).
+    function prOf(e) { return (e && (e.puzzle || e.puzzleReveal || e.puzzle_reveal)) || null; }
+    function outerPhFor(innerPh) { return strip0x(chia.toHex(chia.catPuzzleHash(assetIdBytes, chia.fromHex(innerPh)))); }
 
-    var senderCatPhBytes = chia.catPuzzleHash(assetIdBytes, chia.fromHex(sender.innerPh));
-    var senderCatPh = strip0x(chia.toHex(senderCatPhBytes));
-    var owned = coins.filter(function (e) {
-      var ph = strip0x((e.coin && (e.coin.puzzle_hash || e.coin.puzzleHash)) || "");
-      if (ph !== senderCatPh) return false;
-      if (((e.spent_block_index != null ? e.spent_block_index : e.spentBlockIndex) || 0) !== 0 || e.locked) return false;
-      return true;
-    });
-    owned.sort(function (a, b) { return (BigInt(b.coin.amount) - BigInt(a.coin.amount) > 0n ? 1 : -1); });
+    // (b) key map from XCH coins: CAT outer ph (hex) → { pk, innerPh }.
+    var keyByOuterPh = {};
+    try {
+      var xchEntries = (await wallet.request("chip0002_getAssetCoins", { type: null, assetId: null, includedLocked: false, offset: 0, limit: 200 })) || [];
+      var xchCoins = Array.isArray(xchEntries) ? xchEntries : (xchEntries.coins || []);
+      var seenInner = {};
+      for (var xk = 0; xk < xchCoins.length; xk++) {
+        var key = readSenderKeyFromReveal(chia, clvm, prOf(xchCoins[xk]));
+        if (!key || seenInner[key.innerPh]) continue;
+        seenInner[key.innerPh] = true;
+        keyByOuterPh[outerPhFor(key.innerPh)] = key;
+      }
+    } catch (_) { /* no XCH coins — path (a) may still resolve keys */ }
+
+    // Attach a key to every spendable CAT coin (skip coins whose key we cannot recover).
+    var spendable = [];
+    for (var ci = 0; ci < coins.length; ci++) {
+      var entry = coins[ci];
+      if (((entry.spent_block_index != null ? entry.spent_block_index : entry.spentBlockIndex) || 0) !== 0 || entry.locked) continue;
+      var outerPh = strip0x((entry.coin && (entry.coin.puzzle_hash || entry.coin.puzzleHash)) || "");
+      var coinKey = null;
+      // (a) the coin's own reveal, validated against its outer hash.
+      var own = readSenderKeyFromReveal(chia, clvm, prOf(entry));
+      if (own && outerPhFor(own.innerPh) === outerPh) coinKey = own;
+      // (b) the XCH-derived key map.
+      if (!coinKey && keyByOuterPh[outerPh]) coinKey = keyByOuterPh[outerPh];
+      if (coinKey) spendable.push({ entry: entry, key: coinKey });
+    }
+    if (!spendable.length) {
+      throw new Error("Could not read your wallet's signing key for this token. Make sure your wallet also holds a little XCH, then try again.");
+    }
+    spendable.sort(function (a, b) { return (BigInt(b.entry.coin.amount) - BigInt(a.entry.coin.amount) > 0n ? 1 : -1); });
+
+    var total = 0n;
+    for (var ti = 0; ti < spendable.length; ti++) total += BigInt(spendable[ti].entry.coin.amount);
 
     var selected = [];
     var sum = 0n;
-    for (var i = 0; i < owned.length && sum < need; i++) { selected.push(owned[i]); sum += BigInt(owned[i].coin.amount); }
-    if (sum < need) throw new Error("Not enough of that token: need " + (Number(need) / CAT_BASE_UNITS) + ", have " + (Number(sum) / CAT_BASE_UNITS) + ".");
+    for (var i = 0; i < spendable.length && sum < need; i++) { selected.push(spendable[i]); sum += BigInt(spendable[i].entry.coin.amount); }
+    if (sum < need) throw new Error("Not enough of that token: need " + (Number(need) / CAT_BASE_UNITS) + ", have " + (Number(total) / CAT_BASE_UNITS) + ".");
     var change = sum - need;
+    var leadKey = selected[0].key; // outputs + change ride on the first coin's key/address
 
     var catSpends = [];
     for (var j = 0; j < selected.length; j++) {
-      var e = selected[j];
+      var e = selected[j].entry;
+      var coinKey = selected[j].key; // this coin's OWN inner key (coins may span HD addresses)
       var wasmChildCoin = new chia.Coin(
         hex0xToBytes(e.coin.parent_coin_info != null ? e.coin.parent_coin_info : e.coin.parentCoinInfo),
         hex0xToBytes(e.coin.puzzle_hash != null ? e.coin.puzzle_hash : e.coin.puzzleHash),
@@ -803,14 +812,15 @@
       var parentProgram = clvm.deserialize(parentPuzzleBytes);
       var parsedParentCat = parentProgram.puzzle().parseCatInfo();
       var parentInnerPhBytes = (parsedParentCat && parsedParentCat.info && parsedParentCat.info.p2PuzzleHash)
-        ? parsedParentCat.info.p2PuzzleHash : chia.fromHex(sender.innerPh);
+        ? parsedParentCat.info.p2PuzzleHash : chia.fromHex(coinKey.innerPh);
       var parentCoin = new chia.Coin(
         hex0xToBytes(ps.coin.parent_coin_info != null ? ps.coin.parent_coin_info : ps.coin.parentCoinInfo),
         hex0xToBytes(ps.coin.puzzle_hash != null ? ps.coin.puzzle_hash : ps.coin.puzzleHash),
         BigInt(ps.coin.amount)
       );
       var lineageProof = new chia.LineageProof(parentCoin.parentCoinInfo, parentInnerPhBytes, parentCoin.amount);
-      var catInfo = new chia.CatInfo(assetIdBytes, undefined, chia.fromHex(sender.innerPh));
+      // The Cat's inner puzzle hash is THIS coin's address (each coin reconstructs its own outer puzzle).
+      var catInfo = new chia.CatInfo(assetIdBytes, undefined, chia.fromHex(coinKey.innerPh));
       var cat = new chia.Cat(wasmChildCoin, lineageProof, catInfo);
 
       var conditions = [];
@@ -826,10 +836,11 @@
           var feeMemo = clvm.list([clvm.atom(feePhBytes)]);
           conditions.push(clvm.createCoin(feePhBytes, catSplit.fee, feeMemo));
         }
-        if (change > 0n) conditions.push(clvm.createCoin(chia.fromHex(sender.innerPh), change));
+        if (change > 0n) conditions.push(clvm.createCoin(chia.fromHex(leadKey.innerPh), change));
       }
       var delegated = clvm.delegatedSpend(conditions);
-      var innerSpend = clvm.standardSpend(sender.pk, delegated);
+      // Each coin's inner spend is signed by ITS OWN synthetic key.
+      var innerSpend = clvm.standardSpend(coinKey.pk, delegated);
       catSpends.push(new chia.CatSpend(cat, innerSpend));
     }
     clvm.spendCats(catSpends);
