@@ -22,6 +22,7 @@
  *     data-size="md"                         (optional: md|lg; lg = a prominent tip-page button)
  *     data-variant="button"                  (optional: button|compact|card; the widget style)
  *     data-symbol="DIG"                      (optional: display symbol for a CAT; overrides auto)
+ *     data-locale="ja"                       (optional: UI language; default = the visitor's browser)
  *     data-wc-project-id="<your projectId>"  (optional — defaults to xchtip.app's)
  *     data-target="#my-container"            (optional CSS selector to mount into; default: inline)
  *     async></script>
@@ -80,6 +81,68 @@
     return { fee: fee, net: total - fee };
   }
 
+  // ── Widget i18n ──────────────────────────────────────────────────────────────────────────────────
+  // The widget honors the tipper's locale (data-locale on the embed, else navigator.language). A tiny
+  // inline catalog covers the widget's user-facing strings across the ecosystem's 14 locales; any key
+  // a locale omits falls back to English. Brand/scheme literals ($DIG, XCH, xchtip.app) stay verbatim;
+  // {amt}/{unit} placeholders are substituted by wt(). Mirrors the site's message ids where they overlap.
+  var WIDGET_LOCALES = ["en", "zh-CN", "zh-TW", "ko", "ja", "ru", "es", "pt-BR", "fr", "de", "tr", "vi", "id", "hi"];
+  var WIDGET_I18N = {
+    en: {
+      title: "Send a tip", connectSub: "Scan with your Chia wallet to connect, then approve the tip. Works best with Sage.",
+      copyLink: "Copy connection link", copied: "Copied!", noWallet: "No wallet yet?", getSage: "Get Sage ↗",
+      opening: "Opening your wallet connection…", pickSub: "Send {unit} straight to the recipient’s wallet — on-chain, no middleman.",
+      custom: "Custom", cancel: "Cancel", send: "Send {amt}", preparing: "Preparing your {amt} tip…",
+      approveSub: "Approve the {amt} tip in your wallet. This sends directly to the recipient — wallet to wallet.",
+      back: "Back", signSend: "Sign & send", waiting: "Waiting for your wallet to sign…",
+      doneSub: "Tip sent! You sent {amt} — broadcast to the Chia network.", done: "Done",
+      close: "Close", tryAgain: "Try again", fee: "Includes a 0.1% network fee to xchtip.app.",
+      lowDig: "Low on $DIG? Get it on", disconnect: "Disconnect wallet", enterAmount: "Enter amount",
+    },
+    "zh-CN": { title: "发送打赏", connectSub: "用你的 Chia 钱包扫码连接，然后批准打赏。推荐使用 Sage。", copyLink: "复制连接链接", copied: "已复制！", noWallet: "还没有钱包？", getSage: "获取 Sage ↗", opening: "正在打开钱包连接…", pickSub: "把 {unit} 直接发送到收款人的钱包 —— 链上，无中间人。", custom: "自定义", cancel: "取消", send: "发送 {amt}", preparing: "正在准备你的 {amt} 打赏…", approveSub: "在你的钱包中批准 {amt} 打赏。将直接发送给收款人 —— 钱包到钱包。", back: "返回", signSend: "签名并发送", waiting: "等待你的钱包签名…", doneSub: "打赏已发送！你发送了 {amt} —— 已广播到 Chia 网络。", done: "完成", close: "关闭", tryAgain: "重试", fee: "包含 0.1% 的网络手续费给 xchtip.app。", lowDig: "$DIG 不足？可在这里获取", disconnect: "断开钱包", enterAmount: "输入金额" },
+    "zh-TW": { title: "發送打賞", connectSub: "用你的 Chia 錢包掃碼連接，然後批准打賞。推薦使用 Sage。", copyLink: "複製連接連結", copied: "已複製！", noWallet: "還沒有錢包？", getSage: "取得 Sage ↗", opening: "正在開啟錢包連接…", pickSub: "把 {unit} 直接發送到收款人的錢包 —— 鏈上，無中間人。", custom: "自訂", cancel: "取消", send: "發送 {amt}", preparing: "正在準備你的 {amt} 打賞…", approveSub: "在你的錢包中批准 {amt} 打賞。將直接發送給收款人 —— 錢包到錢包。", back: "返回", signSend: "簽名並發送", waiting: "等待你的錢包簽名…", doneSub: "打賞已發送！你發送了 {amt} —— 已廣播到 Chia 網路。", done: "完成", close: "關閉", tryAgain: "重試", fee: "包含 0.1% 的網路手續費給 xchtip.app。", lowDig: "$DIG 不足？可在這裡取得", disconnect: "中斷錢包", enterAmount: "輸入金額" },
+    ko: { title: "팁 보내기", connectSub: "Chia 지갑으로 스캔하여 연결한 뒤 팁을 승인하세요. Sage 사용을 권장합니다.", copyLink: "연결 링크 복사", copied: "복사됨!", noWallet: "지갑이 없으신가요?", getSage: "Sage 받기 ↗", opening: "지갑 연결을 여는 중…", pickSub: "{unit}를 받는 사람 지갑으로 바로 전송 — 온체인, 중개자 없음.", custom: "직접 입력", cancel: "취소", send: "{amt} 보내기", preparing: "{amt} 팁을 준비하는 중…", approveSub: "지갑에서 {amt} 팁을 승인하세요. 받는 사람에게 지갑에서 지갑으로 바로 전송됩니다.", back: "뒤로", signSend: "서명 후 전송", waiting: "지갑 서명을 기다리는 중…", doneSub: "팁 전송 완료! {amt}를 보냈습니다 — Chia 네트워크에 브로드캐스트됨.", done: "완료", close: "닫기", tryAgain: "다시 시도", fee: "0.1% 네트워크 수수료가 xchtip.app로 갑니다.", lowDig: "$DIG가 부족한가요? 여기서 구하세요", disconnect: "지갑 연결 해제", enterAmount: "금액 입력" },
+    ja: { title: "チップを送る", connectSub: "Chia ウォレットでスキャンして接続し、チップを承認してください。Sage を推奨します。", copyLink: "接続リンクをコピー", copied: "コピーしました！", noWallet: "ウォレットがない？", getSage: "Sage を入手 ↗", opening: "ウォレット接続を開いています…", pickSub: "{unit} を受取先のウォレットへ直接送金 — オンチェーン、仲介者なし。", custom: "カスタム", cancel: "キャンセル", send: "{amt} を送る", preparing: "{amt} のチップを準備中…", approveSub: "ウォレットで {amt} のチップを承認してください。受取先へ直接、ウォレットからウォレットへ送金されます。", back: "戻る", signSend: "署名して送信", waiting: "ウォレットの署名を待っています…", doneSub: "チップを送りました！{amt} を送金し、Chia ネットワークにブロードキャストされました。", done: "完了", close: "閉じる", tryAgain: "再試行", fee: "0.1% のネットワーク手数料が xchtip.app に入ります。", lowDig: "$DIG が不足？こちらで入手", disconnect: "ウォレットを切断", enterAmount: "金額を入力" },
+    ru: { title: "Отправить чаевые", connectSub: "Отсканируйте кошельком Chia для подключения, затем подтвердите чаевые. Лучше всего с Sage.", copyLink: "Копировать ссылку", copied: "Скопировано!", noWallet: "Нет кошелька?", getSage: "Установить Sage ↗", opening: "Открываем подключение кошелька…", pickSub: "Отправьте {unit} прямо в кошелёк получателя — ончейн, без посредников.", custom: "Другая", cancel: "Отмена", send: "Отправить {amt}", preparing: "Готовим ваши чаевые {amt}…", approveSub: "Подтвердите чаевые {amt} в кошельке. Средства уйдут напрямую получателю — кошелёк в кошелёк.", back: "Назад", signSend: "Подписать и отправить", waiting: "Ожидаем подпись кошелька…", doneSub: "Чаевые отправлены! Вы отправили {amt} — транслировано в сеть Chia.", done: "Готово", close: "Закрыть", tryAgain: "Повторить", fee: "Включает комиссию сети 0,1% в пользу xchtip.app.", lowDig: "Мало $DIG? Получите на", disconnect: "Отключить кошелёк", enterAmount: "Введите сумму" },
+    es: { title: "Enviar propina", connectSub: "Escanea con tu billetera Chia para conectar y luego aprueba la propina. Funciona mejor con Sage.", copyLink: "Copiar enlace de conexión", copied: "¡Copiado!", noWallet: "¿Aún no tienes billetera?", getSage: "Obtener Sage ↗", opening: "Abriendo la conexión de tu billetera…", pickSub: "Envía {unit} directamente a la billetera del destinatario — on-chain, sin intermediarios.", custom: "Personalizado", cancel: "Cancelar", send: "Enviar {amt}", preparing: "Preparando tu propina de {amt}…", approveSub: "Aprueba la propina de {amt} en tu billetera. Se envía directamente al destinatario — de billetera a billetera.", back: "Atrás", signSend: "Firmar y enviar", waiting: "Esperando la firma de tu billetera…", doneSub: "¡Propina enviada! Enviaste {amt} — transmitido a la red Chia.", done: "Listo", close: "Cerrar", tryAgain: "Reintentar", fee: "Incluye una comisión de red del 0,1% para xchtip.app.", lowDig: "¿Poco $DIG? Consíguelo en", disconnect: "Desconectar billetera", enterAmount: "Ingresa un monto" },
+    "pt-BR": { title: "Enviar gorjeta", connectSub: "Escaneie com sua carteira Chia para conectar e aprove a gorjeta. Funciona melhor com a Sage.", copyLink: "Copiar link de conexão", copied: "Copiado!", noWallet: "Ainda não tem carteira?", getSage: "Obter Sage ↗", opening: "Abrindo a conexão da carteira…", pickSub: "Envie {unit} direto para a carteira do destinatário — on-chain, sem intermediários.", custom: "Personalizado", cancel: "Cancelar", send: "Enviar {amt}", preparing: "Preparando sua gorjeta de {amt}…", approveSub: "Aprove a gorjeta de {amt} na sua carteira. Vai direto para o destinatário — de carteira para carteira.", back: "Voltar", signSend: "Assinar e enviar", waiting: "Aguardando a assinatura da carteira…", doneSub: "Gorjeta enviada! Você enviou {amt} — transmitido para a rede Chia.", done: "Concluído", close: "Fechar", tryAgain: "Tentar de novo", fee: "Inclui uma taxa de rede de 0,1% para o xchtip.app.", lowDig: "Pouco $DIG? Consiga em", disconnect: "Desconectar carteira", enterAmount: "Digite um valor" },
+    fr: { title: "Envoyer un pourboire", connectSub: "Scannez avec votre portefeuille Chia pour vous connecter, puis approuvez le pourboire. Idéal avec Sage.", copyLink: "Copier le lien de connexion", copied: "Copié !", noWallet: "Pas encore de portefeuille ?", getSage: "Obtenir Sage ↗", opening: "Ouverture de la connexion du portefeuille…", pickSub: "Envoyez des {unit} directement au portefeuille du destinataire — on-chain, sans intermédiaire.", custom: "Personnalisé", cancel: "Annuler", send: "Envoyer {amt}", preparing: "Préparation de votre pourboire de {amt}…", approveSub: "Approuvez le pourboire de {amt} dans votre portefeuille. Envoi direct au destinataire — de portefeuille à portefeuille.", back: "Retour", signSend: "Signer et envoyer", waiting: "En attente de la signature du portefeuille…", doneSub: "Pourboire envoyé ! Vous avez envoyé {amt} — diffusé sur le réseau Chia.", done: "Terminé", close: "Fermer", tryAgain: "Réessayer", fee: "Inclut des frais de réseau de 0,1 % pour xchtip.app.", lowDig: "Pas assez de $DIG ? Procurez-vous-en sur", disconnect: "Déconnecter le portefeuille", enterAmount: "Saisir un montant" },
+    de: { title: "Trinkgeld senden", connectSub: "Mit deiner Chia-Wallet scannen, um zu verbinden, dann das Trinkgeld bestätigen. Am besten mit Sage.", copyLink: "Verbindungslink kopieren", copied: "Kopiert!", noWallet: "Noch keine Wallet?", getSage: "Sage holen ↗", opening: "Wallet-Verbindung wird geöffnet…", pickSub: "Sende {unit} direkt an die Wallet des Empfängers — on-chain, ohne Mittelsmann.", custom: "Eigener", cancel: "Abbrechen", send: "{amt} senden", preparing: "Dein {amt}-Trinkgeld wird vorbereitet…", approveSub: "Bestätige das {amt}-Trinkgeld in deiner Wallet. Es geht direkt an den Empfänger — Wallet zu Wallet.", back: "Zurück", signSend: "Signieren & senden", waiting: "Warte auf die Signatur deiner Wallet…", doneSub: "Trinkgeld gesendet! Du hast {amt} gesendet — ins Chia-Netzwerk übertragen.", done: "Fertig", close: "Schließen", tryAgain: "Erneut versuchen", fee: "Enthält eine Netzwerkgebühr von 0,1 % für xchtip.app.", lowDig: "Wenig $DIG? Hol es dir bei", disconnect: "Wallet trennen", enterAmount: "Betrag eingeben" },
+    tr: { title: "Bahşiş gönder", connectSub: "Bağlanmak için Chia cüzdanınla tara, ardından bahşişi onayla. En iyi Sage ile çalışır.", copyLink: "Bağlantı linkini kopyala", copied: "Kopyalandı!", noWallet: "Henüz cüzdanın yok mu?", getSage: "Sage’i edin ↗", opening: "Cüzdan bağlantısı açılıyor…", pickSub: "{unit} doğrudan alıcının cüzdanına gönder — zincir üstü, aracı yok.", custom: "Özel", cancel: "İptal", send: "{amt} gönder", preparing: "{amt} bahşişin hazırlanıyor…", approveSub: "Cüzdanında {amt} bahşişi onayla. Doğrudan alıcıya gider — cüzdandan cüzdana.", back: "Geri", signSend: "İmzala ve gönder", waiting: "Cüzdanının imzası bekleniyor…", doneSub: "Bahşiş gönderildi! {amt} gönderdin — Chia ağına yayınlandı.", done: "Tamam", close: "Kapat", tryAgain: "Tekrar dene", fee: "xchtip.app’e %0,1 ağ ücreti dahildir.", lowDig: "$DIG az mı? Şuradan edin", disconnect: "Cüzdanı bağlantısını kes", enterAmount: "Tutar gir" },
+    vi: { title: "Gửi tiền boa", connectSub: "Quét bằng ví Chia của bạn để kết nối, rồi phê duyệt tiền boa. Hoạt động tốt nhất với Sage.", copyLink: "Sao chép liên kết kết nối", copied: "Đã sao chép!", noWallet: "Chưa có ví?", getSage: "Tải Sage ↗", opening: "Đang mở kết nối ví…", pickSub: "Gửi {unit} thẳng vào ví người nhận — on-chain, không trung gian.", custom: "Tùy chỉnh", cancel: "Hủy", send: "Gửi {amt}", preparing: "Đang chuẩn bị tiền boa {amt}…", approveSub: "Phê duyệt tiền boa {amt} trong ví. Gửi thẳng đến người nhận — ví tới ví.", back: "Quay lại", signSend: "Ký & gửi", waiting: "Đang chờ ví ký…", doneSub: "Đã gửi tiền boa! Bạn đã gửi {amt} — phát lên mạng Chia.", done: "Xong", close: "Đóng", tryAgain: "Thử lại", fee: "Bao gồm phí mạng 0,1% cho xchtip.app.", lowDig: "Thiếu $DIG? Nhận tại", disconnect: "Ngắt kết nối ví", enterAmount: "Nhập số tiền" },
+    id: { title: "Kirim tip", connectSub: "Pindai dengan dompet Chia untuk terhubung, lalu setujui tip. Paling baik dengan Sage.", copyLink: "Salin tautan koneksi", copied: "Tersalin!", noWallet: "Belum punya dompet?", getSage: "Dapatkan Sage ↗", opening: "Membuka koneksi dompet…", pickSub: "Kirim {unit} langsung ke dompet penerima — on-chain, tanpa perantara.", custom: "Khusus", cancel: "Batal", send: "Kirim {amt}", preparing: "Menyiapkan tip {amt} Anda…", approveSub: "Setujui tip {amt} di dompet Anda. Langsung ke penerima — dompet ke dompet.", back: "Kembali", signSend: "Tanda tangani & kirim", waiting: "Menunggu tanda tangan dompet…", doneSub: "Tip terkirim! Anda mengirim {amt} — disiarkan ke jaringan Chia.", done: "Selesai", close: "Tutup", tryAgain: "Coba lagi", fee: "Termasuk biaya jaringan 0,1% untuk xchtip.app.", lowDig: "Kekurangan $DIG? Dapatkan di", disconnect: "Putuskan dompet", enterAmount: "Masukkan jumlah" },
+    hi: { title: "टिप भेजें", connectSub: "कनेक्ट करने के लिए अपने Chia वॉलेट से स्कैन करें, फिर टिप को स्वीकृत करें। Sage के साथ सबसे अच्छा काम करता है।", copyLink: "कनेक्शन लिंक कॉपी करें", copied: "कॉपी हो गया!", noWallet: "अभी तक वॉलेट नहीं है?", getSage: "Sage पाएं ↗", opening: "आपका वॉलेट कनेक्शन खोला जा रहा है…", pickSub: "{unit} सीधे प्राप्तकर्ता के वॉलेट में भेजें — ऑन-चेन, कोई बिचौलिया नहीं।", custom: "कस्टम", cancel: "रद्द करें", send: "{amt} भेजें", preparing: "आपकी {amt} टिप तैयार की जा रही है…", approveSub: "अपने वॉलेट में {amt} टिप स्वीकृत करें। यह सीधे प्राप्तकर्ता को जाती है — वॉलेट से वॉलेट।", back: "वापस", signSend: "साइन करें और भेजें", waiting: "आपके वॉलेट के हस्ताक्षर की प्रतीक्षा…", doneSub: "टिप भेज दी गई! आपने {amt} भेजा — Chia नेटवर्क पर प्रसारित।", done: "पूर्ण", close: "बंद करें", tryAgain: "फिर से प्रयास करें", fee: "इसमें xchtip.app के लिए 0.1% नेटवर्क शुल्क शामिल है।", lowDig: "$DIG कम है? इससे प्राप्त करें", disconnect: "वॉलेट डिस्कनेक्ट करें", enterAmount: "राशि दर्ज करें" },
+  };
+  // Resolve the widget locale: an explicit data-locale, else the browser language, mapped to one of
+  // our 14 (exact → language prefix → en). Traditional-Chinese regions map to zh-TW.
+  function resolveWidgetLocale(raw) {
+    var cands = [];
+    if (raw) cands.push(String(raw));
+    if (typeof navigator !== "undefined") {
+      if (navigator.languages) cands = cands.concat(navigator.languages);
+      else if (navigator.language) cands.push(navigator.language);
+    }
+    for (var i = 0; i < cands.length; i++) {
+      var tag = String(cands[i]).trim();
+      if (!tag) continue;
+      for (var j = 0; j < WIDGET_LOCALES.length; j++) if (WIDGET_LOCALES[j].toLowerCase() === tag.toLowerCase()) return WIDGET_LOCALES[j];
+      var lang = tag.split(/[-_]/)[0].toLowerCase();
+      var region = (tag.split(/[-_]/)[1] || "").toUpperCase();
+      if (lang === "zh") return (region === "TW" || region === "HK" || region === "MO" || /hant/i.test(tag)) ? "zh-TW" : "zh-CN";
+      if (lang === "pt") return "pt-BR";
+      for (var k = 0; k < WIDGET_LOCALES.length; k++) if (WIDGET_LOCALES[k] === lang) return lang;
+    }
+    return "en";
+  }
+  // wt(locale, key, vars) — translated string with English fallback + {placeholder} substitution.
+  function wt(locale, key, vars) {
+    var cat = WIDGET_I18N[locale] || WIDGET_I18N.en;
+    var s = (cat && cat[key] != null) ? cat[key] : WIDGET_I18N.en[key];
+    if (s == null) return "";
+    if (vars) for (var k in vars) if (Object.prototype.hasOwnProperty.call(vars, k)) s = s.replace("{" + k + "}", vars[k]);
+    return s;
+  }
+
   // The WC method set the widget needs (a subset of the CHIP-0002/chia set).
   var WC_METHODS = ["chia_getAddress", "chip0002_getAssetCoins", "chip0002_signCoinSpends"];
 
@@ -93,11 +156,11 @@
     { name: "dexie", url: "https://dexie.space/offers/" + DIG_ASSET_ID + "/XCH" },
     { name: "9mm.pro", url: "https://xch.9mm.pro/token/" + DIG_ASSET_ID },
   ];
-  function getDigHtml(accentColor) {
+  function getDigHtml(accentColor, locale) {
     var links = GET_DIG_SOURCES.map(function (s) {
       return '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer" style="color:' + accentColor + '">' + escapeHtml(s.name) + " ↗</a>";
     }).join(" · ");
-    return '<p class="xt-getdig">Low on $DIG? Get it on ' + links + "</p>";
+    return '<p class="xt-getdig">' + escapeHtml(wt(locale, "lowDig")) + " " + links + "</p>";
   }
 
   // Default WalletConnect (Reown) projectId — xchtip.app's own, so a drop-in embed works with NO
@@ -312,6 +375,7 @@
       align: parseAlign(a.align),
       size: parseSize(a.size),
       variant: parseVariant(a.variant),
+      locale: resolveWidgetLocale(a.locale),
     };
   }
 
@@ -770,6 +834,7 @@
     var assetBase = widgetAssetBase() || "https://xchtip.app";
     var unit = assetUnitLabel(cfg.asset, cfg.symbol);
     var glyph = glyphFor(cfg.asset, cfg.scheme);
+    var L = cfg.locale; // widget locale for wt() lookups
 
     var mountTarget = null;
     if (scriptEl.dataset.target) { try { mountTarget = document.querySelector(scriptEl.dataset.target); } catch (_) {} }
@@ -831,64 +896,64 @@
         scrim.className = "xt-scrim";
         scrim.setAttribute("role", "dialog");
         scrim.setAttribute("aria-modal", "true");
-        scrim.setAttribute("aria-label", "Send a tip");
+        scrim.setAttribute("aria-label", wt(L, "title"));
         scrim.addEventListener("click", function (e) { if (e.target === scrim && state.status !== "signing") close(); });
         document.body.appendChild(scrim);
       }
-      var closeBtn = state.status === "signing" ? "" : '<button class="xt-close" data-act="close" aria-label="Close">×</button>';
+      var closeBtn = state.status === "signing" ? "" : '<button class="xt-close" data-act="close" aria-label="' + escapeHtml(wt(L, "close")) + '">×</button>';
       var header =
         '<div class="xt-mark" style="color:' + scheme.from + '">xchtip.app</div>' +
-        '<div class="xt-title"><span class="xt-heart" aria-hidden="true" style="color:' + scheme.from + '">♥</span>Send a tip</div>';
+        '<div class="xt-title"><span class="xt-heart" aria-hidden="true" style="color:' + scheme.from + '">♥</span>' + escapeHtml(wt(L, "title")) + "</div>";
       var body = "";
 
       if (state.status === "connecting" || state.status === "pairing") {
         if (state.uri) {
           body =
-            '<p class="xt-sub">Scan with your Chia wallet to connect, then approve the tip. Works best with Sage.</p>' +
-            '<div class="xt-qr"><div id="xt-qrslot"></div><button class="xt-copy" data-act="copy">Copy connection link</button></div>' +
-            '<p class="xt-note">No wallet yet? <a href="' + SAGE_WALLET_URL + '" target="_blank" rel="noopener noreferrer" style="color:' + scheme.from + '">Get Sage ↗</a></p>';
+            '<p class="xt-sub">' + escapeHtml(wt(L, "connectSub")) + "</p>" +
+            '<div class="xt-qr"><div id="xt-qrslot"></div><button class="xt-copy" data-act="copy">' + escapeHtml(wt(L, "copyLink")) + "</button></div>" +
+            '<p class="xt-note">' + escapeHtml(wt(L, "noWallet")) + ' <a href="' + SAGE_WALLET_URL + '" target="_blank" rel="noopener noreferrer" style="color:' + scheme.from + '">' + escapeHtml(wt(L, "getSage")) + "</a></p>";
         } else {
-          body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">Opening your wallet connection…</p></div>';
+          body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">' + escapeHtml(wt(L, "opening")) + "</p></div>";
         }
       } else if (state.status === "pick") {
         var chips = cfg.presets.map(function (d) {
           var pressed = !state.useCustom && state.amount === d;
           return '<button class="xt-amount" data-act="preset" data-amt="' + d + '" aria-pressed="' + pressed + '"' + (pressed ? ' style="border-color:' + scheme.from + ';background:' + rgbaFromHex(scheme.from, 0.08) + '"' : "") + ">" + amountLabel(d) + "</button>";
         }).join("");
-        chips += '<button class="xt-amount" data-act="custom" aria-pressed="' + state.useCustom + '">Custom</button>';
+        chips += '<button class="xt-amount" data-act="custom" aria-pressed="' + state.useCustom + '">' + escapeHtml(wt(L, "custom")) + "</button>";
         var customRow = state.useCustom
-          ? '<div class="xt-custom-row"><input class="xt-input" type="number" min="0" step="any" placeholder="Enter amount" value="' + escapeHtml(state.customAmount) + '" data-act="custominput" aria-label="Custom amount" /><span class="xt-unit">' + unit + '</span></div>'
+          ? '<div class="xt-custom-row"><input class="xt-input" type="number" min="0" step="any" placeholder="' + escapeHtml(wt(L, "enterAmount")) + '" value="' + escapeHtml(state.customAmount) + '" data-act="custominput" aria-label="' + escapeHtml(wt(L, "enterAmount")) + '" /><span class="xt-unit">' + unit + '</span></div>'
           : "";
         var amt = currentAmount();
         body =
-          '<p class="xt-sub">Send ' + unit + ' straight to the recipient’s wallet — on-chain, no middleman.</p>' +
+          '<p class="xt-sub">' + escapeHtml(wt(L, "pickSub", { unit: unit })) + "</p>" +
           '<div class="xt-amounts">' + chips + "</div>" + customRow +
-          '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">Cancel</button>' +
-          '<button class="xt-action" style="' + accentStyle() + '" data-act="confirm"' + (amt > 0 ? "" : " disabled") + ">Send " + (amt > 0 ? amountLabel(amt) : unit) + " ♥</button></div>" +
-          '<p class="xt-fee">Includes a 0.1% network fee to xchtip.app.</p>' +
-          (isDigAsset(cfg.asset) ? getDigHtml(scheme.from) : "") +
-          '<button class="xt-disconnect" data-act="disconnect">Disconnect wallet</button>';
+          '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">' + escapeHtml(wt(L, "cancel")) + "</button>" +
+          '<button class="xt-action" style="' + accentStyle() + '" data-act="confirm"' + (amt > 0 ? "" : " disabled") + ">" + escapeHtml(wt(L, "send", { amt: amt > 0 ? amountLabel(amt) : unit })) + " ♥</button></div>" +
+          '<p class="xt-fee">' + escapeHtml(wt(L, "fee")) + "</p>" +
+          (isDigAsset(cfg.asset) ? getDigHtml(scheme.from, L) : "") +
+          '<button class="xt-disconnect" data-act="disconnect">' + escapeHtml(wt(L, "disconnect")) + "</button>";
       } else if (state.status === "preparing") {
-        body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">Preparing your ' + amountLabel(currentAmount()) + " tip…</p></div>";
+        body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">' + escapeHtml(wt(L, "preparing", { amt: amountLabel(currentAmount()) })) + "</p></div>";
       } else if (state.status === "sign") {
         body =
-          '<p class="xt-sub">Approve the ' + amountLabel(currentAmount()) + " tip in your wallet. This sends directly to the recipient — wallet to wallet.</p>" +
-          '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="backtopick">Back</button>' +
-          '<button class="xt-action" style="' + accentStyle() + '" data-act="sign">Sign &amp; send ♥</button></div>';
+          '<p class="xt-sub">' + escapeHtml(wt(L, "approveSub", { amt: amountLabel(currentAmount()) })) + "</p>" +
+          '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="backtopick">' + escapeHtml(wt(L, "back")) + "</button>" +
+          '<button class="xt-action" style="' + accentStyle() + '" data-act="sign">' + escapeHtml(wt(L, "signSend")) + " ♥</button></div>";
       } else if (state.status === "signing") {
-        body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">Waiting for your wallet to sign…</p></div>';
+        body = '<div class="xt-center"><div class="xt-spinner" style="border-top-color:' + scheme.from + '"></div><p class="xt-sub">' + escapeHtml(wt(L, "waiting")) + "</p></div>";
       } else if (state.status === "done") {
         body =
           '<span class="xt-done-heart" aria-hidden="true" style="color:' + scheme.from + '">♥</span>' +
-          '<p class="xt-sub" style="text-align:center">Tip sent! You sent <strong>' + amountLabel(currentAmount()) + "</strong> — broadcast to the Chia network.</p>" +
-          '<div class="xt-actions"><button class="xt-action" style="' + accentStyle() + '" data-act="close">Done</button></div>';
+          '<p class="xt-sub" style="text-align:center">' + escapeHtml(wt(L, "doneSub", { amt: amountLabel(currentAmount()) })) + "</p>" +
+          '<div class="xt-actions"><button class="xt-action" style="' + accentStyle() + '" data-act="close">' + escapeHtml(wt(L, "done")) + "</button></div>";
       } else if (state.status === "error") {
         var lowOnDig = isDigAsset(cfg.asset) && /not enough/i.test(state.error || "");
         body =
           '<p class="xt-err" role="alert">' + escapeHtml(state.error || "Something went wrong.") + "</p>" +
-          (lowOnDig ? getDigHtml(scheme.from) : "") +
-          '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">Close</button>' +
-          '<button class="xt-action" style="' + accentStyle() + '" data-act="retry">Try again</button></div>';
+          (lowOnDig ? getDigHtml(scheme.from, L) : "") +
+          '<div class="xt-actions"><button class="xt-action xt-secondary" data-act="close">' + escapeHtml(wt(L, "close")) + "</button>" +
+          '<button class="xt-action" style="' + accentStyle() + '" data-act="retry">' + escapeHtml(wt(L, "tryAgain")) + "</button></div>";
       }
 
       scrim.innerHTML = '<div class="xt-modal"><span style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,' + scheme.from + "," + scheme.to + ')"></span>' + closeBtn + header + body + "</div>";
@@ -919,7 +984,7 @@
 
     async function onAction(act, el) {
       if (act === "close") return close();
-      if (act === "copy") { try { await navigator.clipboard.writeText(state.uri || ""); el.textContent = "Copied!"; setTimeout(function () { el.textContent = "Copy connection link"; }, 1500); } catch (_) {} return; }
+      if (act === "copy") { try { await navigator.clipboard.writeText(state.uri || ""); el.textContent = wt(L, "copied"); setTimeout(function () { el.textContent = wt(L, "copyLink"); }, 1500); } catch (_) {} return; }
       if (act === "preset") { state.useCustom = false; state.amount = Number(el.dataset.amt); render(); return; }
       if (act === "custom") { state.useCustom = true; render(); return; }
       if (act === "backtopick") { state.status = "pick"; state.prepared = null; render(); return; }
@@ -997,6 +1062,7 @@
       size: el.dataset.size,
       variant: el.dataset.variant,
       symbol: el.dataset.symbol,
+      locale: el.dataset.locale,
     });
     if (!cfg.ok) {
       injectStyles();

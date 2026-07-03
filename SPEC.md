@@ -65,6 +65,7 @@ The generated snippet is a single self-contained script tag:
         data-size="md" | "lg"                          OPTIONAL (default md; lg = prominent tip-page button)
         data-variant="button" | "compact" | "card"     OPTIONAL (default button; the widget style)
         data-symbol="<TICKER>"                         OPTIONAL (CAT display symbol; overrides auto)
+        data-locale="<bcp47>"                          OPTIONAL (widget UI language; default = browser)
         data-wc-project-id="<projectId>"               OPTIONAL (defaults to xchtip.app's, build-injected)
         data-target="<css selector>"                   OPTIONAL (mount container; default: inline)
         async></script>
@@ -88,6 +89,9 @@ Attribute semantics:
   (a self-contained tip card with the recipient + pitch). Any other value → `button`.
 - `data-symbol` — a display symbol for a CAT (e.g. `DIG`), shown on the button + amounts. Overrides
   auto-detection; XCH is always `XCH`, the canonical DIG tail is `$DIG`, other CATs default to `CAT`.
+- `data-locale` — the widget UI language (a BCP-47 tag). Default: the visitor's browser language,
+  resolved to one of the 14 supported locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr,
+  vi, id, hi) with per-string English fallback. The tip page passes its active locale through.
 - **Brand glyph:** the button's leading glyph is chosen from the asset/scheme — a Chia leaf for XCH,
   the DIG mark for the $DIG CAT, and a heart for a custom-color scheme or any other CAT.
 - `data-wc-project-id` — a WalletConnect (Reown) projectId. Absent → the widget uses xchtip.app's own

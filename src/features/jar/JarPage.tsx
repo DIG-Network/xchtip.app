@@ -18,6 +18,7 @@ import { applyMeta } from "@/lib/meta";
 import { useCopy } from "@/components/useCopy";
 import { SITE_ORIGIN, EMBED_PATH } from "@/lib/constants";
 import { useT } from "@/i18n/useT";
+import { useLocale } from "@/i18n/I18nProvider";
 
 export interface JarPageProps {
   /** The parsed jar route result (valid config, or an error). */
@@ -72,6 +73,7 @@ export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
 // ── The valid jar: identity + suggested amounts + the live widget + the Chia story. ──────────────
 function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   const t = useT();
+  const { locale } = useLocale();
   // Prefer an explicit CAT symbol override; else the asset's auto symbol (XCH / $DIG / CAT).
   const symbol = config.symbol?.trim() || assetSymbol(config.asset);
   const displayName = config.name?.trim() || null;
@@ -110,7 +112,7 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
       </ul>
 
       {/* The real widget mounts here, preconfigured from the URL. */}
-      <JarWidget config={config} />
+      <JarWidget config={config} locale={locale} />
 
       <p className="jar-note">{t("jarNote")}</p>
       <p className="jar-fee">{t("feeNote")}</p>
@@ -163,7 +165,7 @@ function JarAddress({ recipient }: { recipient: string }) {
 // Mounts the canonical embed widget (/embed/xch-tip.js), preconfigured from the JarConfig, into a
 // container the page owns. Deterministic: attributes derive only from the config (which came only
 // from the URL). Rebuilt on config change; cleaned up on unmount.
-function JarWidget({ config }: { config: JarConfig; origin?: string }) {
+function JarWidget({ config, locale }: { config: JarConfig; origin?: string; locale: string }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -185,6 +187,8 @@ function JarWidget({ config }: { config: JarConfig; origin?: string }) {
     }
     if (config.label) script.setAttribute("data-label", config.label);
     if (config.symbol) script.setAttribute("data-symbol", config.symbol);
+    // The tip page's widget honors the page's active locale.
+    script.setAttribute("data-locale", locale);
     // A tip PAGE wants a prominent button — the widget's large size.
     script.setAttribute("data-size", "lg");
     // Mount into this container (the widget targets it).
@@ -194,7 +198,7 @@ function JarWidget({ config }: { config: JarConfig; origin?: string }) {
     return () => {
       mount.replaceChildren();
     };
-  }, [config]);
+  }, [config, locale]);
 
   return (
     <div className="jar-widget" data-testid="jar-widget" ref={mountRef}>

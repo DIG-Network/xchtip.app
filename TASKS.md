@@ -36,6 +36,22 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
   submodule (e.g. @dignetwork/wallet-emulator) for reuse across every frontend submodule (user
   request). Superproject + hub change — orchestrator owns .gitmodules + the extraction.
 
+## OPEN (2026-07-02, even later)
+
+- [ ] **Widget locale honoring** — the embed widget (xch-tip.js) is standalone JS with hardcoded
+      English. Add lightweight i18n: a small inline translation table for the widget's ~20 strings ×
+      14 locales + a wt(key) lookup; locale from data-locale attribute else navigator.language →
+      resolveOne. Translate the modal (Send a tip, amounts, Sign & send, errors, refill, disconnect).
+- [ ] **Widget iframe isolation (WC state across sites)** — ANSWER to the user: currently the widget
+      injects into the HOST page DOM (NOT an iframe), so its WalletConnect session lives in the HOST
+      site's partitioned localStorage → NOT shared across embedding domains (a connect on siteA is not
+      reused on siteB; browsers partition 3rd-party storage per top-level site). To share ONE WC
+      session across ALL embedding sites, render the widget's interactive/modal part in an IFRAME served
+      from https://xchtip.app (its own first-party origin storage). DESIGN + implement: a thin loader
+      script that injects the button, opens an xchtip.app iframe for the connect+sign flow, postMessage
+      between host↔iframe. Larger architectural change — scope carefully; keep the openness (embeddable,
+      no frame guards) + current data-* contract.
+
 ## OPEN (2026-07-02, later)
 
 - [ ] **Full internationalization** (like the hub, CLAUDE.md §6.6) — react-intl, externalize ALL copy
