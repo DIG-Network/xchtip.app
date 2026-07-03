@@ -36,7 +36,15 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
   submodule (e.g. @dignetwork/wallet-emulator) for reuse across every frontend submodule (user
   request). Superproject + hub change — orchestrator owns .gitmodules + the extraction.
 
-## LIVE BUGS (2026-07-02, P0)
+## LATEST (2026-07-02) — DONE + DEPLOYED
+
+- [x] **P0 tip signing**: wallet rejected coin_spends ("Expected string, received object") — wasm
+      returns byte objects; coinSpendToWallet now hex-encodes every field (toHexStr). fetchBalance no
+      longer calls the unsupported chip0002_getAssetBalance. Verified vs real wasm; live.
+- [x] **6 widget style variants**: button, compact, pill (outline), inline (text link), banner, card.
+      Builder picker + data-variant end-to-end; docs updated; each verified in a browser; deployed.
+
+## LIVE BUGS (2026-07-02, P0) — FIXED
 
 - [ ] **XCH balance mis-read**: "Not enough XCH: need 0.1, have 9.03e-7" with plenty of XCH. The XCH
       path filters owned coins by the ONE recovered inner puzzle hash (senderPh) — but coins live
