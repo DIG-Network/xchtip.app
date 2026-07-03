@@ -29,7 +29,7 @@ Parameters:
 - `color` (optional) — a custom 6-hex accent color, e.g. `#7a3dff`. Overrides `scheme` (sets custom).
 - `presets` (optional) — comma-separated preset amounts in whole units of the asset, e.g. `1,5,25`.
 - `label` (optional) — a custom button label.
-- `variant` (optional) — the widget style: `button` (default), `compact`, or `card`.
+- `variant` (optional) — the widget style: `button` (default), `compact`, `pill`, `inline`, `banner`, or `card`.
 - `symbol` (optional) — a CAT display symbol override (e.g. `DIG`); auto-detected otherwise.
 - `raw` (optional) — `1`/`true` → return the snippet as plain text only (raw mode).
 - `format` (optional) — `raw` is equivalent to `raw=1`.
@@ -79,7 +79,7 @@ The generated snippet is a single self-contained script tag served from `https:/
         data-amount-presets="1,5,25"     (optional)
         data-label="Tip"                 (optional)
         data-size="md"                   (optional: md | lg — lg = a prominent tip-page button)
-        data-variant="button"            (optional: button | compact | card — the widget style)
+        data-variant="button"            (optional: button|compact|pill|inline|banner|card)
         data-symbol="DIG"                (optional: CAT display symbol; auto-detected otherwise)
         async></script>
 ```

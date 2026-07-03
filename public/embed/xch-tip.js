@@ -20,7 +20,7 @@
  *     data-amount-presets="1,5,25"           (optional preset amounts, whole units of the asset)
  *     data-align="center"                    (optional: center|left|right; default center)
  *     data-size="md"                         (optional: md|lg; lg = a prominent tip-page button)
- *     data-variant="button"                  (optional: button|compact|card; the widget style)
+ *     data-variant="button"                  (optional: button|compact|pill|inline|banner|card)
  *     data-symbol="DIG"                      (optional: display symbol for a CAT; overrides auto)
  *     data-locale="ja"                       (optional: UI language; default = the visitor's browser)
  *     data-wc-project-id="<your projectId>"  (optional — defaults to xchtip.app's)
@@ -287,11 +287,17 @@
   function parseSize(raw) {
     return String(raw == null ? "" : raw).trim().toLowerCase() === "lg" ? "lg" : "md";
   }
-  // Widget style variant: "button" (default), "compact" (smaller inline pill), or "card" (a full
-  // tip card with the recipient + inline amount chips). Any other value → "button".
+  // Widget style variant. Any unknown value → "button".
+  //   button  — the default gradient pill button
+  //   compact — a smaller inline pill
+  //   pill    — a ghost/outline button (transparent, accent border) for text-heavy sites
+  //   inline  — a minimal inline text link ("♥ Tip in XCH")
+  //   banner  — a full-width bar (pitch text + button), for a page header/footer
+  //   card    — a self-contained tip card (recipient + pitch + button)
+  var WIDGET_VARIANTS = ["button", "compact", "pill", "inline", "banner", "card"];
   function parseVariant(raw) {
     var v = String(raw == null ? "" : raw).trim().toLowerCase();
-    return v === "compact" || v === "card" ? v : "button";
+    return WIDGET_VARIANTS.indexOf(v) >= 0 ? v : "button";
   }
 
   // decode a bech32m Chia address to its 32-byte puzzle hash hex (mirrors src/lib/bech32m.ts). Returns
@@ -399,6 +405,20 @@
       /* data-variant=compact: a smaller inline pill. */
       ".xt-btn.xt-compact{gap:6px;padding:7px 14px;font-size:13px}",
       ".xt-btn.xt-compact .xt-heart,.xt-btn.xt-compact .xt-glyph{font-size:13px}",
+      /* data-variant=pill: a ghost/outline button (transparent, accent border via inline box-shadow). */
+      ".xt-btn.xt-pill{background:transparent!important}",
+      ".xt-btn.xt-pill:hover{background:rgba(0,0,0,.04)!important}",
+      /* data-variant=inline: a minimal inline text link. */
+      ".xt-btn.xt-inline{margin:0;padding:2px 4px;gap:5px;border-radius:6px;background:transparent!important;box-shadow:none!important;font-size:inherit;text-decoration:underline;text-underline-offset:2px}",
+      ".xt-btn.xt-inline:hover{transform:none;background:rgba(0,0,0,.04)!important}",
+      /* data-variant=banner: a full-width bar with a pitch on the left + the button on the right. */
+      ".xt-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;",
+      "box-sizing:border-box;width:100%;padding:16px 20px;border-radius:14px;background:#12241f;color:#eef4f0;",
+      "border:1px solid #1e3630;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}",
+      ".xt-banner-text{display:flex;flex-direction:column;gap:2px;text-align:left;min-width:0}",
+      ".xt-banner-text strong{font-size:15px;font-weight:700;color:#fff}",
+      ".xt-banner-text span{font-size:12.5px;color:#a6bcb3}",
+      ".xt-banner .xt-btn{margin:0;flex:0 0 auto}",
       ".xt-heart{font-size:15px;line-height:1}",
       ".xt-glyph{display:inline-block;width:1em;height:1em;line-height:1;flex:0 0 auto;vertical-align:-.125em}",
       ".xt-btn-label{display:inline-block}",
@@ -877,21 +897,30 @@
     if (scriptEl.dataset.target) { try { mountTarget = document.querySelector(scriptEl.dataset.target); } catch (_) {} }
 
     // The trigger button — its class encodes size + variant so the CSS styles each variant. The
-    // leading glyph is brand-aware (Chia leaf / DIG mark / heart). The card variant wraps the button
-    // in a small card with the recipient + a one-line pitch (still opening the same tip flow on click).
+    // leading glyph is brand-aware (Chia leaf / DIG mark / heart). Variants that change the button's
+    // OWN look (pill=ghost/outline, inline=text link) skip the gradient fill; wrapper variants
+    // (banner, card) place the default button inside a larger surface.
+    var v = cfg.variant;
+    var variantClass = { compact: " xt-compact", pill: " xt-pill", inline: " xt-inline" }[v] || "";
     var btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "xt-btn" + (cfg.size === "lg" ? " xt-lg" : "") + (cfg.variant === "compact" ? " xt-compact" : "");
+    btn.className = "xt-btn" + (cfg.size === "lg" ? " xt-lg" : "") + variantClass;
     btn.setAttribute("aria-haspopup", "dialog");
-    btn.style.background = "linear-gradient(135deg," + scheme.from + " 0%," + scheme.to + " 100%)";
-    btn.style.color = scheme.text;
-    btn.style.boxShadow = "0 6px 18px " + scheme.shadow;
+    if (v === "pill" || v === "inline") {
+      // Ghost / text styles: no gradient fill; the accent tints the border/text.
+      btn.style.color = scheme.from;
+      if (v === "pill") btn.style.boxShadow = "inset 0 0 0 1.5px " + scheme.from;
+    } else {
+      btn.style.background = "linear-gradient(135deg," + scheme.from + " 0%," + scheme.to + " 100%)";
+      btn.style.color = scheme.text;
+      btn.style.boxShadow = "0 6px 18px " + scheme.shadow;
+    }
     btn.innerHTML = glyph + '<span class="xt-btn-label">' + escapeHtml(cfg.label) + "</span>";
 
     var wrap = document.createElement("div");
     wrap.className = "xt-wrap" + (cfg.align === "left" ? " xt-align-left" : cfg.align === "right" ? " xt-align-right" : "");
 
-    if (cfg.variant === "card") {
+    if (v === "card") {
       var card = document.createElement("div");
       card.className = "xt-card";
       card.style.setProperty("--xt-accent", scheme.from);
@@ -905,6 +934,17 @@
       card.appendChild(btn);
       card.insertAdjacentHTML("beforeend", '<div class="xt-card-note">On-chain, wallet to wallet. Includes a 0.1% fee to xchtip.app.</div>');
       wrap.appendChild(card);
+    } else if (v === "banner") {
+      // A full-width bar: a short pitch on the left, the button on the right.
+      var banner = document.createElement("div");
+      banner.className = "xt-banner";
+      banner.style.setProperty("--xt-accent", scheme.from);
+      var pitch = document.createElement("div");
+      pitch.className = "xt-banner-text";
+      pitch.innerHTML = '<strong>Support this creator</strong><span>Tip in ' + escapeHtml(unit) + " on Chia — wallet to wallet.</span>";
+      banner.appendChild(pitch);
+      banner.appendChild(btn);
+      wrap.appendChild(banner);
     } else {
       wrap.appendChild(btn);
     }

@@ -235,6 +235,9 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
             [
               ["button", t("variantButton")],
               ["compact", t("variantCompact")],
+              ["pill", t("variantPill")],
+              ["inline", t("variantInline")],
+              ["banner", t("variantBanner")],
               ["card", t("variantCard")],
             ] as [WidgetVariant, string][]
           ).map(([value, text]) => (

@@ -226,8 +226,9 @@ describe("buildEmbedSnippet", () => {
 
   it("emits data-variant only when it is not the default button", () => {
     expect(buildEmbedSnippet(base)).not.toContain("data-variant");
-    expect(buildEmbedSnippet({ ...base, variant: "card" })).toContain('data-variant="card"');
-    expect(buildEmbedSnippet({ ...base, variant: "compact" })).toContain('data-variant="compact"');
+    for (const v of ["compact", "pill", "inline", "banner", "card"] as const) {
+      expect(buildEmbedSnippet({ ...base, variant: v })).toContain(`data-variant="${v}"`);
+    }
   });
 
   it("emits data-symbol when a CAT symbol is set", () => {

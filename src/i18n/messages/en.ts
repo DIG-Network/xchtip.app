@@ -58,6 +58,9 @@ export const en = {
   variantHelp: "How the tip widget looks where it's embedded.",
   variantButton: "Button",
   variantCompact: "Compact",
+  variantPill: "Outline",
+  variantInline: "Text link",
+  variantBanner: "Banner",
   variantCard: "Tip card",
 
   symbolLabel: "Token symbol (optional)",

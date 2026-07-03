@@ -35,12 +35,22 @@ export interface TipConfig {
 }
 
 /** The selectable widget style. */
-export type WidgetVariant = "button" | "compact" | "card";
+export type WidgetVariant = "button" | "compact" | "pill" | "inline" | "banner" | "card";
+
+/** The selectable widget styles, in display order. */
+export const WIDGET_VARIANTS: readonly WidgetVariant[] = [
+  "button",
+  "compact",
+  "pill",
+  "inline",
+  "banner",
+  "card",
+];
 
 /** Normalize a raw variant selector to a WidgetVariant (default `button`). */
 export function parseVariant(value: unknown): WidgetVariant {
   const v = String(value == null ? "" : value).trim().toLowerCase();
-  return v === "compact" || v === "card" ? v : "button";
+  return (WIDGET_VARIANTS as readonly string[]).includes(v) ? (v as WidgetVariant) : "button";
 }
 
 /** The result of validating raw inputs into a TipConfig. */
