@@ -17,6 +17,26 @@ on infra change); (B) build + sync + invalidate on every content change (CI or m
 
 ## A. Provision infra (Terraform)
 
+**State persistence.** Terraform state lives in the shared ecosystem **remote S3 backend** (bucket
+`dighub-tfstate`, key `xchtip.app/prod/terraform.tfstate`) with a DynamoDB lock (`dighub-tflock`), so
+it **persists across every run** — CI and local alike — and concurrent runs are serialized by the
+lock. State is NEVER kept on a runner's ephemeral disk: each run does `terraform init
+-backend-config=…` against that same S3 key, reading + writing the one durable state object.
+
+### CI (automatic)
+
+`deploy.yml` runs a **`terraform` job before the site sync**: it assumes the OIDC deploy role, runs
+`terraform init` against the remote backend above, then `terraform apply -auto-approve`. Because the
+backend is the shared S3 bucket, the run picks up the exact state the previous run left — additive
+applies, no re-creation. The job is GATED on `CI_DEPLOY_ROLE_ARN`: absent, it no-ops cleanly (infra
+is then provisioned manually, below). The apply's `shortener_api_endpoint` output is passed to the
+build as `VITE_SHORTENER_API` so the "Create short link" affordance is baked into the SPA.
+
+The backend location is overridable via repo vars `TF_STATE_BUCKET` / `TF_LOCK_TABLE` (defaulting to
+`dighub-tfstate` / `dighub-tflock`).
+
+### Manual (same backend — same persistent state)
+
 Prereqs: Terraform ≥ 1.5, AWS creds for account 873139760123 (ambient credentials or a profile).
 
 ```bash
@@ -29,6 +49,9 @@ terraform init -reconfigure \
 terraform plan -out=xchtip.tfplan
 terraform apply xchtip.tfplan
 ```
+
+Because the manual and CI paths use the **same** `-backend-config`, they share one state object — a
+local apply and a CI apply never diverge.
 
 The ACM cert is DNS-validated automatically: Terraform writes the validation CNAME(s) into the
 delegated zone and `aws_acm_certificate_validation` waits for validation (completes in ~1–2 min once

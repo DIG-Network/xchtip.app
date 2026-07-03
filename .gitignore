@@ -17,6 +17,7 @@ terraform/*.tfstate
 terraform/*.tfstate.*
 terraform/*.tfplan
 terraform/.terraform.lock.hcl.bak
+terraform/.build/
 
 # env / secrets (WalletConnect projectId is build-time injected — NEVER commit)
 .env

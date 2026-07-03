@@ -1,14 +1,19 @@
 name: deploy
 
-# Build the static SPA and replace the S3 site bucket contents, then invalidate CloudFront.
-# GATED so it stays green before infra is provisioned: without the infra repo vars the build is
-# verified and the sync is skipped (a clean no-op).
+# Provision infra (Terraform) + build the static SPA + replace the S3 site bucket contents +
+# invalidate CloudFront. GATED so it stays green before infra is provisioned: without the infra repo
+# vars the build is verified and the apply/sync are skipped (a clean no-op).
+#
+# TERRAFORM STATE PERSISTS ACROSS RUNS via the shared remote S3 backend (bucket `dighub-tfstate`,
+# key `xchtip.app/prod/terraform.tfstate`, DynamoDB lock `dighub-tflock`) — every run does
+# `terraform init -backend-config=…` against that SAME S3 key, so state is read/written in S3, never
+# on the ephemeral runner disk; the DynamoDB lock serializes concurrent runs. See runbooks/deploy.md.
 on:
   push:
     branches: [main]
   workflow_dispatch: {}
 
-# Serialize deploys so two runs never race on `s3 sync --delete`.
+# Serialize deploys so two runs never race on the terraform state lock or `s3 sync --delete`.
 concurrency:
   group: xchtip-deploy
   cancel-in-progress: false
@@ -19,10 +24,74 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
+  # The shared ecosystem remote-state backend (durable across runs). Overridable via repo vars.
+  TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET || 'dighub-tfstate' }}
+  TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE || 'dighub-tflock' }}
+  TF_STATE_KEY: xchtip.app/prod/terraform.tfstate
 
 jobs:
+  # ── Infra: terraform init (remote state) + apply. State lives in S3 and PERSISTS across runs. ──
+  terraform:
+    name: terraform apply (remote state)
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      applied: ${{ steps.tf.outputs.applied }}
+      shortener_api: ${{ steps.tf.outputs.shortener_api }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: check infra gate
+        id: gate
+        env:
+          ROLE: ${{ vars.CI_DEPLOY_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          # Terraform runs only when a deploy role is configured (it needs AWS creds + the S3 backend).
+          if [ -n "${ROLE:-}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=xchtip.app terraform::CI_DEPLOY_ROLE_ARN not set — skipping terraform (infra provisioned manually per runbooks/deploy.md)."
+          fi
+
+      - name: configure aws (oidc)
+        if: steps.gate.outputs.ready == 'true'
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: ${{ vars.CI_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: setup terraform
+        if: steps.gate.outputs.ready == 'true'
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: "1.9.8"
+
+      - name: terraform init + apply (persistent remote state)
+        id: tf
+        if: steps.gate.outputs.ready == 'true'
+        working-directory: terraform
+        env:
+          XCHTIP_WC_PROJECT_ID: ${{ secrets.XCHTIP_WC_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          # Point at the SHARED S3 backend so state persists across every CI run (never local disk).
+          terraform init -input=false -reconfigure \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="dynamodb_table=${TF_LOCK_TABLE}" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="key=${TF_STATE_KEY}"
+          terraform apply -input=false -auto-approve
+          echo "applied=true" >> "$GITHUB_OUTPUT"
+          # Surface the shortener create-endpoint so the build can bake it into the SPA
+          # (VITE_SHORTENER_API). Empty when the shortener is disabled — the UI hides it then.
+          api="$(terraform output -raw shortener_api_endpoint 2>/dev/null || true)"
+          echo "shortener_api=${api}" >> "$GITHUB_OUTPUT"
+
   deploy:
     name: build + sync + invalidate
+    needs: terraform
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -37,6 +106,9 @@ jobs:
         env:
           # The WalletConnect projectId is baked into dist/embed/xch-tip.js at build (never committed).
           XCHTIP_WC_PROJECT_ID: ${{ secrets.XCHTIP_WC_PROJECT_ID }}
+          # The shortener create-endpoint (from the terraform job's output) → baked into the SPA so the
+          # builder's "Create short link" affordance is live. Empty ⇒ the UI hides it (graceful).
+          VITE_SHORTENER_API: ${{ needs.terraform.outputs.shortener_api }}
         run: npm run build
 
       - name: check deploy gates
