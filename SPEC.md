@@ -179,7 +179,7 @@ configs always mint the identical URL:
 ```
 /jar/<recipient>                 recipient bech32m xch address (path segment; canonical lowercase)
   ?asset=<64-hex CAT id>         only when the asset is a CAT (omitted for XCH)
-  &scheme=purple                 only for the purple scheme (green is the default)
+  &scheme=purple|orange          only for a named non-green scheme (green is the default)
   &color=%23rrggbb               only for a custom accent (implies the custom scheme)
   &presets=<a,b,c>               only when custom amount presets are set
   &label=<text>                  only when a custom button label is set
@@ -231,6 +231,28 @@ rounded, fixed 100×100 box, `onerror` → fallback); otherwise the Chia leaf (X
 (NEVER a broken image). The medallion is decorative (`aria-hidden`) — the asset is already named
 in the adjacent text.
 
+**Personalized link-preview card (crawler-visible).** Every `/jar/<recipient>` URL carries its OWN
+Open Graph/Twitter card, not the site-wide default `og.png`:
+
+- **Image** — `og:image`/`twitter:image` point at `/og?recipient=&name=&asset=&scheme=&logo=` (§6c),
+  carrying exactly the params needed to reproduce the SAME card a human visitor sees (recipient,
+  asset, display name, scheme/custom color, symbol override, custom logo).
+- **Text** — `<title>`/description mirror the page's own heading/description text (English; see §6c
+  "Text is not localized").
+- **Two delivery layers, same values, different audiences:**
+  1. A JS-executing visitor's own browser tab: `JarPage` calls `applyMeta()` (`lib/meta.ts`) in a
+     `useEffect`, mutating `document.head` client-side — this is what a screen reader / the tab
+     title / a same-tab bookmark sees, and it reverts to the site default on unmount (SPA nav never
+     leaves a stale card).
+  2. A crawler that NEVER executes JS (Facebook/Twitter/Discord/Slack/most link-unfurlers): the
+     `/jar/*` CloudFront behavior routes to a dedicated Lambda (`lambda/jar-meta`) that fetches the
+     site's own built `index.html` and rewrites its `<head>` tags server-side (`lib/htmlMeta.ts`)
+     BEFORE the response reaches the client — so the crawler gets the personalized card with zero
+     JS execution. A real browser's `<body>`/bundle reference is byte-identical; only `<head>` meta
+     differs, so hydration/routing is completely unaffected. An invalid/unparsable jar link (bad or
+     missing recipient) is served the unmodified default shell — the SPA still renders its own
+     client-side error state (§6a "invalid/missing recipient").
+
 ## 6b. Embed-preview route (`/embed-preview`)
 
 `GET /embed-preview?<params>` is a minimal, CHROMELESS route whose sole purpose is to be **iframed
@@ -276,6 +298,58 @@ Behavior:
   — the CloudFront default behavior applies no such header to any route).
 
 Example: `https://xchtip.app/embed-preview?recipient=xch1...&asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
+
+## 6c. Per-recipient OG/Twitter-card image (`/og`)
+
+`GET /og?recipient=&name=&asset=&scheme=&color=&symbol=&logo=` MUST return `200 image/png`, exactly
+**1200×630** pixels (the standard `summary_large_image` size), for ANY combination of params —
+never a 4xx/5xx, never a broken/blank image. Params mirror the jar/builder contract (§6/§6a); every
+field fails soft to the same green/XCH/chia-leaf default an empty jar config renders.
+
+**Card contents**, drawn from the resolved model (heading, address, pitch, scheme, mark):
+
+- **Heading** — the sanitized `name` (§5 `data-name` sanitization: whitespace-collapsed,
+  control-chars stripped, capped at 64 chars), or the generic "Send a tip" when absent.
+- **Address** — the `recipient`, shortened for display (`xch1qyqs…s0wg4qq`); omitted entirely when
+  no `recipient` is given.
+- **Pitch** — `Tip me in <symbol>`, where `<symbol>` is a `symbol` override or the auto-detected
+  display symbol for `asset` (XCH / $DIG / HOA / CAT — §2).
+- **Color** — the resolved scheme's gradient/surface palette (§4), via the EXACT SAME
+  `resolveScheme()`/`deriveSurfaces()` the jar page and widget paint with — a `$DIG` card
+  (`scheme=purple` or `asset=` the $DIG CAT id together with `scheme=purple`, as the builder's $DIG
+  preset emits) is never visually distinguishable in hue from the live jar page. The asset mark's
+  own fixed brand gradient (the $DIG disc, the HOA disc) and the page `scheme` resolve
+  INDEPENDENTLY, exactly as everywhere else in the app (§4) — asset and scheme are separate params.
+- **Mark** — the SAME precedence as `resolveAssetGlyph` (§6a "Coin hero mark"): a valid `logo=` URL
+  wins (fetched + embedded server-side — see below), else the built-in Chia-leaf/DIG/HOA mark (drawn
+  from the SAME vector path data as the browser's `<AssetGlyph>`, `lib/brandMarks.ts`, so the two
+  are pixel-identical, never just "the same decision"), else a single-letter monogram fallback for
+  an unrecognized CAT with no logo. Satori has no bundled color-emoji font, so the HOA 🍊 mark is
+  drawn as a colored "H" monogram on the card (a documented simplification — the resolution
+  precedence itself is unchanged).
+- **Custom logo (`logo=`)** — an `https://` URL is fetched SERVER-SIDE (size-capped at 300 kB,
+  4-second timeout) and re-embedded as a `data:` URI (satori/resvg have no browser `<img>` loader,
+  so this must happen before rendering); a `data:image/*` value is used as-is. ANY failure — network
+  error, timeout, non-2xx, a non-`image/*` content-type, or an oversized body — falls back to the
+  built-in mark, never a broken image and never a hard error.
+- **Text is not localized.** The pitch/heading text on the image itself is always English,
+  regardless of the visitor's locale — the image is a static raster the visitor's browser cannot
+  re-render per-locale. (The jar PAGE around it is still fully localized, §13.)
+
+**Rendering**: satori (JSX/HTML-shaped element tree → SVG, with the same bundled Inter font weights
+the site uses) + `@resvg/resvg-js` (SVG → PNG rasterization) — `lambda/og-image`. The pure
+param→model mapping, sanitization, custom-logo fetch/fail-soft, and the satori element-tree shape
+are ALL in `src/lib/ogCard.ts` (unit-tested with plain vitest, no satori/resvg/AWS import); the
+Lambda handler is thin AWS glue only.
+
+**Caching**: the response carries `Cache-Control: public, max-age=31536000, immutable` — a given
+querystring's rendered PNG never changes — and CloudFront's cache key includes the FULL querystring
+(every param above), so two different recipients/schemes/logos never collide in the cache.
+
+**Transport**: a CloudFront `/og` behavior fronts a Lambda Function URL (`AWS_IAM` auth, invocable
+ONLY via this distribution's Origin Access Control — never a bare public URL). See `terraform/og.tf`.
+
+Example: `https://xchtip.app/og?recipient=xch1...&asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
 
 ## 7. Raw plain-text endpoint (`/embed.txt`)
 
@@ -335,11 +409,15 @@ Every tip carries a **0.1% protocol fee** paid to the xchtip.app fee address
 - The fee output is a first-class coin created on the first selected coin's conditions (a CAT coin of
   the same asset for a CAT tip). It is signed + broadcast atomically with the recipient output.
 - The fee is CLEARLY disclosed to the tipper, not buried: the tip modal shows an "Includes a 0.1%
-  network fee to xchtip.app" line BEFORE the Send/Cancel actions (read before committing to send,
-  not as an easy-to-miss afterthought below the button), and the builder + jar page carry the same
-  disclosure as legible secondary text near the button (not hidden fine print). No surface claims
-  the tip itself is "free" — copy describing the tool (e.g. the header tagline) refers to using
-  xchtip.app (no signup/account), never to the tip being fee-less.
+  fee to xchtip.app, plus a small XCH network fee" line BEFORE the Send/Cancel actions (read before
+  committing to send, not as an easy-to-miss afterthought below the button), and the builder + jar
+  page carry the equivalent disclosure ("A 0.1% fee supports xchtip.app; plus a small XCH network
+  fee — the rest goes straight to the recipient") as legible secondary text near the button (not
+  hidden fine print). The wording NAMES the two fees SEPARATELY — the 0.1% platform fee this section
+  defines, and Chia's own separate, unrelated on-chain network fee — never conflating "network fee"
+  with the amount xchtip.app receives. No surface claims the tip itself is "free" — copy describing
+  the tool (e.g. the header tagline) refers to using xchtip.app (no signup/account), never to the
+  tip being fee-less.
 
 ## 9. WalletConnect projectId injection
 
@@ -372,7 +450,22 @@ possible:
 Static SPA built by Vite to `dist/`, synced to a private S3 bucket, served via CloudFront (Origin
 Access Control) with a DNS-validated ACM cert (us-east-1) for `xchtip.app` (+ `www`). Route53 records
 live in the existing hosted zone `Z05614961P7OR8IWYYF3` (read as a data source; never created here).
-The CloudFront distribution is dualstack (A + AAAA), `http2and3`, `PriceClass_All`. See
+The CloudFront distribution is dualstack (A + AAAA), `http2and3`, `PriceClass_All`.
+
+Two Lambda Function URLs sit behind dedicated CloudFront behaviors, each fronted by its own Origin
+Access Control (`origin_access_control_origin_type = "lambda"`, `AWS_IAM` function-URL auth) so
+neither is invocable except through this distribution:
+
+- **`/og`** (§6c) — `lambda/og-image`, Node 20.x, bundled with esbuild (satori + `@resvg/resvg-js`;
+  the native `@resvg/resvg-js-linux-x64-gnu` addon requires building on a linux/x64 host — CI does
+  this; a local/manual apply needs the same, see `runbooks/deploy.md`).
+- **`/jar/*`** (§6a "Personalized link-preview card") — `lambda/jar-meta`, Node 20.x, pure JS/TS (no
+  native deps, any OS builds it identically). It fetches the site's OWN built `index.html` over
+  HTTPS from `SITE_ORIGIN` (the SAME distribution's default behavior → S3) rather than reading S3
+  directly, so it needs NO AWS SDK / IAM S3 permissions — only outbound network access.
+
+Both are built (`npm ci && npm run build` inside each `lambda/*` package) BEFORE `terraform apply`,
+which zips each `dist/` directly (`terraform/og.tf`, `terraform/jar-meta.tf`). See
 `runbooks/deploy.md`.
 
 ## 12. Accessibility + machine-friendliness

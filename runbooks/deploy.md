@@ -25,12 +25,40 @@ lock. State is NEVER kept on a runner's ephemeral disk: each run does `terraform
 
 ### CI (automatic)
 
-`deploy.yml` runs a **`terraform` job before the site sync**: it assumes the OIDC deploy role, runs
-`terraform init` against the remote backend above, then `terraform apply -auto-approve`. Because the
-backend is the shared S3 bucket, the run picks up the exact state the previous run left — additive
-applies, no re-creation. The job is GATED on `CI_DEPLOY_ROLE_ARN`: absent, it no-ops cleanly (infra
-is then provisioned manually, below). The apply's `shortener_api_endpoint` output is passed to the
-build as `VITE_SHORTENER_API` so the "Create short link" affordance is baked into the SPA.
+`deploy.yml` runs a **`terraform` job before the site sync**: it assumes the OIDC deploy role, builds
+the two edge Lambdas (below), runs `terraform init` against the remote backend above, then
+`terraform apply -auto-approve`. Because the backend is the shared S3 bucket, the run picks up the
+exact state the previous run left — additive applies, no re-creation. The job is GATED on
+`CI_DEPLOY_ROLE_ARN`: absent, it no-ops cleanly (infra is then provisioned manually, below). The
+apply's `shortener_api_endpoint` output is passed to the build as `VITE_SHORTENER_API` so the
+"Create short link" affordance is baked into the SPA.
+
+**Build prerequisite — the `/og` + `/jar/*` edge Lambdas (#221).** `terraform/og.tf` and
+`terraform/jar-meta.tf`'s `archive_file` data sources zip `lambda/og-image/dist/` and
+`lambda/jar-meta/dist/` directly — those directories MUST exist and be freshly built BEFORE
+`terraform apply` (`deploy.yml` does this as a dedicated step before the terraform step):
+
+```bash
+cd lambda/og-image  && npm ci && npm run build && cd ../..   # satori + @resvg/resvg-js
+cd lambda/jar-meta   && npm ci && npm run build && cd ../..   # pure JS/TS, no native deps
+```
+
+`lambda/og-image` has a REAL native-addon dependency (`@resvg/resvg-js`) — `npm ci` MUST run on a
+linux/x64 (glibc) host so npm resolves the `@resvg/resvg-js-linux-x64-gnu` optional dependency
+matching the `nodejs20.x` Lambda runtime. CI runs on `ubuntu-latest`, so this is automatic there. For
+a local/manual apply on Windows/macOS, build it in Docker instead:
+
+```bash
+docker run --rm -v "$PWD/lambda/og-image:/w" -w /w node:20-slim bash -c "npm ci && npm run build"
+```
+
+(`lambda/jar-meta` has no native deps — `npm ci && npm run build` works identically on any OS.)
+
+Each package also has a `npm run smoke` script that builds AND exercises the built bundle end-to-end
+with no AWS required (og-image: a real satori/resvg render of every scheme + a custom logo, written
+to `.smoke-out/*.png` for a visual spot-check; jar-meta: a stubbed-`fetch` index.html rewrite,
+asserting the injected `<head>` tags) — run it after a build to confirm the artifact actually works
+before trusting it to `terraform apply`.
 
 The backend location is overridable via repo vars `TF_STATE_BUCKET` / `TF_LOCK_TABLE` (defaulting to
 `dighub-tfstate` / `dighub-tflock`).
@@ -119,6 +147,15 @@ curl -sI https://xchtip.app/ | head            # 200, text/html
 curl -sI https://xchtip.app/embed/xch-tip.js | grep -i access-control-allow-origin   # *
 curl -s "https://xchtip.app/embed.txt?recipient=xch1...&asset=xch"                    # text/plain snippet
 curl -s https://xchtip.app/llms.txt | head
+
+# #221 — the per-recipient OG image (§6c SPEC.md): 200, image/png, 1200x630.
+curl -sI "https://xchtip.app/og?recipient=xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq&name=Alice&asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple" | head
+
+# #221 — the per-jar crawler-visible <head> meta (§6a "Personalized link-preview card"): the
+# returned HTML's og:image/title are PERSONALIZED (no browser/JS involved — this is exactly what a
+# non-JS crawler sees).
+curl -s "https://xchtip.app/jar/xch1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs0wg4qq?name=Alice&asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple" \
+  | grep -Eo '<title>[^<]*</title>|og:image" content="[^"]*"'
 ```
 
 Before DNS resolves you can test against the CloudFront domain

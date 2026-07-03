@@ -12,7 +12,14 @@
 #   • Long/immutable cache for the content-hashed build assets.
 
 locals {
-  s3_origin_id = "s3-${var.s3_bucket}"
+  s3_origin_id       = "s3-${var.s3_bucket}"
+  og_image_origin_id = "lambda-og-image"
+  jar_meta_origin_id = "lambda-jar-meta"
+
+  # A Lambda Function URL looks like `https://<url-id>.lambda-url.<region>.on.aws/` — CloudFront's
+  # custom-origin `domain_name` wants the bare host, no scheme/trailing slash (og.tf / jar-meta.tf).
+  og_image_origin_domain = trimsuffix(trimprefix(aws_lambda_function_url.og_image.function_url, "https://"), "/")
+  jar_meta_origin_domain = trimsuffix(trimprefix(aws_lambda_function_url.jar_meta.function_url, "https://"), "/")
 }
 
 # --- S3 bucket (private; CloudFront-only via OAC) -----------------------------------------------
@@ -212,6 +219,32 @@ resource "aws_cloudfront_distribution" "site" {
     origin_access_control_id = aws_cloudfront_origin_access_control.site.id
   }
 
+  # The per-recipient OG/Twitter-card image Lambda (#221 item 1 — og.tf).
+  origin {
+    domain_name              = local.og_image_origin_domain
+    origin_id                = local.og_image_origin_id
+    origin_access_control_id = aws_cloudfront_origin_access_control.og_image.id
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # The /jar/* per-recipient <head> meta injection Lambda (#221 item 2 — jar-meta.tf).
+  origin {
+    domain_name              = local.jar_meta_origin_domain
+    origin_id                = local.jar_meta_origin_id
+    origin_access_control_id = aws_cloudfront_origin_access_control.jar_meta.id
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
   # Default behavior: the SPA (HTML + hashed assets). Permissive CORS, no frame guard.
   default_cache_behavior {
     target_origin_id       = local.s3_origin_id
@@ -254,6 +287,32 @@ resource "aws_cloudfront_distribution" "site" {
     cache_policy_id            = data.aws_cloudfront_cache_policy.optimized.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.embed_open.id
     compress                   = true
+  }
+
+  # #221 item 1 — GET /og?recipient=&name=&asset=&scheme=&logo= -> a 1200x630 image/png (og.tf). No
+  # response-headers policy: the Lambda itself sets the full correct header set (content-type,
+  # long-immutable Cache-Control, permissive CORS) — see lambda/og-image/src/handler.ts.
+  ordered_cache_behavior {
+    path_pattern           = "/og"
+    target_origin_id       = local.og_image_origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    cache_policy_id        = aws_cloudfront_cache_policy.og_image.id
+    compress               = true
+  }
+
+  # #221 item 2 — GET /jar/<recipient>?... -> the static SPA shell with a PERSONALIZED <head>
+  # (jar-meta.tf). Takes priority over the default behavior's 403/404->index.html SPA fallback, so
+  # a crawler unfurling a jar link sees the per-recipient card without ever needing to run JS.
+  ordered_cache_behavior {
+    path_pattern           = "/jar/*"
+    target_origin_id       = local.jar_meta_origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    cache_policy_id        = aws_cloudfront_cache_policy.jar_meta.id
+    compress               = true
   }
 
   # SPA routing: any non-asset path (deep links, /?params) serves index.html (the SPA reads the URL).

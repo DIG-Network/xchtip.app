@@ -78,7 +78,21 @@ end-to-end, an `HOA` jar warm orange, XCH green, a custom `color` tints the same
 own hue. The asset's logo (or a custom `logo=` mark) renders as a prominent hero medallion under
 the intro copy.
 
+Sharing a jar link produces a PERSONALIZED link-preview card, not the site-wide default image: the
+`<head>` (title/description/Open Graph/Twitter) is rewritten server-side per recipient — even for a
+crawler that never executes JS — and `og:image`/`twitter:image` point at the matching `/og` image
+below, in the SAME color scheme and mark as the live page.
+
 Example: `https://xchtip.app/jar/xch1...?asset=a406d3a9de984d03c9591c10d917593b434d5263cabe2b42f6b367df16832f81&scheme=purple&name=Alice`
+
+## Per-recipient link-preview image (`/og`)
+
+`https://xchtip.app/og?recipient=<xch1...>&name=<text>&asset=<xch|catId>&scheme=<green|purple|orange|hex>&logo=<url>`
+returns a `1200x630 image/png` — the personalized Open Graph/Twitter card image for a jar link, in
+the SAME color scheme and coin mark as the live tip page (same params as the jar page, §above). A
+custom `logo=` URL is fetched and embedded server-side; any failure falls back to the built-in mark.
+Every jar page's `og:image`/`twitter:image` already points here — this endpoint is documented for an
+integrator who wants to generate their own preview image for a recipient without visiting the page.
 
 ## Embed preview (for integrators embedding a live preview)
 
@@ -124,6 +138,7 @@ domain, and the site imposes no frame/embedding restrictions.
 
 - Builder: https://xchtip.app/
 - Tip page (per recipient): https://xchtip.app/jar/<recipient>
+- Per-recipient link-preview image: https://xchtip.app/og?recipient=<recipient>
 - Embed preview (iframe target): https://xchtip.app/embed-preview
 - Embed script: https://xchtip.app/embed/xch-tip.js
 - Sitemap: https://xchtip.app/sitemap.xml

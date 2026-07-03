@@ -47,3 +47,28 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # The two edge Lambdas (#221) are their own npm packages (not part of the root `src/` TS project —
+  # tsconfig.app.json only includes `src`), so they get their own typecheck + smoke build here. The
+  # smoke scripts exercise the BUILT bundle end-to-end (real satori/resvg render for og-image; a
+  # stubbed-fetch index.html rewrite for jar-meta) with no AWS required.
+  lambdas:
+    name: og-image + jar-meta Lambdas (typecheck + smoke build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+      - name: og-image — typecheck + smoke
+        working-directory: lambda/og-image
+        run: |
+          npm ci
+          npm run typecheck
+          npm run smoke
+      - name: jar-meta — typecheck + smoke
+        working-directory: lambda/jar-meta
+        run: |
+          npm ci
+          npm run typecheck
+          npm run smoke
