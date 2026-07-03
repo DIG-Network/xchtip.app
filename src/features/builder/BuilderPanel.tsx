@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import { useBuilder, type BuilderForm as Form } from "./useBuilder";
 import { BuilderForm } from "./BuilderForm";
 import { TipButtonPreview } from "./TipButtonPreview";
+import { ShortLink } from "./ShortLink";
 import { CopyField } from "@/components/CopyField";
 import { parseAsset } from "@/lib/embed";
 import { resolveScheme } from "@/lib/schemes";
@@ -66,8 +67,20 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
           />
         </section>
 
-        <section className="builder-output" aria-label="Embed code and shareable links">
+        <section className="builder-output" aria-label="Share and embed options">
           <p className="eyebrow">{S.embedEyebrow}</p>
+
+          {/* Simplest path first: a ready-to-share hosted tip page (no embedding needed). */}
+          {derived.ok && derived.jarLink && (
+            <div className="output-block">
+              <h2 className="output-heading">{S.jarLinkHeading}</h2>
+              <p className="output-help">{S.jarLinkHelp}</p>
+              <CopyField value={derived.jarLink} label={S.jarLinkLabel} valueTestId="jar-link" />
+            </div>
+          )}
+
+          {/* Optional: shorten it to a *.xchtip.app link (hidden if the service isn't configured). */}
+          {derived.ok && derived.jarLink && <ShortLink target={derived.jarLink} />}
 
           <div className="output-block">
             <h2 className="output-heading">{S.snippetHeading}</h2>

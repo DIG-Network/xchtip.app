@@ -688,6 +688,255 @@ legend.field-label {
   color: var(--gold);
 }
 
+/* ============================================================= Short-link (builder) ===== */
+.shortlink-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.shortlink-btn {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gold-line);
+  background: var(--gold-soft);
+  color: var(--gold-hi);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
+}
+.shortlink-btn::before {
+  content: "🔗";
+  font-size: 0.9em;
+}
+.shortlink-btn:hover:not(:disabled) {
+  background: rgba(245, 182, 66, 0.22);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.shortlink-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.shortlink-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.82rem;
+}
+
+/* ============================================================= Tip-jar landing page ===== */
+/* The recipient's standalone, deterministic tip page — one spotlit card, centered. */
+.jar-brand-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  text-decoration: none;
+}
+.jar-main {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: clamp(36px, 7vh, 80px) 24px 64px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.jar-card {
+  width: 100%;
+  text-align: center;
+  border-radius: calc(var(--radius) + 6px);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--ink-2), var(--well));
+  padding: 44px 34px 38px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.jar-card::before {
+  content: "";
+  position: absolute;
+  inset: -30% 8% auto 8%;
+  height: 360px;
+  background: radial-gradient(52% 100% at 50% 0%, var(--gold-soft), transparent 72%);
+  z-index: -1;
+}
+.jar-eyebrow {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--gold);
+  margin: 0 0 10px;
+}
+.jar-heading {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-size: clamp(1.8rem, 5.4vw, 2.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+  color: var(--paper);
+  overflow-wrap: break-word;
+}
+.jar-sub {
+  margin: 0 auto 24px;
+  max-width: 42ch;
+  color: var(--paper-dim);
+  font-size: 1.02rem;
+}
+.jar-asset {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* Recipient chip — click to copy the full address */
+.jar-address {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 26px;
+  padding: 9px 15px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--well);
+  max-width: 100%;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.jar-address:hover,
+.jar-address:focus-visible {
+  border-color: var(--gold-line);
+}
+.jar-address-to {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+}
+.jar-address code {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  color: var(--paper);
+}
+.jar-address-copy {
+  color: var(--gold);
+  font-size: 0.95rem;
+}
+
+/* Suggested amounts (display-only echo of the widget's presets) */
+.jar-amounts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 0 0 26px;
+  padding: 0;
+}
+.jar-amount {
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-2);
+  background: var(--ink-3);
+  color: var(--paper-dim);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* the real widget mounts here; center the injected button + give it presence */
+.jar-widget {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 76px;
+  margin: 4px 0 10px;
+}
+.jar-widget-target {
+  display: inline-flex;
+}
+.jar-note {
+  margin: 20px auto 0;
+  max-width: 40ch;
+  font-size: 0.82rem;
+  color: var(--paper-faint);
+}
+
+/* Why Chia — the honest value story */
+.jar-benefits {
+  list-style: none;
+  margin: 30px 0 0;
+  padding: 26px 0 0;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 18px;
+  text-align: left;
+}
+@media (min-width: 520px) {
+  .jar-benefits {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+.jar-benefits li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.jar-benefits strong {
+  font-size: 0.9rem;
+  color: var(--paper);
+}
+.jar-benefits span {
+  font-size: 0.82rem;
+  color: var(--paper-faint);
+  line-height: 1.5;
+}
+
+/* Invalid jar link — a clean, deterministic dead-end */
+.jar-error {
+  width: 100%;
+  text-align: center;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  padding: 48px 32px;
+}
+.jar-error-title {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--paper);
+}
+.jar-error-body {
+  margin: 0 auto 24px;
+  max-width: 46ch;
+  color: var(--paper-dim);
+  font-size: 0.98rem;
+}
+.jar-error-cta {
+  color: var(--gold);
+  font-weight: 700;
+  text-decoration: none;
+}
+.jar-error-cta:hover {
+  color: var(--gold-hi);
+}
+
 /* Raw mode keeps its own inline styling (see RawSnippet.tsx) — no chrome. */
 
 @media (prefers-reduced-motion: reduce) {

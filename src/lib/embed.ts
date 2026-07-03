@@ -88,6 +88,13 @@ export function defaultLabelFor(asset: Asset): string {
   return "Send a tip";
 }
 
+/** The short display symbol for an asset: `XCH`, `$DIG`, or `CAT` (a generic CAT). */
+export function assetSymbol(asset: Asset): string {
+  if (asset.kind === "xch") return "XCH";
+  if (isDigAsset(asset)) return "$DIG";
+  return "CAT";
+}
+
 /**
  * parsePresets — "1,5,25" → [1,5,25]. Drops non-positive / non-numeric entries; an empty /
  * all-invalid list returns null (the widget then uses the asset defaults). XCH presets may be

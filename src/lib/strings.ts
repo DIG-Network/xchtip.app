@@ -60,12 +60,50 @@ export const S = {
   linkHelp: "This link pre-fills the builder. Add &raw=1 to get the snippet as plain text.",
   rawLinkLabel: "Raw snippet URL",
 
+  // Tip-jar share link (in the builder output)
+  jarLinkHeading: "Your tip page",
+  jarLinkHelp:
+    "A ready-to-share page with your button — no site or embedding needed. All the settings live in " +
+    "the link, so it works anywhere. Add a display name below to personalize it.",
+  jarLinkLabel: "Tip page URL",
+  jarNameLabel: "Display name (optional)",
+  jarNameHelp: "Shown on your tip page (e.g. your name or project). Leave blank for a generic page.",
+  jarNamePlaceholder: "e.g. Alice, or Café Zoë",
+  shortLinkHeading: "Short link",
+  shortLinkHelp: "Turn the long tip-page link into a short xchtip.app link that's easy to share.",
+  shortLinkButton: "Create short link",
+  shortLinkCreating: "Creating…",
+  shortLinkError: "Couldn't create a short link right now. Your full tip-page link above always works.",
+
   // Errors
   fixErrors: "Fix the highlighted fields to generate a snippet.",
 
   // Footer
   poweredBy: "Runs on Chia. Wallet connection via WalletConnect.",
   digNetwork: "A DIG Network dapp",
+
+  // ── Tip-jar landing page (a recipient's standalone, deterministic page) ──
+  jarHeaderTag: "A Chia tip page",
+  jarEyebrow: "Send a tip",
+  jarHeadingNamed: "Tip {name}",
+  jarHeadingGeneric: "Send a tip",
+  jarSub: "On-chain, wallet to wallet — the recipient keeps 100%. Paid in",
+  jarTo: "To",
+  jarCopyAddress: "Copy the full address",
+  jarAmountsLabel: "Suggested amounts",
+  jarNote: "Connect a Chia wallet to send. Nothing moves until you approve it in your wallet.",
+  jarBenefit1Title: "Fees are pennies",
+  jarBenefit1Body: "Chia transactions cost a fraction of a cent — nearly all of your tip lands.",
+  jarBenefit2Title: "Straight to their wallet",
+  jarBenefit2Body: "No account, no platform cut, no middleman holding the funds.",
+  jarBenefit3Title: "You stay in control",
+  jarBenefit3Body: "You sign every tip in your own wallet. Nothing leaves without your approval.",
+  jarFooterCta: "Make your own tip page →",
+  jarErrorTitle: "This tip link isn't valid.",
+  jarErrorBody:
+    "The address or settings in this link are incomplete or malformed, so there's nothing to tip to. " +
+    "Ask for a fresh link, or make your own.",
+  jarErrorCta: "Build a tip page →",
 } as const;
 
 export type StringKey = keyof typeof S;

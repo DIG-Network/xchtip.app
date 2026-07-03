@@ -6,6 +6,7 @@ import {
   isDigAsset,
   defaultPresetsFor,
   parsePresets,
+  assetSymbol,
   escapeHtmlAttr,
   validateConfig,
   buildEmbedSnippet,
@@ -62,6 +63,11 @@ describe("assetToAttr / isDigAsset / defaultPresetsFor", () => {
     expect(isDigAsset({ kind: "cat", assetId: DIG_ASSET_ID })).toBe(true);
     expect(isDigAsset({ kind: "cat", assetId: CAT })).toBe(false);
     expect(isDigAsset({ kind: "xch" })).toBe(false);
+  });
+  it("shows the display symbol per asset", () => {
+    expect(assetSymbol({ kind: "xch" })).toBe("XCH");
+    expect(assetSymbol({ kind: "cat", assetId: DIG_ASSET_ID })).toBe("$DIG");
+    expect(assetSymbol({ kind: "cat", assetId: CAT })).toBe("CAT");
   });
   it("uses XCH defaults for xch, DIG defaults for CATs", () => {
     expect(defaultPresetsFor({ kind: "xch" })).toEqual([0.1, 0.5, 1]);

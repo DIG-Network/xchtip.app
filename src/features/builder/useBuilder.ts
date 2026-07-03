@@ -10,6 +10,7 @@ import {
   hasBuilderParams,
   type ValidationErrors,
 } from "@/lib/embed";
+import { jarUrl } from "@/lib/jar";
 import { SITE_ORIGIN } from "@/lib/constants";
 import { DIG_ASSET_ID } from "@/lib/constants";
 
@@ -25,6 +26,8 @@ export interface BuilderForm {
   color: string;
   presets: string;
   label: string;
+  /** Display name shown on the shareable tip-jar page (optional). */
+  name: string;
 }
 
 /** The derived, read-only outputs of the builder. */
@@ -34,6 +37,8 @@ export interface BuilderDerived {
   errors: ValidationErrors;
   builderLink: string | null;
   rawLink: string | null;
+  /** The deterministic, shareable tip-jar page URL (`<origin>/jar/<recipient>?…`). */
+  jarLink: string | null;
 }
 
 const DEFAULT_FORM: BuilderForm = {
@@ -44,6 +49,7 @@ const DEFAULT_FORM: BuilderForm = {
   color: "#7a3dff",
   presets: "",
   label: "",
+  name: "",
 };
 
 // The wire `asset` value for a given asset choice + custom CAT id.
@@ -151,14 +157,24 @@ export function useBuilder(initial?: BuilderForm, origin: string = SITE_ORIGIN):
       origin,
     );
     if (!result.ok) {
-      return { ok: false, snippet: null, errors: result.errors, builderLink: null, rawLink: null };
+      return {
+        ok: false,
+        snippet: null,
+        errors: result.errors,
+        builderLink: null,
+        rawLink: null,
+        jarLink: null,
+      };
     }
+    const name = form.name.trim();
     return {
       ok: true,
       snippet: result.snippet,
       errors: {},
       builderLink: buildBuilderLink(form, origin, false),
       rawLink: buildBuilderLink(form, origin, true),
+      // The deterministic hosted tip-jar page for this config (canonical /jar/<recipient>?… URL).
+      jarLink: jarUrl({ ...result.config, name: name === "" ? null : name }, origin),
     };
   }, [form, origin]);
 

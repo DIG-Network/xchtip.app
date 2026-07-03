@@ -211,6 +211,27 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
           autoComplete="off"
         />
       </div>
+
+      {/* Display name — shown on the shareable tip page (does not affect the embed button). */}
+      <div className="field">
+        <label htmlFor="name" className="field-label">
+          {S.jarNameLabel}
+        </label>
+        <p id="name-help" className="field-help">
+          {S.jarNameHelp}
+        </p>
+        <input
+          id="name"
+          type="text"
+          className="field-input"
+          data-testid="input-name"
+          value={form.name}
+          placeholder={S.jarNamePlaceholder}
+          onChange={(e) => setField("name", e.target.value)}
+          aria-describedby="name-help"
+          autoComplete="off"
+        />
+      </div>
     </form>
   );
 }

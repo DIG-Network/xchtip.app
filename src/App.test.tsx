@@ -30,4 +30,20 @@ describe("App", () => {
     render(<App search={`?recipient=${XCH}&asset=xch&format=raw`} origin="https://xchtip.test" />);
     expect(screen.getByTestId("raw-snippet")).toHaveAttribute("data-ok", "true");
   });
+
+  it("routes /jar/<recipient> to the tip-jar page (no builder)", () => {
+    render(<App pathname={`/jar/${XCH}`} search="" origin="https://xchtip.test" />);
+    expect(screen.getByTestId("jar-widget")).toBeInTheDocument();
+    expect(screen.queryByTestId("input-recipient")).not.toBeInTheDocument();
+  });
+
+  it("routes an invalid jar path to the jar error state", () => {
+    render(<App pathname="/jar/xch1bogus" search="" origin="https://xchtip.test" />);
+    expect(screen.getByTestId("jar-error")).toBeInTheDocument();
+  });
+
+  it("keeps the builder on the root path", () => {
+    render(<App pathname="/" search="" origin="https://xchtip.test" />);
+    expect(screen.getByTestId("input-recipient")).toBeInTheDocument();
+  });
 });

@@ -12,6 +12,7 @@ const baseForm: Form = {
   color: "#7a3dff",
   presets: "",
   label: "",
+  name: "",
 };
 
 function setup(overrides: Partial<Form> = {}, errors = {}) {
