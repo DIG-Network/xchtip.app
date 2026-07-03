@@ -52,18 +52,23 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
       bundle (missing variant preview etc.). terraform: default behavior → short cache policy +
       html_open sets max-age=60 must-revalidate. Apply required.
 
-## OPEN (2026-07-02, newest batch)
+## OPEN (2026-07-02, newest batch) — ALL DONE + DEPLOYED
 
-- [ ] **SECURITY: do NOT truncate addresses** — middle-truncation (shortenMiddle on the jar chip, the
-      card variant's shortAddr) enables lookalike-address spoofing (attacker matches head+tail). Show
-      the FULL address everywhere (wrap/monospace, still copyable). Remove shortenMiddle from display.
-- [ ] **Widget shows detected balance** of the asset it's sending (query the connected wallet balance
-      for XCH / the CAT, show it on the amount screen so the tipper sees what they have).
-- [ ] **Dual-audience UX (world-class)** — the tip PAGE (non-devs) is hidden behind clicks while the
-      embed code (devs) is prominent → non-devs may leave thinking it's not for them. Redesign the
-      builder output so BOTH paths are obvious at a glance: two clear side-by-side/segmented offers —
-      "Share your tip page" (for everyone) and "Embed on your site" (for developers) — each labeled by
-      audience + outcome. Make the tip-page path at least as prominent as the embed snippet.
+- [x] **SECURITY: no address truncation** — DONE (341a5e6): jar chip + widget card show the FULL
+      address, wrapped/monospace, click-to-copy; removed shortenMiddle from display.
+- [x] **Widget shows detected balance** — DONE (341a5e6): chip0002_getAssetBalance (else summed
+      coins) on the amount screen, localized in all 14 widget locales.
+- [x] **Dual-audience UX** — DONE (341a5e6): two labeled paths — "FOR ANYONE · Share your tip page"
+      (gold primary, Visit CTA + short link) and "FOR DEVELOPERS · Embed on your site" (snippet +
+      links). Both prominent at a glance. Live-verified.
+
+## STILL OPEN — for a future session / orchestrator
+
+- [ ] **CAT multi-address selection** — the CAT path still selects coins at a single inner address
+      (senderCatPh). Like the XCH fix, select across all the wallet's CAT coins for the asset with
+      per-coin inner-key recovery. (XCH multi-address is fixed; CAT works when the CAT is at the
+      primary address — same limitation the hub has.)
+- [ ] **Widget iframe isolation** (WC session shared across embedding sites) — see design note above.
 
 ## OPEN (2026-07-02, even later)
 
