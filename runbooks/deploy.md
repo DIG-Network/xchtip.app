@@ -80,11 +80,17 @@ no-ops cleanly (stays green pre-provisioning).
 
 ```bash
 export XCHTIP_WC_PROJECT_ID=<the WalletConnect projectId>   # optional; else the widget needs data-wc-project-id
+export VITE_SHORTENER_API=https://api.xchtip.app            # optional; enables the "Create short link" UI
 npm ci
 npm run build                                                # → dist/ (+ SEO gate + WC projectId injection)
 aws s3 sync dist "s3://xchtip-app-site" --delete
 aws cloudfront create-invalidation --distribution-id <ID> --paths '/*'
 ```
+
+Distribution id: `E36TX1HU0RTI0D`. The shortener API (`https://api.xchtip.app`) + `*.xchtip.app`
+redirect are provisioned by Terraform (`enable_shortener = true`); `terraform output shortener_api_endpoint`
+is the value for `VITE_SHORTENER_API`. NOTE: `/embed/xch-tip.js` is served with a SHORT revalidating
+cache (not immutable) so widget updates reach embedders — always invalidate `/*` after a deploy.
 
 ## Secrets / env
 

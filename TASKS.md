@@ -38,6 +38,16 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
 
 ## OPEN (2026-07-02, later)
 
+- [ ] **Full internationalization** (like the hub, CLAUDE.md §6.6) — react-intl, externalize ALL copy
+      (strings.ts already centralizes it) to a message catalog with stable ids, the ecosystem's 14
+      locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr, vi, id, hi), locale detection +
+      a language selector + persisted choice, numbers/dates/plurals via intl, preserve brand/scheme
+      literals ($DIG, XCH, chia://). A completeness test that every locale covers every id. IN PROGRESS.
+- [x] **Shortener LIVE + integrated** — terraform applied (api.xchtip.app + *.xchtip.app 301);
+      VITE_SHORTENER_API baked; "Create short link" visible on the live builder; POST /shorten → short
+      url verified; short link 301→jar verified. Embed cache header fixed (max-age=300 revalidate).
+- [x] **DIG refill link + Disconnect wallet + CAT sender-key-from-XCH** — DONE (b47f34c), deployed.
+
 - [x] **P0 root cause = STALE CACHE, not the fix.** The uncurry fix IS correct — PROVEN in Node
       against a real synthetic key + the standard puzzle reveal (standardSpend(pk,inner).puzzle),
       matching hub lib/chia-address.ts syntheticPkHexFromCoinPuzzle exactly (recovered pk === expected).
