@@ -1,0 +1,14 @@
+{
+  "name": "xchtip.app — Chia tip buttons",
+  "short_name": "xchtip.app",
+  "description": "Embeddable Chia tip buttons for XCH or any CAT. On-chain, wallet to wallet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1512",
+  "theme_color": "#0b1512",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" }
+  ]
+}

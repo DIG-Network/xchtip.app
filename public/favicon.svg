@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="xchtip.app">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7a3dff"/>
-      <stop offset="1" stop-color="#ff00de"/>
+      <stop offset="0" stop-color="#ffcf6a"/>
+      <stop offset="1" stop-color="#f5b642"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="#16131f"/>
+  <rect width="64" height="64" rx="14" fill="#0b1512"/>
   <path fill="url(#g)" d="M32 50c-1 0-2-.4-2.7-1.1L15.6 35.2a10 10 0 0 1 14.1-14.1L32 23.4l2.3-2.3a10 10 0 0 1 14.1 14.1L34.7 48.9A3.8 3.8 0 0 1 32 50z"/>
 </svg>
