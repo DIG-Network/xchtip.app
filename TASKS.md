@@ -124,10 +124,14 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
       (green/purple/orange + a custom-logo URL all spot-checked from the live endpoint); a
       crawler-style no-JS fetch of `/jar/<r>?asset=<digCat>&scheme=purple&name=Alice` returns the
       personalized `<title>Tip Alice in $DIG · xchtip.app</title>` + og:image/twitter:image pointing
-      at the matching `/og?...`. (First-apply note: the /og + /jar/* behaviors serve the SPA
-      index.html for a few minutes post-apply until the Lambda resource policy + OAC signing
-      converge — documented in runbooks/deploy.md.) Folded in the fee-line honesty nit (jar/builder
-      + the widget's OWN
+      at the matching `/og?...`. (Two real deploy bugs were found + fixed live, NOT propagation —
+      see commits 7a0a70d + ac98000: (1) a CloudFront OAC + Lambda Function URL needs BOTH
+      `lambda:InvokeFunctionUrl` AND `lambda:InvokeFunction` resource-policy grants — og.tf/jar-meta.tf
+      originally granted only the former, so the Function URL's AWS_IAM authorizer 403'd every
+      CloudFront request before the function ran; (2) the distribution-wide custom_error_response
+      (403/404->200 /index.html) applied to ALL origins, masking those Lambda 403s as a 200 SPA page
+      — replaced with edge SPA routing in the CloudFront Function. Both documented in
+      runbooks/deploy.md.) Folded in the fee-line honesty nit (jar/builder + the widget's OWN
       14-locale modal catalog in `public/embed/xch-tip.js`): reworded from "network fee goes to
       xchtip.app" (conflated the platform cut with Chia's separate on-chain fee) to "A 0.1% fee
       supports xchtip.app; plus a small XCH network fee — the rest goes straight to the recipient."
