@@ -36,9 +36,21 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
   submodule (e.g. @dignetwork/wallet-emulator) for reuse across every frontend submodule (user
   request). Superproject + hub change — orchestrator owns .gitmodules + the extraction.
 
-## New user requests (2026-07-02) — in priority order
+## New user requests (2026-07-02) — status
 
-- [ ] **BUG (P0): widget tip fails** — "Could not read your wallet's signing key from its coins."
+- [x] **BUG (P0): widget tip fails** — FIXED (e5fbfe1): synthetic-pk via uncurry().args[0].toAtom().
+- [x] **Live preview = REAL working widget, grayed until recipient** — DONE (52e5850): LiveWidgetPreview.
+- [x] **Brand logo on the button** — DONE (52e5850): Chia leaf (XCH) / DIG mark (\$DIG) / heart (custom).
+- [x] **CAT symbol auto-detect + override** — DONE (52e5850): Dexie→Spacescan, useCatSymbol, override field.
+- [x] **Tip page URL: Visit (new tab) + Copy** — DONE (52e5850).
+- [x] **Widget style variants (compact/button/card)** — DONE (52e5850): data-variant + picker.
+- [x] **0.1% protocol fee + subtle disclosure** — DONE (25c3565).
+- [x] **All loading/error/empty/disabled states** — applied across builder/jar/shortlink/live-preview.
+      (GLOBAL CLAUDE.md rule generalization flagged to orchestrator — out of xchtip scope.)
+
+### Original P0 detail (kept for reference)
+
+- [x] **BUG (P0): widget tip fails** — "Could not read your wallet's signing key from its coins."
       In `public/embed/xch-tip.js` `readSenderKey()` — the standard-puzzle synthetic-pk parse path
       doesn't match what the wallet returns. Reproduce, fix the parse (regression), reinstall/redeploy.
 - [ ] **Live preview = the REAL working widget** — the builder's preview should be the actual
