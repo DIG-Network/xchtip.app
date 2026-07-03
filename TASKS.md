@@ -57,6 +57,17 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
       a manual OVERRIDE field. Graceful fallback to "CAT" on lookup failure. Loading/error states.
 - [ ] **Tip page URL actions** — the builder's "Tip page URL" row gets a "Visit" action (opens the
       jar page in a new tab) IN ADDITION to a "Copy" button; rename the copy label to just "Copy".
+- [ ] **Widget style variants** — a selectable widget STYLE: compact button, regular button (current),
+      tip card, etc. New `data-variant` (append-only) on the widget + a style picker in the builder +
+      live preview per variant + jar page uses card. Document in SPEC/llms.
+
+## Batched widget work (design coherently — single-writer on xch-tip.js)
+
+These all touch the embed widget + builder; do as one coherent design pass:
+brand logos (XCH=Chia leaf, $DIG=D mark, custom=heart) · style variants (compact/button/card) ·
+CAT symbol auto-detect (Spacescan/Dexie + override) · live preview = real widget (grayed until
+recipient) · loading/error states everywhere. Author clean inline SVGs for the glyphs (the dig.net
+brand SVGs use gradient-defs/raster <image> — not inline-friendly). E2E via hub wallet-emulator.
 
 TEST HARNESS (user-provided): use the WalletConnect emulator + test credentials in
 modules/services/hub.dig.net (apps/web/tests/integration/) against LIVE mainnet to E2E-verify the
