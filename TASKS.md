@@ -36,6 +36,35 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
   submodule (e.g. @dignetwork/wallet-emulator) for reuse across every frontend submodule (user
   request). Superproject + hub change — orchestrator owns .gitmodules + the extraction.
 
+## LIVE BUGS (2026-07-02, P0)
+
+- [ ] **XCH balance mis-read**: "Not enough XCH: need 0.1, have 9.03e-7" with plenty of XCH. The XCH
+      path filters owned coins by the ONE recovered inner puzzle hash (senderPh) — but coins live
+      across MANY derived addresses, so it sums only coins at coin[0]'s address (a dust coin). FIX:
+      sum/select across all returned XCH coins that have a usable puzzle reveal (the wallet only
+      returns spendable coins it owns), signing each with its own recovered key — OR select across all
+      and group by their own puzzle. Mirror how a real wallet selects across the HD set.
+- [ ] **BigInt JSON serialize on CAT**: "Do not know how to serialize a BigInt" — a BigInt reaches
+      JSON.stringify in the CAT path (coinset request body or WC params: fee/amount/coin.amount as
+      BigInt). FIX: convert all BigInt to Number/String before any JSON.stringify (coinsetPost bodies,
+      createCoin amounts already BigInt for wasm are fine; the wire bodies must be numbers/strings).
+- [x] **HTML cache fix**: index.html had no Cache-Control → CDN long-cached it → users kept the OLD
+      bundle (missing variant preview etc.). terraform: default behavior → short cache policy +
+      html_open sets max-age=60 must-revalidate. Apply required.
+
+## OPEN (2026-07-02, newest batch)
+
+- [ ] **SECURITY: do NOT truncate addresses** — middle-truncation (shortenMiddle on the jar chip, the
+      card variant's shortAddr) enables lookalike-address spoofing (attacker matches head+tail). Show
+      the FULL address everywhere (wrap/monospace, still copyable). Remove shortenMiddle from display.
+- [ ] **Widget shows detected balance** of the asset it's sending (query the connected wallet balance
+      for XCH / the CAT, show it on the amount screen so the tipper sees what they have).
+- [ ] **Dual-audience UX (world-class)** — the tip PAGE (non-devs) is hidden behind clicks while the
+      embed code (devs) is prominent → non-devs may leave thinking it's not for them. Redesign the
+      builder output so BOTH paths are obvious at a glance: two clear side-by-side/segmented offers —
+      "Share your tip page" (for everyone) and "Embed on your site" (for developers) — each labeled by
+      audience + outcome. Make the tip-page path at least as prominent as the embed snippet.
+
 ## OPEN (2026-07-02, even later)
 
 - [x] **Widget locale honoring** — DONE (3d16ea9, deployed): data-locale + navigator.language, inline

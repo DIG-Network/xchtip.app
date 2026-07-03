@@ -177,6 +177,17 @@ resource "aws_cloudfront_response_headers_policy" "html_open" {
     origin_override = true
   }
 
+  # index.html + machine files live at STABLE urls whose content changes on deploy (index.html points
+  # at the new content-hashed bundle each build). They MUST revalidate — otherwise a cached index.html
+  # keeps loading the OLD bundle and users never get new features. Short max-age + must-revalidate.
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=60, must-revalidate, stale-while-revalidate=86400"
+      override = true
+    }
+  }
+
   security_headers_config {
     content_type_options {
       override = true
@@ -203,11 +214,13 @@ resource "aws_cloudfront_distribution" "site" {
 
   # Default behavior: the SPA (HTML + hashed assets). Permissive CORS, no frame guard.
   default_cache_behavior {
-    target_origin_id           = local.s3_origin_id
-    viewer_protocol_policy     = "redirect-to-https"
-    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
-    cached_methods             = ["GET", "HEAD"]
-    cache_policy_id            = data.aws_cloudfront_cache_policy.optimized.id
+    target_origin_id       = local.s3_origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    # SHORT edge TTL so index.html (which references the new content-hashed bundle each deploy)
+    # revalidates quickly — the hashed /assets/* keep their own long-immutable behavior below.
+    cache_policy_id            = aws_cloudfront_cache_policy.embed_short.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.html_open.id
     compress                   = true
 

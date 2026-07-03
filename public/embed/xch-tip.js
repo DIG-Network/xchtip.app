@@ -580,12 +580,17 @@
     return res.json().catch(function () { return {}; });
   }
   function fix0x(h) { return h && !String(h).startsWith("0x") ? "0x" + h : h; }
+  // Coin amounts from the wasm are BigInt; the WC request params + the coinset /push_tx body are
+  // JSON-serialized, and JSON.stringify THROWS on a BigInt ("Do not know how to serialize a BigInt").
+  // Normalize amounts to a JS Number here (the single choke point both spend paths flow through) —
+  // Chia coin amounts in a tip are well within Number's safe integer range.
+  function toNum(v) { return typeof v === "bigint" ? Number(v) : Number(v); }
   function coinSpendToWallet(cs) {
     return {
       coin: {
         parent_coin_info: cs.coin.parent_coin_info != null ? cs.coin.parent_coin_info : cs.coin.parentCoinInfo,
         puzzle_hash: cs.coin.puzzle_hash != null ? cs.coin.puzzle_hash : cs.coin.puzzleHash,
-        amount: cs.coin.amount,
+        amount: toNum(cs.coin.amount),
       },
       puzzle_reveal: cs.puzzle_reveal != null ? cs.puzzle_reveal : cs.puzzleReveal,
       solution: cs.solution,
@@ -646,24 +651,32 @@
     var coins = Array.isArray(entries) ? entries : (entries.coins || []);
     if (!coins.length) throw new Error("Your wallet holds no XCH. Add XCH and try again.");
 
-    var sender = await resolveSenderFromXch(wallet, chia, clvm);
-    if (!sender) throw new Error("Could not read your wallet's signing key from its coins.");
-    var senderPhBytes = chia.fromHex(sender.innerPh);
-    var senderPh = sender.innerPh;
-
-    var owned = coins.filter(function (e) {
-      var ph = strip0x((e.coin && (e.coin.puzzle_hash || e.coin.puzzleHash)) || "");
-      if (ph !== senderPh) return false;
+    // Every spendable XCH coin the wallet returns is ours — select across ALL of them (they may live
+    // at many HD addresses / synthetic keys), NOT just one address. Each coin carries its OWN standard
+    // puzzle reveal, from which we recover that coin's OWN synthetic key to sign it. Change returns to
+    // the first selected coin's own address.
+    function prOf(e) { return (e && (e.puzzle || e.puzzleReveal || e.puzzle_reveal)) || null; }
+    var spendable = coins.filter(function (e) {
+      if (!prOf(e)) return false;
       if (((e.spent_block_index != null ? e.spent_block_index : e.spentBlockIndex) || 0) !== 0 || e.locked) return false;
       return true;
     });
-    owned.sort(function (a, b) { return (BigInt(b.coin.amount) - BigInt(a.coin.amount) > 0n ? 1 : -1); });
+    if (!spendable.length) throw new Error("Your wallet didn't return spendable XCH coins. Reconnect and try again.");
+    spendable.sort(function (a, b) { return (BigInt(b.coin.amount) - BigInt(a.coin.amount) > 0n ? 1 : -1); });
+
+    var total = 0n;
+    for (var t = 0; t < spendable.length; t++) total += BigInt(spendable[t].coin.amount);
 
     var selected = [];
     var sum = 0n;
-    for (var i = 0; i < owned.length && sum < need; i++) { selected.push(owned[i]); sum += BigInt(owned[i].coin.amount); }
-    if (sum < need) throw new Error("Not enough XCH: need " + (Number(need) / XCH_MOJOS_PER_XCH) + " XCH, have " + (Number(sum) / XCH_MOJOS_PER_XCH) + " XCH.");
+    for (var i = 0; i < spendable.length && sum < need; i++) { selected.push(spendable[i]); sum += BigInt(spendable[i].coin.amount); }
+    if (sum < need) throw new Error("Not enough XCH: need " + (Number(need) / XCH_MOJOS_PER_XCH) + " XCH, have " + (Number(total) / XCH_MOJOS_PER_XCH) + " XCH.");
     var change = sum - need;
+
+    // Recover the FIRST selected coin's key/address — change (+ the outputs are made on coin 0) go here.
+    var lead = readSenderKeyFromReveal(chia, clvm, prOf(selected[0]));
+    if (!lead) throw new Error("Could not read your wallet's signing key from its coins.");
+    var leadPhBytes = chia.fromHex(lead.innerPh);
 
     // 0.1% protocol fee → the fee address; the recipient gets the remainder. No fee coin if too small.
     var split = splitFee(need);
@@ -676,17 +689,30 @@
         hex0xToBytes(e.coin.puzzle_hash != null ? e.coin.puzzle_hash : e.coin.puzzleHash),
         BigInt(e.coin.amount)
       );
+      // Each coin is signed with ITS OWN synthetic key (coins may span HD addresses).
+      var signer = j === 0 ? lead : (readSenderKeyFromReveal(chia, clvm, prOf(e)) || lead);
       var conditions = [];
       if (j === 0) {
         conditions.push(clvm.createCoin(chia.fromHex(recipient), split.net, clvm.nil()));
         if (split.fee > 0n && feePh) conditions.push(clvm.createCoin(chia.fromHex(feePh), split.fee, clvm.nil()));
-        if (change > 0n) conditions.push(clvm.createCoin(senderPhBytes, change, clvm.nil()));
+        if (change > 0n) conditions.push(clvm.createCoin(leadPhBytes, change, clvm.nil()));
       }
       var delegated = clvm.delegatedSpend(conditions);
-      clvm.spendStandardCoin(coin, sender.pk, delegated);
+      clvm.spendStandardCoin(coin, signer.pk, delegated);
     }
     var wasmCoinSpends = clvm.coinSpends();
     return { coin_spends: wasmCoinSpends.map(coinSpendToWallet) };
+  }
+
+  // Recover { pk, innerPh } from a single standard puzzle reveal (per-coin key). Returns null if the
+  // reveal isn't a standard p2 puzzle.
+  function readSenderKeyFromReveal(chia, clvm, puzzleRevealHex) {
+    if (!puzzleRevealHex) return null;
+    var pkBytes = recoverSyntheticPk(chia, clvm, puzzleRevealHex);
+    if (!pkBytes || pkBytes.length !== 48) return null;
+    var pk = chia.PublicKey.fromBytes(pkBytes);
+    var innerPhBytes = chia.standardPuzzleHash ? chia.standardPuzzleHash(pk) : clvm.standardPuzzle(pk).puzzleHash();
+    return { pk: pk, innerPh: strip0x(chia.toHex(innerPhBytes)) };
   }
 
   // Build unsigned CAT coin spends sending `baseUnits` of `assetId` to `recipientPh`. Faithful port of
