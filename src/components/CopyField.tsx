@@ -4,7 +4,7 @@
 // change is announced via aria-live, the region is labelled, and the value is selectable text.
 
 import { useCallback, useRef, useState } from "react";
-import { S } from "@/lib/strings";
+import { useT } from "@/i18n/useT";
 
 export interface CopyFieldProps {
   /** The text to display + copy. */
@@ -20,6 +20,7 @@ export interface CopyFieldProps {
 }
 
 export function CopyField({ value, label, multiline = false, valueTestId, copyLabel }: CopyFieldProps) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -47,9 +48,9 @@ export function CopyField({ value, label, multiline = false, valueTestId, copyLa
           className="copy-btn"
           data-copied={copied ? "true" : "false"}
           onClick={onCopy}
-          aria-label={`${copyLabel ?? S.copyButton}: ${label}`}
+          aria-label={`${copyLabel ?? t("copyButton")}: ${label}`}
         >
-          {copied ? S.copiedButton : copyLabel ?? S.copyButton}
+          {copied ? t("copiedButton") : copyLabel ?? t("copyButton")}
         </button>
       </div>
       {multiline ? (

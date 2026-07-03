@@ -4,7 +4,8 @@
 // flow is tested with no network.
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import { renderIntl as render } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import { ShortLink } from "./ShortLink";
 import * as shortener from "@/lib/shortener";

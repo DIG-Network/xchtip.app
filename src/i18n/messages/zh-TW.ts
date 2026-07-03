@@ -1,0 +1,4 @@
+// zh-TW catalog — placeholder pending translation; falls back to English per-key.
+import type { Messages } from "./en";
+
+export const zhTW: Partial<Messages> = {};

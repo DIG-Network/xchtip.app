@@ -11,7 +11,7 @@
 // (any config edit) and torn down when the config goes invalid.
 
 import { useEffect, useRef } from "react";
-import { S } from "@/lib/strings";
+import { useT } from "@/i18n/useT";
 
 export interface LiveWidgetPreviewProps {
   /** The exact embed snippet to mount, or null when the config is invalid (disabled state). */
@@ -30,6 +30,7 @@ function parseScriptAttrs(snippet: string): Array<[string, string]> | null {
 }
 
 export function LiveWidgetPreview({ snippet }: LiveWidgetPreviewProps) {
+  const t = useT();
   const mountRef = useRef<HTMLDivElement | null>(null);
   const active = snippet != null && snippet.trim() !== "";
 
@@ -83,7 +84,7 @@ export function LiveWidgetPreview({ snippet }: LiveWidgetPreviewProps) {
       <div ref={mountRef} className="live-widget-mount" aria-hidden={active ? undefined : "true"} />
       {!active && (
         <p className="live-widget-hint" role="status">
-          {S.stageCaptionDisabled}
+          {t("stageCaptionDisabled")}
         </p>
       )}
     </div>

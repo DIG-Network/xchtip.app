@@ -43,6 +43,10 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
       locales (en, zh-CN, zh-TW, ko, ja, ru, es, pt-BR, fr, de, tr, vi, id, hi), locale detection +
       a language selector + persisted choice, numbers/dates/plurals via intl, preserve brand/scheme
       literals ($DIG, XCH, chia://). A completeness test that every locale covers every id. IN PROGRESS.
+- [ ] **Social/OG cards + icons/logos for link embeds** — generate + export a full set: og-image
+      (1200x630 twitter/OG card), favicon set, apple-touch-icon, maybe per-asset (XCH/DIG) cards. Wire
+      into index.html meta + the jar page per-page OG. Self-contained (data URIs or static files in
+      public/). Use a considered xchtip visual identity.
 - [x] **Shortener LIVE + integrated** — terraform applied (api.xchtip.app + *.xchtip.app 301);
       VITE_SHORTENER_API baked; "Create short link" visible on the live builder; POST /shorten → short
       url verified; short link 301→jar verified. Embed cache header fixed (max-age=300 revalidate).

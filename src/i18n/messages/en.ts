@@ -1,26 +1,22 @@
-// strings.ts — ALL user-facing copy, centralized in one module.
+// The BASE (English) message catalog — the single source of truth for message IDS + default text.
+// Every other locale is a Partial of this shape; any key a locale omits falls back to English here
+// (per-key fallback), so the app is always fully rendered even mid-translation.
 //
-// i18n is NOT wired yet (xchtip.app is a single-purpose tool). Copy is centralized here with stable
-// keys so a react-intl / message-catalog layer can bolt on later WITHOUT touching components —
-// FOLLOW-UP: replace direct `S.*` reads with `intl.formatMessage({ id })` using these same keys, and
-// add the ecosystem's standard locale set (CLAUDE.md §6.6). Until then components read `S.*` directly.
+// Keys mirror the former strings.ts `S` keys 1:1 (stable ids), so a message is looked up by the same
+// name components already use. Brand/scheme literals ($DIG, XCH, chia://, xchtip.app) are preserved
+// verbatim in every locale.
 
-export const S = {
+export const en = {
   appName: "xchtip.app",
-  // Top bar one-liner (hidden on narrow screens).
   headerTag: "Embeddable Chia tip buttons",
 
-  // Hero — the button you're building is the thesis; keep the copy short + confident.
   heroKicker: "Free · on-chain · no account",
   heroTitleLead: "A tip button",
   heroTitleAccent: "worth showing off.",
-  // Legacy key kept for any external reference; the hero now uses the lead/accent pair above.
-  tagline: "Build an embeddable Chia tip button — for XCH or any CAT.",
   intro:
     "Configure it on the left, watch it come to life on the stage, then copy one line of HTML " +
     "onto any site. Tippers connect a Chia wallet and send on-chain — wallet to wallet, no middleman.",
 
-  // Builder form
   recipientLabel: "Recipient Chia address",
   recipientHelp: "The wallet that receives tips (starts with xch1…).",
   recipientPlaceholder: "xch1…",
@@ -45,34 +41,28 @@ export const S = {
   presetXchButton: "Preset: XCH (green)",
   presetDigButton: "Preset: $DIG (purple)",
 
-  // Stage + workbench section labels
   stageCaption: "Live preview — this is exactly what your visitors will see.",
   stageCaptionDisabled: "Enter a recipient address to activate your live tip button.",
   configureEyebrow: "Configure",
   embedEyebrow: "Embed",
 
-  // Widget style variants
   variantLabel: "Widget style",
   variantHelp: "How the tip widget looks where it's embedded.",
   variantButton: "Button",
   variantCompact: "Compact",
   variantCard: "Tip card",
 
-  // CAT symbol
   symbolLabel: "Token symbol (optional)",
   symbolHelp: "Shown on the button + amounts. Auto-detected from the asset id; override here.",
   symbolPlaceholder: "e.g. DIG",
   symbolDetecting: "Detecting symbol…",
   symbolDetected: "Detected: ",
 
-  // Tip page URL actions
   visitButton: "Visit",
   copyShort: "Copy",
 
-  // Protocol fee disclosure (subtle)
   feeNote: "A 0.1% network fee goes to xchtip.app; the rest goes straight to the recipient.",
 
-  // Output
   previewHeading: "Live preview",
   snippetHeading: "Embed snippet",
   snippetHelp: "Paste this once into your page's HTML, where you want the button.",
@@ -82,7 +72,6 @@ export const S = {
   linkHelp: "This link pre-fills the builder. Add &raw=1 to get the snippet as plain text.",
   rawLinkLabel: "Raw snippet URL",
 
-  // Tip-jar share link (in the builder output)
   jarLinkHeading: "Your tip page",
   jarLinkHelp:
     "A ready-to-share page with your button — no site or embedding needed. All the settings live in " +
@@ -97,14 +86,13 @@ export const S = {
   shortLinkCreating: "Creating…",
   shortLinkError: "Couldn't create a short link right now. Your full tip-page link above always works.",
 
-  // Errors
   fixErrors: "Fix the highlighted fields to generate a snippet.",
 
-  // Footer
   poweredBy: "Runs on Chia. Wallet connection via WalletConnect.",
   digNetwork: "A DIG Network dapp",
 
-  // ── Tip-jar landing page (a recipient's standalone, deterministic page) ──
+  languageLabel: "Language",
+
   jarHeaderTag: "A Chia tip page",
   jarEyebrow: "Send a tip",
   jarHeadingNamed: "Tip {name}",
@@ -121,7 +109,6 @@ export const S = {
   jarBenefit3Title: "You stay in control",
   jarBenefit3Body: "You sign every tip in your own wallet. Nothing leaves without your approval.",
   jarFooterCta: "Make your own tip page →",
-  // Per-page SEO/social meta (each jar URL is its own shareable page). {name}/{asset}/{who} filled in.
   jarMetaTitleNamed: "Tip {name} in {asset} · xchtip.app",
   jarMetaTitleGeneric: "Send a {asset} tip · xchtip.app",
   jarMetaWhoGeneric: "this recipient",
@@ -135,4 +122,6 @@ export const S = {
   jarErrorCta: "Build a tip page →",
 } as const;
 
-export type StringKey = keyof typeof S;
+/** The message id set — every locale is a Partial of this. */
+export type MessageKey = keyof typeof en;
+export type Messages = Record<MessageKey, string>;

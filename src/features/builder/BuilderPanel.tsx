@@ -9,7 +9,7 @@ import { LiveWidgetPreview } from "./LiveWidgetPreview";
 import { ShortLink } from "./ShortLink";
 import { CopyField } from "@/components/CopyField";
 import { resolveScheme } from "@/lib/schemes";
-import { S } from "@/lib/strings";
+import { useT } from "@/i18n/useT";
 
 export interface BuilderPanelProps {
   /** Seed form (e.g. from query params). */
@@ -19,6 +19,7 @@ export interface BuilderPanelProps {
 }
 
 export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
+  const t = useT();
   const { form, derived, setField, applyXchPreset, applyDigPreset } = useBuilder(initialForm, origin);
 
   // Signature moment: the plinth's spotlight + the button's reflection take the ACTIVE scheme's hue,
@@ -36,16 +37,16 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
           grayed out + inert until a valid recipient makes a real snippet. */}
       <section className="stage" style={stageStyle} aria-label="Live tip button preview">
         <div className="stage-spot">
-          <h2 className="sr-only">{S.previewHeading}</h2>
+          <h2 className="sr-only">{t("previewHeading")}</h2>
           <LiveWidgetPreview snippet={derived.ok ? derived.snippet : null} />
         </div>
-        <p className="stage-caption">{derived.ok ? S.stageCaption : S.stageCaptionDisabled}</p>
-        <p className="stage-fee">{S.feeNote}</p>
+        <p className="stage-caption">{derived.ok ? t("stageCaption") : t("stageCaptionDisabled")}</p>
+        <p className="stage-fee">{t("feeNote")}</p>
       </section>
 
       <div className="builder-panel">
         <section className="builder-inputs" aria-label="Configure the tip button">
-          <p className="eyebrow">{S.configureEyebrow}</p>
+          <p className="eyebrow">{t("configureEyebrow")}</p>
           <BuilderForm
             form={form}
             errors={derived.errors}
@@ -56,13 +57,13 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
         </section>
 
         <section className="builder-output" aria-label="Share and embed options">
-          <p className="eyebrow">{S.embedEyebrow}</p>
+          <p className="eyebrow">{t("embedEyebrow")}</p>
 
           {/* Simplest path first: a ready-to-share hosted tip page (no embedding needed). */}
           {derived.ok && derived.jarLink && (
             <div className="output-block">
               <div className="output-heading-row">
-                <h2 className="output-heading">{S.jarLinkHeading}</h2>
+                <h2 className="output-heading">{t("jarLinkHeading")}</h2>
                 <a
                   className="visit-link"
                   href={derived.jarLink}
@@ -70,14 +71,14 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
                   rel="noopener noreferrer"
                   data-testid="jar-visit"
                 >
-                  {S.visitButton}
+                  {t("visitButton")}
                 </a>
               </div>
-              <p className="output-help">{S.jarLinkHelp}</p>
+              <p className="output-help">{t("jarLinkHelp")}</p>
               <CopyField
                 value={derived.jarLink}
-                label={S.jarLinkLabel}
-                copyLabel={S.copyShort}
+                label={t("jarLinkLabel")}
+                copyLabel={t("copyShort")}
                 valueTestId="jar-link"
               />
             </div>
@@ -87,28 +88,28 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
           {derived.ok && derived.jarLink && <ShortLink target={derived.jarLink} />}
 
           <div className="output-block">
-            <h2 className="output-heading">{S.snippetHeading}</h2>
-            <p className="output-help">{S.snippetHelp}</p>
+            <h2 className="output-heading">{t("snippetHeading")}</h2>
+            <p className="output-help">{t("snippetHelp")}</p>
             {derived.ok && derived.snippet ? (
               <CopyField
                 value={derived.snippet}
-                label={S.snippetHeading}
+                label={t("snippetHeading")}
                 multiline
                 valueTestId="snippet-output"
               />
             ) : (
               <p className="output-empty" role="status" data-testid="snippet-blocked">
-                {S.fixErrors}
+                {t("fixErrors")}
               </p>
             )}
           </div>
 
           {derived.ok && derived.builderLink && derived.rawLink && (
             <div className="output-block">
-              <h2 className="output-heading">{S.linkHeading}</h2>
-              <p className="output-help">{S.linkHelp}</p>
-              <CopyField value={derived.builderLink} label={S.linkHeading} valueTestId="builder-link" />
-              <CopyField value={derived.rawLink} label={S.rawLinkLabel} valueTestId="raw-link" />
+              <h2 className="output-heading">{t("linkHeading")}</h2>
+              <p className="output-help">{t("linkHelp")}</p>
+              <CopyField value={derived.builderLink} label={t("linkHeading")} valueTestId="builder-link" />
+              <CopyField value={derived.rawLink} label={t("rawLinkLabel")} valueTestId="raw-link" />
             </div>
           )}
         </section>

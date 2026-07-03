@@ -8,7 +8,7 @@
 import { useCallback, useState } from "react";
 import { CopyField } from "@/components/CopyField";
 import { shorten, shortenerAvailable } from "@/lib/shortener";
-import { S } from "@/lib/strings";
+import { useT } from "@/i18n/useT";
 
 export interface ShortLinkProps {
   /** The deterministic tip-page URL to shorten. */
@@ -22,6 +22,7 @@ type State =
   | { status: "error" };
 
 export function ShortLink({ target }: ShortLinkProps) {
+  const t = useT();
   const [state, setState] = useState<State>({ status: "idle" });
 
   const onCreate = useCallback(async () => {
@@ -39,11 +40,11 @@ export function ShortLink({ target }: ShortLinkProps) {
 
   return (
     <div className="output-block" data-testid="shortlink">
-      <h2 className="output-heading">{S.shortLinkHeading}</h2>
-      <p className="output-help">{S.shortLinkHelp}</p>
+      <h2 className="output-heading">{t("shortLinkHeading")}</h2>
+      <p className="output-help">{t("shortLinkHelp")}</p>
 
       {state.status === "done" ? (
-        <CopyField value={state.shortUrl} label={S.shortLinkHeading} valueTestId="shortlink-url" />
+        <CopyField value={state.shortUrl} label={t("shortLinkHeading")} valueTestId="shortlink-url" />
       ) : (
         <div className="shortlink-row">
           <button
@@ -53,11 +54,11 @@ export function ShortLink({ target }: ShortLinkProps) {
             disabled={state.status === "loading"}
             data-testid="shortlink-create"
           >
-            {state.status === "loading" ? S.shortLinkCreating : S.shortLinkButton}
+            {state.status === "loading" ? t("shortLinkCreating") : t("shortLinkButton")}
           </button>
           {state.status === "error" && (
             <p className="shortlink-error" role="alert" data-testid="shortlink-error">
-              {S.shortLinkError}
+              {t("shortLinkError")}
             </p>
           )}
         </div>

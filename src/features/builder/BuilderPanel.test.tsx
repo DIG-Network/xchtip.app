@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderIntl as render } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import { BuilderPanel } from "./BuilderPanel";
 

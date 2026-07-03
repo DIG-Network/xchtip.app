@@ -2,7 +2,8 @@
 // mount (preconfigured data-* script), suggested amounts, Chia-UX copy, and the error state.
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderIntl as render } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import { JarPage } from "./JarPage";
 import { parseJarPath } from "@/lib/jar";

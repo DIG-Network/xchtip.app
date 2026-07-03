@@ -12,7 +12,8 @@ import { formFromQuery } from "@/features/builder/useBuilder";
 import { BuilderPanel } from "@/features/builder/BuilderPanel";
 import { RawSnippet } from "@/features/raw/RawSnippet";
 import { JarPage } from "@/features/jar/JarPage";
-import { S } from "@/lib/strings";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useT } from "@/i18n/useT";
 
 export interface AppProps {
   /** The URL search string (defaults to the live location; injectable for tests). */
@@ -24,6 +25,7 @@ export interface AppProps {
 }
 
 export function App({ search, pathname, origin }: AppProps) {
+  const t = useT();
   const rawSearch = search ?? (typeof window !== "undefined" ? window.location.search : "");
   const rawPath = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "");
   const params = useMemo(() => parseQueryParams(rawSearch), [rawSearch]);
@@ -54,24 +56,25 @@ export function App({ search, pathname, origin }: AppProps) {
           <span className="brand-name">
             xchtip<span className="brand-tld">.app</span>
           </span>
-          <span className="header-tag">{S.headerTag}</span>
+          <span className="header-tag">{t("headerTag")}</span>
+          <LanguageSelector />
         </div>
       </header>
 
       <main id="main" className="site-main">
         <div className="hero">
-          <p className="hero-kicker">{S.heroKicker}</p>
+          <p className="hero-kicker">{t("heroKicker")}</p>
           <h1 className="hero-title">
-            {S.heroTitleLead} <em>{S.heroTitleAccent}</em>
+            {t("heroTitleLead")} <em>{t("heroTitleAccent")}</em>
           </h1>
-          <p className="hero-intro">{S.intro}</p>
+          <p className="hero-intro">{t("intro")}</p>
         </div>
         <BuilderPanel initialForm={initialForm} origin={origin} />
       </main>
 
       <footer className="site-footer">
-        <p>{S.poweredBy}</p>
-        <p>{S.digNetwork}</p>
+        <p>{t("poweredBy")}</p>
+        <p>{t("digNetwork")}</p>
       </footer>
     </>
   );

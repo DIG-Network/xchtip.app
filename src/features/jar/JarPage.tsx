@@ -17,7 +17,7 @@ import { shortenMiddle } from "@/lib/format";
 import { applyMeta } from "@/lib/meta";
 import { useCopy } from "@/components/useCopy";
 import { SITE_ORIGIN, EMBED_PATH } from "@/lib/constants";
-import { S } from "@/lib/strings";
+import { useT } from "@/i18n/useT";
 
 export interface JarPageProps {
   /** The parsed jar route result (valid config, or an error). */
@@ -31,6 +31,7 @@ export interface JarPageProps {
 }
 
 export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
+  const t = useT();
   return (
     <>
       <a href="#jar" className="skip-link">
@@ -46,7 +47,7 @@ export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
               xchtip<span className="brand-tld">.app</span>
             </span>
           </a>
-          <span className="header-tag">{S.jarHeaderTag}</span>
+          <span className="header-tag">{t("jarHeaderTag")}</span>
         </div>
       </header>
 
@@ -59,9 +60,9 @@ export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
       </main>
 
       <footer className="site-footer">
-        <p>{S.poweredBy}</p>
+        <p>{t("poweredBy")}</p>
         <p>
-          <a href="/">{S.jarFooterCta}</a>
+          <a href="/">{t("jarFooterCta")}</a>
         </p>
       </footer>
     </>
@@ -70,10 +71,11 @@ export function JarPage({ result, origin = SITE_ORIGIN }: JarPageProps) {
 
 // ── The valid jar: identity + suggested amounts + the live widget + the Chia story. ──────────────
 function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
+  const t = useT();
   // Prefer an explicit CAT symbol override; else the asset's auto symbol (XCH / $DIG / CAT).
   const symbol = config.symbol?.trim() || assetSymbol(config.asset);
   const displayName = config.name?.trim() || null;
-  const heading = displayName ? S.jarHeadingNamed.replace("{name}", displayName) : S.jarHeadingGeneric;
+  const heading = displayName ? t("jarHeadingNamed").replace("{name}", displayName) : t("jarHeadingGeneric");
   const amounts = config.presets && config.presets.length ? config.presets : defaultPresetsFor(config.asset);
 
   // Per-page SEO/social meta (§6.6) — each jar URL is its own shareable page, so it gets its own
@@ -81,25 +83,25 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
   // navigation never leaves a stale card. All derived from the URL (no backend).
   useEffect(() => {
     const title = displayName
-      ? S.jarMetaTitleNamed.replace("{name}", displayName).replace("{asset}", symbol)
-      : S.jarMetaTitleGeneric.replace("{asset}", symbol);
-    const who = displayName ? displayName : S.jarMetaWhoGeneric;
-    const description = S.jarMetaDescription.replace("{who}", who).replace("{asset}", symbol);
+      ? t("jarMetaTitleNamed").replace("{name}", displayName).replace("{asset}", symbol)
+      : t("jarMetaTitleGeneric").replace("{asset}", symbol);
+    const who = displayName ? displayName : t("jarMetaWhoGeneric");
+    const description = t("jarMetaDescription").replace("{who}", who).replace("{asset}", symbol);
     return applyMeta({ title, description, canonical: jarUrl(config, origin) });
-  }, [config, origin, displayName, symbol]);
+  }, [config, origin, displayName, symbol, t]);
 
   return (
     <div className="jar-card" data-testid="jar-card">
-      <p className="jar-eyebrow">{S.jarEyebrow}</p>
+      <p className="jar-eyebrow">{t("jarEyebrow")}</p>
       <h1 className="jar-heading">{heading}</h1>
       <p className="jar-sub">
-        {S.jarSub} <span data-testid="jar-asset" className="jar-asset">{symbol}</span>.
+        {t("jarSub")} <span data-testid="jar-asset" className="jar-asset">{symbol}</span>.
       </p>
 
       <JarAddress recipient={config.recipient} />
 
       {/* Suggested amounts (display-only echo of what the widget offers; the widget owns the flow). */}
-      <ul className="jar-amounts" data-testid="jar-amounts" aria-label={S.jarAmountsLabel}>
+      <ul className="jar-amounts" data-testid="jar-amounts" aria-label={t("jarAmountsLabel")}>
         {amounts.map((a) => (
           <li key={a} className="jar-amount">
             {String(a)} {symbol}
@@ -110,22 +112,22 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
       {/* The real widget mounts here, preconfigured from the URL. */}
       <JarWidget config={config} />
 
-      <p className="jar-note">{S.jarNote}</p>
-      <p className="jar-fee">{S.feeNote}</p>
+      <p className="jar-note">{t("jarNote")}</p>
+      <p className="jar-fee">{t("feeNote")}</p>
 
       {/* Why Chia — the honest value story (low fees, fast, self-custodial). */}
       <ul className="jar-benefits" data-testid="jar-benefits">
         <li>
-          <strong>{S.jarBenefit1Title}</strong>
-          <span>{S.jarBenefit1Body}</span>
+          <strong>{t("jarBenefit1Title")}</strong>
+          <span>{t("jarBenefit1Body")}</span>
         </li>
         <li>
-          <strong>{S.jarBenefit2Title}</strong>
-          <span>{S.jarBenefit2Body}</span>
+          <strong>{t("jarBenefit2Title")}</strong>
+          <span>{t("jarBenefit2Body")}</span>
         </li>
         <li>
-          <strong>{S.jarBenefit3Title}</strong>
-          <span>{S.jarBenefit3Body}</span>
+          <strong>{t("jarBenefit3Title")}</strong>
+          <span>{t("jarBenefit3Body")}</span>
         </li>
       </ul>
     </div>
@@ -134,6 +136,7 @@ function JarBody({ config, origin }: { config: JarConfig; origin: string }) {
 
 // The recipient identity chip: an elegant middle-truncation that copies the FULL address on click.
 function JarAddress({ recipient }: { recipient: string }) {
+  const t = useT();
   const { copied, copy } = useCopy(recipient);
   return (
     <button
@@ -143,9 +146,9 @@ function JarAddress({ recipient }: { recipient: string }) {
       data-copied={copied ? "true" : "false"}
       onClick={copy}
       title={recipient}
-      aria-label={`${S.jarCopyAddress}: ${recipient}`}
+      aria-label={`${t("jarCopyAddress")}: ${recipient}`}
     >
-      <span className="jar-address-to">{S.jarTo}</span>
+      <span className="jar-address-to">{t("jarTo")}</span>
       <code>{shortenMiddle(recipient)}</code>
       <span className="jar-address-copy" aria-hidden="true">
         {copied ? "✓" : "⧉"}
@@ -204,12 +207,13 @@ const WIDGET_MOUNT_ID = "xt-jar-mount";
 
 // ── The invalid jar: a clean dead-end with a route home. ─────────────────────────────────────────
 function JarError({ reason }: { reason: string }) {
+  const t = useT();
   return (
     <div className="jar-error" role="alert" data-testid="jar-error">
-      <p className="jar-error-title">{S.jarErrorTitle}</p>
-      <p className="jar-error-body">{reason || S.jarErrorBody}</p>
+      <p className="jar-error-title">{t("jarErrorTitle")}</p>
+      <p className="jar-error-body">{reason || t("jarErrorBody")}</p>
       <a className="jar-error-cta" href="/">
-        {S.jarErrorCta}
+        {t("jarErrorCta")}
       </a>
     </div>
   );

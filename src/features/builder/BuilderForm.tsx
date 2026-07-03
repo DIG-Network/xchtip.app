@@ -6,7 +6,7 @@
 import type { BuilderForm as Form, AssetChoice } from "./useBuilder";
 import type { ValidationErrors, WidgetVariant } from "@/lib/embed";
 import { useCatSymbol } from "./useCatSymbol";
-import { S } from "@/lib/strings";
+import { useT } from "@/i18n/useT";
 
 export interface BuilderFormProps {
   form: Form;
@@ -17,6 +17,7 @@ export interface BuilderFormProps {
 }
 
 export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPreset }: BuilderFormProps) {
+  const t = useT();
   // Auto-detect the CAT symbol for an "Other CAT" asset (a suggestion; the manual field overrides).
   const catSymbol = useCatSymbol(form.catId, form.assetChoice === "cat");
   return (
@@ -24,20 +25,20 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
       {/* One-click presets */}
       <div className="preset-row" role="group" aria-label="Quick presets">
         <button type="button" className="preset-btn preset-xch" onClick={applyXchPreset} data-testid="preset-xch">
-          {S.presetXchButton}
+          {t("presetXchButton")}
         </button>
         <button type="button" className="preset-btn preset-dig" onClick={applyDigPreset} data-testid="preset-dig">
-          {S.presetDigButton}
+          {t("presetDigButton")}
         </button>
       </div>
 
       {/* Recipient */}
       <div className="field">
         <label htmlFor="recipient" className="field-label">
-          {S.recipientLabel}
+          {t("recipientLabel")}
         </label>
         <p id="recipient-help" className="field-help">
-          {S.recipientHelp}
+          {t("recipientHelp")}
         </p>
         <input
           id="recipient"
@@ -45,7 +46,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
           className="field-input"
           data-testid="input-recipient"
           value={form.recipient}
-          placeholder={S.recipientPlaceholder}
+          placeholder={t("recipientPlaceholder")}
           onChange={(e) => setField("recipient", e.target.value)}
           aria-describedby={errors.recipient ? "recipient-help recipient-error" : "recipient-help"}
           aria-invalid={errors.recipient ? true : undefined}
@@ -61,13 +62,13 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
 
       {/* Asset */}
       <fieldset className="field">
-        <legend className="field-label">{S.assetLabel}</legend>
-        <div className="radio-row" role="radiogroup" aria-label={S.assetLabel}>
+        <legend className="field-label">{t("assetLabel")}</legend>
+        <div className="radio-row" role="radiogroup" aria-label={t("assetLabel")}>
           {(
             [
-              ["xch", S.assetXch],
-              ["dig", S.assetDig],
-              ["cat", S.assetCustomCat],
+              ["xch", t("assetXch")],
+              ["dig", t("assetDig")],
+              ["cat", t("assetCustomCat")],
             ] as [AssetChoice, string][]
           ).map(([value, text]) => (
             <label key={value} className="radio-chip">
@@ -86,10 +87,10 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
         {form.assetChoice === "cat" && (
           <div className="subfield">
             <label htmlFor="catId" className="field-label">
-              {S.catIdLabel}
+              {t("catIdLabel")}
             </label>
             <p id="catId-help" className="field-help">
-              {S.catIdHelp}
+              {t("catIdHelp")}
             </p>
             <input
               id="catId"
@@ -97,7 +98,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
               className="field-input"
               data-testid="input-catid"
               value={form.catId}
-              placeholder={S.catIdPlaceholder}
+              placeholder={t("catIdPlaceholder")}
               onChange={(e) => setField("catId", e.target.value)}
               aria-describedby="catId-help"
               autoComplete="off"
@@ -106,10 +107,10 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
 
             {/* Token symbol — auto-detected from the asset id, overridable. Loading + detected states. */}
             <label htmlFor="symbol" className="field-label">
-              {S.symbolLabel}
+              {t("symbolLabel")}
             </label>
             <p id="symbol-help" className="field-help">
-              {S.symbolHelp}
+              {t("symbolHelp")}
             </p>
             <input
               id="symbol"
@@ -117,7 +118,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
               className="field-input"
               data-testid="input-symbol"
               value={form.symbol}
-              placeholder={catSymbol.detected ?? S.symbolPlaceholder}
+              placeholder={catSymbol.detected ?? t("symbolPlaceholder")}
               onChange={(e) => setField("symbol", e.target.value)}
               aria-describedby="symbol-help symbol-status"
               autoComplete="off"
@@ -125,9 +126,9 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
             />
             <p id="symbol-status" className="field-help" role="status" data-testid="symbol-status">
               {catSymbol.detecting
-                ? S.symbolDetecting
+                ? t("symbolDetecting")
                 : !form.symbol.trim() && catSymbol.detected
-                  ? `${S.symbolDetected}${catSymbol.detected}`
+                  ? `${t("symbolDetected")}${catSymbol.detected}`
                   : ""}
             </p>
           </div>
@@ -141,13 +142,13 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
 
       {/* Scheme */}
       <fieldset className="field">
-        <legend className="field-label">{S.schemeLabel}</legend>
-        <div className="radio-row" role="radiogroup" aria-label={S.schemeLabel}>
+        <legend className="field-label">{t("schemeLabel")}</legend>
+        <div className="radio-row" role="radiogroup" aria-label={t("schemeLabel")}>
           {(
             [
-              ["green", S.schemeGreen],
-              ["purple", S.schemePurple],
-              ["custom", S.schemeCustom],
+              ["green", t("schemeGreen")],
+              ["purple", t("schemePurple")],
+              ["custom", t("schemeCustom")],
             ] as [Form["scheme"], string][]
           ).map(([value, text]) => (
             <label key={value} className="radio-chip">
@@ -166,10 +167,10 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
         {form.scheme === "custom" && (
           <div className="subfield">
             <label htmlFor="color" className="field-label">
-              {S.colorLabel}
+              {t("colorLabel")}
             </label>
             <p id="color-help" className="field-help">
-              {S.colorHelp}
+              {t("colorHelp")}
             </p>
             <div className="color-row">
               <input
@@ -179,7 +180,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
                 data-testid="input-color-swatch"
                 value={/^#[0-9a-f]{6}$/i.test(form.color) ? form.color : "#7a3dff"}
                 onChange={(e) => setField("color", e.target.value)}
-                aria-label={`${S.colorLabel} (swatch)`}
+                aria-label={`${t("colorLabel")} (swatch)`}
               />
               <input
                 type="text"
@@ -187,7 +188,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
                 data-testid="input-color-text"
                 value={form.color}
                 onChange={(e) => setField("color", e.target.value)}
-                aria-label={`${S.colorLabel} (hex)`}
+                aria-label={`${t("colorLabel")} (hex)`}
                 aria-describedby={errors.color ? "color-help color-error" : "color-help"}
                 aria-invalid={errors.color ? true : undefined}
                 autoComplete="off"
@@ -206,10 +207,10 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
       {/* Presets */}
       <div className="field">
         <label htmlFor="presets" className="field-label">
-          {S.presetsLabel}
+          {t("presetsLabel")}
         </label>
         <p id="presets-help" className="field-help">
-          {S.presetsHelp}
+          {t("presetsHelp")}
         </p>
         <input
           id="presets"
@@ -227,14 +228,14 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
 
       {/* Widget style variant */}
       <fieldset className="field">
-        <legend className="field-label">{S.variantLabel}</legend>
-        <p className="field-help">{S.variantHelp}</p>
-        <div className="radio-row" role="radiogroup" aria-label={S.variantLabel}>
+        <legend className="field-label">{t("variantLabel")}</legend>
+        <p className="field-help">{t("variantHelp")}</p>
+        <div className="radio-row" role="radiogroup" aria-label={t("variantLabel")}>
           {(
             [
-              ["button", S.variantButton],
-              ["compact", S.variantCompact],
-              ["card", S.variantCard],
+              ["button", t("variantButton")],
+              ["compact", t("variantCompact")],
+              ["card", t("variantCard")],
             ] as [WidgetVariant, string][]
           ).map(([value, text]) => (
             <label key={value} className="radio-chip">
@@ -255,7 +256,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
       {/* Label */}
       <div className="field">
         <label htmlFor="label" className="field-label">
-          {S.labelLabel}
+          {t("labelLabel")}
         </label>
         <input
           id="label"
@@ -263,7 +264,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
           className="field-input"
           data-testid="input-label"
           value={form.label}
-          placeholder={S.labelPlaceholder}
+          placeholder={t("labelPlaceholder")}
           onChange={(e) => setField("label", e.target.value)}
           autoComplete="off"
         />
@@ -272,10 +273,10 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
       {/* Display name — shown on the shareable tip page (does not affect the embed button). */}
       <div className="field">
         <label htmlFor="name" className="field-label">
-          {S.jarNameLabel}
+          {t("jarNameLabel")}
         </label>
         <p id="name-help" className="field-help">
-          {S.jarNameHelp}
+          {t("jarNameHelp")}
         </p>
         <input
           id="name"
@@ -283,7 +284,7 @@ export function BuilderForm({ form, errors, setField, applyXchPreset, applyDigPr
           className="field-input"
           data-testid="input-name"
           value={form.name}
-          placeholder={S.jarNamePlaceholder}
+          placeholder={t("jarNamePlaceholder")}
           onChange={(e) => setField("name", e.target.value)}
           aria-describedby="name-help"
           autoComplete="off"
