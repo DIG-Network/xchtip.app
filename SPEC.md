@@ -281,6 +281,17 @@ operability, visible focus, sufficient contrast, `axe` 0 violations desktop + mo
 `llms.txt`, `robots.txt`, `sitemap.xml`, and full SEO meta (title/description/canonical/OG/Twitter +
 schema.org JSON-LD). Interactive elements expose stable `data-testid`s.
 
+### 12a. Bug reporting
+
+The app shell (`src/App.tsx`) mounts the shared `@dignetwork/components` `<BugReportButton
+repo="xchtip.app">` once, on every human-facing view (the builder AND every `/jar/<recipient>`
+state, valid or invalid) — `data-testid="bugreport-launcher"`, fixed bottom-right. It is OMITTED in
+raw mode (`?...&raw=1` / `/embed.txt`), which renders only the machine-readable snippet with no
+chrome. Reports submit to `https://api.bugreport.dig.net` and file into the
+`DIG-Network/xchtip.app` GitHub repo; the component owns its own accessibility (focus trap,
+`role="dialog"`, live-region status) and anti-abuse contract — xchtip.app does not reimplement any
+of it. See `@dignetwork/components`' own `SPEC.md` for the normative wire contract.
+
 ## 13. Internationalization (follow-up)
 
 All user-facing copy is centralized in `src/lib/strings.ts` with stable keys. i18n (react-intl + the

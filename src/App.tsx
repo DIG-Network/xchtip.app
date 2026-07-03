@@ -6,6 +6,7 @@
 // Semantic landmarks (header/main/footer) + a skip link for accessibility (§6.6).
 
 import { useMemo } from "react";
+import { BugReportButton } from "@dignetwork/components";
 import { parseQueryParams } from "@/lib/embed";
 import { parseJarPath } from "@/lib/jar";
 import { formFromQuery } from "@/features/builder/useBuilder";
@@ -14,6 +15,11 @@ import { RawSnippet } from "@/features/raw/RawSnippet";
 import { JarPage } from "@/features/jar/JarPage";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useT } from "@/i18n/useT";
+
+// The GitHub repo bug reports file into (DIG-Network/xchtip.app) — the shared widget's one
+// required prop. `apiBase` and `position` keep their component defaults (api.bugreport.dig.net,
+// bottom-right).
+const BUG_REPORT_REPO = "xchtip.app";
 
 export interface AppProps {
   /** The URL search string (defaults to the live location; injectable for tests). */
@@ -36,9 +42,16 @@ export function App({ search, pathname, origin }: AppProps) {
   const jar = useMemo(() => parseJarPath(rawPath, rawSearch), [rawPath, rawSearch]);
 
   if (jar) {
-    return <JarPage result={jar} origin={origin} />;
+    return (
+      <>
+        <JarPage result={jar} origin={origin} />
+        <BugReportButton repo={BUG_REPORT_REPO} />
+      </>
+    );
   }
 
+  // Raw mode renders ONLY the machine-readable snippet for a scraping tool/agent — not a page a
+  // human browses, so it gets no chrome, including no floating bug-report button.
   if (params.raw) {
     return <RawSnippet params={params} origin={origin} />;
   }
@@ -76,6 +89,8 @@ export function App({ search, pathname, origin }: AppProps) {
         <p>{t("poweredBy")}</p>
         <p>{t("digNetwork")}</p>
       </footer>
+
+      <BugReportButton repo={BUG_REPORT_REPO} />
     </>
   );
 }

@@ -29,6 +29,10 @@ The normative contract (embed data-attributes, query-param API, widget wire beha
    and each jar URL is its own SEO/Open Graph page. The builder emits this as the "Your tip page" link.
 4. **Automate.** Any client can GET a snippet without the UI: `?...&raw=1` renders the snippet as
    plain text in the SPA, and `/embed.txt?...` returns it as a real `text/plain` response.
+5. **Report a bug.** A floating 🐞 button (bottom-right, via the shared `@dignetwork/components`
+   `<BugReportButton>`) is available on the builder and every tip-jar page, letting a visitor file a
+   report — with a reviewable screenshot + console-log preview — straight to
+   [DIG-Network/xchtip.app](https://github.com/DIG-Network/xchtip.app) via api.bugreport.dig.net.
 
 ## Query-param / raw API (quick reference)
 
