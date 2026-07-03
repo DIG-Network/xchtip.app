@@ -38,10 +38,12 @@ Single-writer: this repo only. Do NOT touch the superproject or any other module
 
 ## OPEN (2026-07-02, even later)
 
-- [ ] **Widget locale honoring** — the embed widget (xch-tip.js) is standalone JS with hardcoded
-      English. Add lightweight i18n: a small inline translation table for the widget's ~20 strings ×
-      14 locales + a wt(key) lookup; locale from data-locale attribute else navigator.language →
-      resolveOne. Translate the modal (Send a tip, amounts, Sign & send, errors, refill, disconnect).
+- [x] **Widget locale honoring** — DONE (3d16ea9, deployed): data-locale + navigator.language, inline
+      14-locale catalog + wt(), modal fully translated; tip page passes its locale through. Verified live.
+- [x] **Full internationalization (site)** — DONE (7b2bab8/9083d79, deployed): react-intl, 14 locales,
+      language selector, detection + persistence. Verified live in Japanese + Spanish.
+- [x] **Social/OG card + icons** — DONE (2797df1, deployed): og.png (1200x630), favicon/apple-touch/
+      192/512, manifest. Verified live (og.png 200).
 - [ ] **Widget iframe isolation (WC state across sites)** — ANSWER to the user: currently the widget
       injects into the HOST page DOM (NOT an iframe), so its WalletConnect session lives in the HOST
       site's partitioned localStorage → NOT shared across embedding domains (a connect on siteA is not
