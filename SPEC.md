@@ -420,6 +420,53 @@ Every tip carries a **0.1% protocol fee** paid to the xchtip.app fee address
   the tool (e.g. the header tagline) refers to using xchtip.app (no signup/account), never to the
   tip being fee-less.
 
+## 8b. Embedder Content-Security-Policy requirements
+
+A site that sets its own `Content-Security-Policy` and drops in the `<script src=".../xch-tip.js">`
+snippet (§5) MUST ADD the following directives — merged into its existing policy, never replacing
+it — so the widget can load and complete a tip. The builder UI (§ path-embed / `CspHelp`) renders
+this same block, copyable, next to the embed snippet; `src/lib/embedCsp.ts` is the single source of
+truth for the exact text.
+
+```
+script-src  'self' 'wasm-unsafe-eval' https://xchtip.app https://esm.sh;
+style-src   'self' 'unsafe-inline';
+connect-src 'self' https://xchtip.app https://esm.sh https://api.coinset.org
+            wss://relay.walletconnect.org wss://relay.walletconnect.com
+            https://verify.walletconnect.org https://verify.walletconnect.com
+            https://pulse.walletconnect.org https://explorer-api.walletconnect.com;
+frame-src   https://verify.walletconnect.org https://verify.walletconnect.com;
+```
+
+Per-directive rationale:
+
+- **`script-src`** — `https://xchtip.app` is the `<script src>` origin itself; `https://esm.sh` is
+  the pinned CDN the widget dynamically `import()`s `@walletconnect/sign-client` + `qrcode` from at
+  click time (inert until then); `'wasm-unsafe-eval'` lets it compile/instantiate its self-hosted
+  `chia_wallet_sdk_wasm` (§8).
+- **`style-src`** — the widget injects its own `<style>` block plus inline `style="…"` attributes
+  for the button/modal; it ships no external stylesheet.
+- **`connect-src`** — `https://api.coinset.org` for coin lookups + broadcast; `https://xchtip.app`
+  to fetch its self-hosted wasm glue/binary; the WalletConnect relay (`wss://relay.walletconnect.*`),
+  its anti-phishing Verify API, telemetry (`pulse.walletconnect.org`), and wallet-registry
+  (`explorer-api.walletconnect.com`) endpoints the `@walletconnect/sign-client@2.19.0` dependency
+  talks to.
+- **`frame-src`** — WalletConnect's Verify API loads a hidden iframe to `verify.walletconnect.{org,com}`
+  as an anti-phishing check; this is internal to the sign-client dependency, not code in xch-tip.js.
+
+Deliberately NOT included: `media-src` (the widget plays no audio/video) and an `img-src` allowance
+for a fixed icon host (the widget's built-in marks are inline SVG/emoji, not `<img>` fetches). A
+site using a custom `data-logo` image (§5) may need its own `img-src` entry for that image's host,
+or `data:` for a `data:image/*` URI — that is embedder-specific and outside this fixed list.
+
+The WalletConnect infrastructure hosts are not literal strings in `xch-tip.js` (they belong to the
+pinned `@walletconnect/sign-client` package) and are cross-verified against hub.dig.net's own
+production CSP, which embeds the SAME sign-client version for its tip widget
+(`infra/modules/cloudfront-distributions/main.tf`). Re-verify this list if the widget's pinned
+WalletConnect version ever changes (`embedCsp.test.ts` guards the hosts that ARE literal strings in
+`xch-tip.js`: `esm.sh`, `api.coinset.org`, the wasm compile/instantiate calls, and the pinned
+version string itself).
+
 ## 9. WalletConnect projectId injection
 
 The committed widget source contains the literal placeholder `__XCHTIP_WC_PROJECT_ID__`. The deploy

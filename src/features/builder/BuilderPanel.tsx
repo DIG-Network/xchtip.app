@@ -7,6 +7,7 @@ import { useBuilder, type BuilderForm as Form } from "./useBuilder";
 import { BuilderForm } from "./BuilderForm";
 import { LiveWidgetPreview } from "./LiveWidgetPreview";
 import { ShortLink } from "./ShortLink";
+import { CspHelp } from "./CspHelp";
 import { CopyField } from "@/components/CopyField";
 import { resolveScheme } from "@/lib/schemes";
 import { useT } from "@/i18n/useT";
@@ -112,6 +113,7 @@ export function BuilderPanel({ initialForm, origin }: BuilderPanelProps) {
                     multiline
                     valueTestId="snippet-output"
                   />
+                  <CspHelp />
                   {derived.builderLink && derived.rawLink && (
                     <details className="path-more">
                       <summary>{t("linkHeading")}</summary>

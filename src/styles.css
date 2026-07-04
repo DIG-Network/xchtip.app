@@ -741,6 +741,36 @@ legend.field-label {
 .path-more[open] summary {
   margin-bottom: 8px;
 }
+/* Embedder Content-Security-Policy help (CspHelp, inside the embed path's disclosure). Sits below
+   the copyable directive block: one tight reason line per directive, then a quiet merge note. */
+.csp-reasons {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.csp-reasons li {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+.csp-reasons code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--gold-hi);
+  background: var(--ink-3);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.csp-merge-note {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--paper-faint);
+}
 
 /* A heading + an inline action (e.g. "Visit") on one row. */
 .output-heading-row {

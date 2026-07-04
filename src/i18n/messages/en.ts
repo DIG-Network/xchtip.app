@@ -91,6 +91,19 @@ export const en = {
   linkHelp: "This link pre-fills the builder. Add &raw=1 to get the snippet as plain text.",
   rawLinkLabel: "Raw snippet URL",
 
+  // Embedder Content-Security-Policy help — shown as a disclosure next to the embed snippet
+  // (BuilderPanel → CspHelp) for sites that set their own CSP. See src/lib/embedCsp.ts (the single
+  // source of truth for the directive text) + SPEC.md §8b.
+  cspHeading: "Content-Security-Policy",
+  cspIntro:
+    "Embedding the tip button on your own site? If your site sets a Content-Security-Policy, add " +
+    "these directives so the widget can load.",
+  cspScriptSrc: "loads the widget's own script, plus the wallet-connection library it fetches on click.",
+  cspStyleSrc: "the widget injects its own button + tip-modal styling.",
+  cspConnectSrc: "reads and broadcasts on the Chia chain, and opens the wallet connection.",
+  cspFrameSrc: "WalletConnect's own anti-phishing check, run in a hidden iframe.",
+  cspMergeNote: "These ADD to your site's existing policy — merge them in, don't replace it.",
+
   jarLinkHeading: "Your tip page",
   jarLinkHelp:
     "A ready-to-share page with your button — no site or embedding needed. All the settings live in " +

@@ -134,6 +134,28 @@ The embed asset and its wasm
 are served with permissive CORS (`Access-Control-Allow-Origin: *`) so it loads from any page on any
 domain, and the site imposes no frame/embedding restrictions.
 
+### Embedder Content-Security-Policy
+
+A site with its own `Content-Security-Policy` must ADD (merge into its existing policy) these
+directives for the widget to load and complete a tip:
+
+```
+script-src  'self' 'wasm-unsafe-eval' https://xchtip.app https://esm.sh;
+style-src   'self' 'unsafe-inline';
+connect-src 'self' https://xchtip.app https://esm.sh https://api.coinset.org
+            wss://relay.walletconnect.org wss://relay.walletconnect.com
+            https://verify.walletconnect.org https://verify.walletconnect.com
+            https://pulse.walletconnect.org https://explorer-api.walletconnect.com;
+frame-src   https://verify.walletconnect.org https://verify.walletconnect.com;
+```
+
+`script-src`/`connect-src` cover the script's own origin (`xchtip.app`) and the CDN it dynamically
+imports WalletConnect + QR-code from (`esm.sh`); `connect-src` also covers the Chia RPC
+(`api.coinset.org`) and the WalletConnect relay/verify/telemetry/wallet-registry network;
+`frame-src` covers WalletConnect's anti-phishing Verify iframe. `'wasm-unsafe-eval'` and
+`'unsafe-inline'` (style) are needed because the widget compiles its own signing wasm and injects
+its own inline styles. The builder UI shows this same block, copyable, next to the embed snippet.
+
 ## Links
 
 - Builder: https://xchtip.app/
