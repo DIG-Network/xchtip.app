@@ -4,7 +4,7 @@
 // flow is tested with no network.
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { renderIntl as render } from "@/test/intl";
 import userEvent from "@testing-library/user-event";
 import { ShortLink } from "./ShortLink";
@@ -43,8 +43,9 @@ describe("ShortLink", () => {
     mockShorten.mockResolvedValue({ code: "abc", shortUrl: "https://abc.xchtip.app" });
     render(<ShortLink target={TARGET} />);
     await user.click(screen.getByTestId("shortlink-create"));
-    await waitFor(() => expect(screen.getByTestId("shortlink-url")).toBeInTheDocument());
-    expect(screen.getByTestId("shortlink-url").textContent).toContain("abc.xchtip.app");
+    const link = await screen.findByTestId("shortlink-url");
+    expect(link).toBeInTheDocument();
+    expect(link.textContent).toContain("abc.xchtip.app");
     expect(mockShorten).toHaveBeenCalledWith(TARGET);
   });
 
@@ -54,7 +55,7 @@ describe("ShortLink", () => {
     mockShorten.mockRejectedValue(new Error("nope"));
     render(<ShortLink target={TARGET} />);
     await user.click(screen.getByTestId("shortlink-create"));
-    await waitFor(() => expect(screen.getByTestId("shortlink-error")).toBeInTheDocument());
+    expect(await screen.findByTestId("shortlink-error")).toBeInTheDocument();
     expect(screen.getByTestId("shortlink-create")).toBeEnabled();
   });
 });

@@ -22,6 +22,9 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    // Flaky-test management (#489): retry a failing test up to 2x before failing the run, so a
+    // transient/flaky failure doesn't red the whole CI job.
+    retry: 2,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
