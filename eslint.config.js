@@ -4,6 +4,7 @@ import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import testingLibrary from "eslint-plugin-testing-library";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -32,6 +33,19 @@ export default tseslint.config(
     files: ["scripts/**/*.mjs", "*.config.{js,ts}"],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+  {
+    // Flaky-test management (#489): React Testing Library rules that catch common sources of
+    // flaky tests — waiting for elements the right way, and not mixing sync/async queries.
+    files: ["src/**/*.test.{ts,tsx}"],
+    plugins: {
+      "testing-library": testingLibrary,
+    },
+    rules: {
+      "testing-library/prefer-find-by": "error",
+      "testing-library/await-async-queries": "error",
+      "testing-library/no-await-sync-queries": "error",
     },
   },
 );
