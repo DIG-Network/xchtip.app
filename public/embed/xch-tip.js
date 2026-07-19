@@ -45,6 +45,15 @@
  * The wallet connect prompt shows the xchtip.app brand. An approved wallet session is reused across
  * page loads on the SAME site (WalletConnect persists it to this origin's localStorage). Cross-DOMAIN
  * reuse is not possible: browsers partition third-party storage per top-level site.
+ *
+ * DRY / DUPLICATION NOTE: this widget MUST ship as a single zero-build, dependency-free `<script>` —
+ * it cannot import from the app's `src/lib/*` TypeScript (there is no bundler in an embedder's page).
+ * A handful of pure helpers below are therefore NECESSARILY hand-duplicated from their canonical
+ * `src/lib/*` source (each block cites its origin inline). `src/lib/embedParity.test.ts` pins the
+ * duplicated CONSTANTS (the named-scheme color triplets and the bech32m generator table) equal to
+ * their canonical source so the copies can never silently drift; `src/lib/embedCsp.test.ts` guards
+ * the widget's host/CSP literals the same way. Change a canonical value → update BOTH copies; the
+ * parity tests fail until they match.
  */
 (function () {
   "use strict";
@@ -175,7 +184,10 @@
     return DEFAULT_WC_PROJECT_ID && DEFAULT_WC_PROJECT_ID.indexOf("__") !== 0 ? DEFAULT_WC_PROJECT_ID : "";
   }
 
-  // ── Named schemes (byte-compatible with src/lib/schemes.ts). ────────────────────────────────────
+  // ── Named schemes ───────────────────────────────────────────────────────────────────────────────
+  // Canonical source: src/lib/schemes.ts (GREEN_SCHEME/PURPLE_SCHEME/ORANGE_SCHEME). Necessarily
+  // duplicated because the zero-build embed cannot import the TS module; the triplets here MUST stay
+  // byte-identical to the canonical ones — src/lib/embedParity.test.ts asserts it.
   var SCHEMES = {
     green: { from: "#3ab54a", to: "#1f8f3a", text: "#ffffff", shadow: "rgba(31,143,58,.34)" },
     purple: { from: "#7a3dff", to: "#ff00de", text: "#ffffff", shadow: "rgba(122,61,255,.34)" },
@@ -200,6 +212,8 @@
     if (!n) return "rgba(0,0,0," + a + ")";
     return "rgba(" + parseInt(n.slice(1, 3), 16) + "," + parseInt(n.slice(3, 5), 16) + "," + parseInt(n.slice(5, 7), 16) + "," + a + ")";
   }
+  // resolveScheme — canonical source: src/lib/schemes.ts resolveScheme(); hand-duplicated for the
+  // zero-build embed (custom hex → derived gradient, else a named preset).
   function resolveScheme(schemeName, color) {
     var hex = normHex(color);
     if (hex) return { from: hex, to: darken(hex, 0.22), text: "#ffffff", shadow: rgbaFromHex(hex, 0.34) };
@@ -316,6 +330,9 @@
     if (s) return "Tip in " + s;
     return "Send a tip";
   }
+  // escapeHtml — HTML-entity-escape the five significant chars before interpolating any user value
+  // into the widget's innerHTML. The standard escape set (mirrors React/src escaping); duplicated
+  // inline because the zero-build embed carries no framework or utility dependency.
   function escapeHtml(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -342,8 +359,11 @@
     return WIDGET_VARIANTS.indexOf(v) >= 0 ? v : "button";
   }
 
-  // decode a bech32m Chia address to its 32-byte puzzle hash hex (mirrors src/lib/bech32m.ts). Returns
-  // the puzzle-hash hex or null. The widget spends TO this puzzle hash.
+  // decode a bech32m Chia address to its 32-byte puzzle hash hex. Returns the puzzle-hash hex or null;
+  // the widget spends TO this puzzle hash.
+  // Canonical source: src/lib/bech32m.ts (CHARSET + the polymod GEN table). Necessarily duplicated
+  // because the zero-build embed cannot import the TS module; the GEN table below MUST stay identical
+  // to the canonical one — src/lib/embedParity.test.ts asserts it.
   var BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
   function bech32Polymod(values) {
     var GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
@@ -398,8 +418,9 @@
   }
 
   // sanitizeName — an optional recipient display name from data-name. Hard-sanitized (strip control
-  // chars, collapse whitespace, trim, cap at 64) to match src/lib/embed.ts normalizeDisplayName;
-  // rendered only via escapeHtml, never as raw markup. Returns the clean text or null.
+  // chars, collapse whitespace, trim, cap at 64). Canonical source: src/lib/embed.ts
+  // normalizeDisplayName — hand-duplicated here because the zero-build embed cannot import the TS
+  // module. Rendered only via escapeHtml, never as raw markup. Returns the clean text or null.
   function sanitizeName(raw) {
     if (raw == null) return null;
     var s = String(raw).replace(/\s+/g, " ").replace(/[\u0000-\u001f\u007f-\u009f]/g, "").trim().slice(0, 64);

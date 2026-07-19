@@ -500,7 +500,13 @@ Access Control) with a DNS-validated ACM cert (us-east-1) for `xchtip.app` (+ `w
 live in the existing hosted zone `Z05614961P7OR8IWYYF3` (read as a data source; never created here).
 The CloudFront distribution is dualstack (A + AAAA), `http2and3`, `PriceClass_All`.
 
-Two Lambda Function URLs sit behind dedicated CloudFront behaviors, each fronted by its own Origin
+The deployment runs **three** Lambdas in total. TWO of them — `/og` (§6c) and `/jar/*` (§6a) — are
+Lambda **Function URLs** behind dedicated CloudFront behaviors on this distribution, described in the
+rest of this section. The THIRD — the `*.xchtip.app` URL shortener — is a separate serverless stack
+behind its OWN API Gateway wildcard custom domain (NOT this CloudFront distribution) and is specified
+normatively in §11a.
+
+The two Function URLs each sit behind their own Origin
 Access Control (`origin_access_control_origin_type = "lambda"`, `AWS_IAM` function-URL auth) so
 neither is invocable except through this distribution. Each Lambda's resource-based policy MUST grant
 `cloudfront.amazonaws.com` BOTH `lambda:InvokeFunctionUrl` AND `lambda:InvokeFunction` (with a
@@ -527,6 +533,77 @@ distribution has NO distribution-wide `custom_error_response` mapping — that w
 from EVERY origin (S3 and both Lambda origins alike) and mask it as a 200 SPA page, hiding a genuine
 OAC/auth failure on `/og` or `/jar/*` behind what looks like a working (but wrong) response. A real
 error from any origin MUST surface as a real error.
+
+## 11a. URL shortener (`*.xchtip.app`)
+
+The shortener maps a short subdomain (`https://<code>.xchtip.app`) onto a long, deterministic tip
+page (`https://xchtip.app/jar/<recipient>…`) so a recipient can hand out a memorable link. It is a
+pure convenience layer: the tip PAGE is fully deterministic + backend-free, so the long `/jar` link
+ALWAYS works and the shortener being unavailable never blocks tipping. Serverless backend: one Lambda
+(`lambda/shortener/`) + one DynamoDB table + an API Gateway HTTP API with a WILDCARD custom domain
+(`terraform/shortener.tf`), gated behind `var.enable_shortener`. Frontend client:
+`src/lib/shortener.ts` + `src/features/builder/ShortLink.tsx`.
+
+### 11a.1 Create — `POST https://api.xchtip.app/shorten`
+
+- Request body MUST be JSON `{ "url": string }`. A non-JSON body MUST yield `400`.
+- The server MUST validate `url` and store it ONLY if it is a well-formed xchtip.app tip page (see the
+  open-redirect guard, §11a.4); otherwise it MUST respond `400` and store nothing.
+- On success the server mints a unique short code and responds `200` with
+  `{ "code": string, "shortUrl": "https://<code>.xchtip.app" }`.
+- If no unique code can be allocated the server MUST respond `503` (the client retries / falls back to
+  the long link).
+- The endpoint is CORS-open (`Access-Control-Allow-Origin: *`, `POST,OPTIONS`) because the builder
+  calls it cross-origin; a `OPTIONS` preflight returns `204`.
+
+### 11a.2 Resolve — `GET https://<code>.xchtip.app/…`
+
+- The Lambda reads the short code from the Host subdomain label (case-insensitive, port stripped). A
+  known code MUST return a **`301` permanent redirect** to the stored target URL.
+- An unknown code MUST return a `302` soft-landing redirect to the apex builder (`https://xchtip.app/`).
+- The apex, `www`, any RESERVED label (`www`, `api`, `app`, `mail`, `ns`, `cdn`, `assets`, `static`),
+  a multi-level host, or a syntactically invalid code MUST NOT be treated as a code.
+- A valid short code is 3–16 chars from the unambiguous alphabet
+  `abcdefghjkmnpqrstvwxyz23456789` (lowercase; excludes `0/1/o/l/i/u`).
+
+### 11a.3 Storage — DynamoDB item shape
+
+- Table `xchtip-shortlinks`, `PAY_PER_REQUEST`, hash key `code` (String), no sort key.
+- Item shape: `{ code: string (PK), target: string (the canonicalized `/jar` URL), created_at:
+  ISO-8601 string }`.
+- Codes are minted with a conditional put (`attribute_not_exists(code)`) and retried on collision, so a
+  code is never reassigned to a different target.
+
+### 11a.4 Open-redirect guard (SECURITY — normative)
+
+The shortener MUST NOT become an open redirector. On CREATE the server MUST accept a target ONLY when
+ALL hold, and MUST reject (`400`, store nothing) otherwise:
+
+- the URL parses and its scheme is exactly `https:`;
+- its host is exactly `xchtip.app` or `www.xchtip.app`;
+- its path matches `^/jar/[^/]` (a tip page).
+
+An accepted target is canonicalized (host forced to the apex, dropping any `www.`) before storage, so
+every short link resolves to a single origin. Because ONLY `https://xchtip.app/jar/*` targets can ever
+be stored, a `301` from any `<code>.xchtip.app` can only ever land on an xchtip.app tip page — never an
+attacker-controlled destination. This guard is implemented in `lambda/shortener/lib.mjs`
+(`validateTargetUrl`) and is unit-tested there.
+
+### 11a.5 Custom domains + TLS
+
+A single wildcard ACM certificate covers `*.xchtip.app` (SAN `api.xchtip.app`), DNS-validated. TWO API
+Gateway custom domains map to the ONE HTTP API: the wildcard `*.xchtip.app` (resolve) and
+`api.xchtip.app` (create). Both are dualstack Route53 alias records (A + AAAA) to the regional API
+Gateway domains. The wildcard custom domain means every `<code>.xchtip.app` reaches the API with no
+per-code DNS record; the Lambda derives the code from the Host header.
+
+### 11a.6 Client
+
+`src/lib/shortener.ts` is the thin fetch client (`POST {VITE_SHORTENER_API}/shorten`). The API base is
+injected at build time via `VITE_SHORTENER_API`; when it is absent the shortener is treated as
+unavailable and `src/features/builder/ShortLink.tsx` renders NOTHING (the long `/jar` link is always
+shown above it). A request failure surfaces a quiet, honest message and keeps the affordance
+actionable — the deterministic link never depends on the shortener.
 
 ## 12. Accessibility + machine-friendliness
 
