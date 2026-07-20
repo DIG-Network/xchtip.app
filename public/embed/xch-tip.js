@@ -78,6 +78,12 @@
   var XCH_MOJOS_PER_XCH = 1000000000000; // 1 XCH = 1e12 mojos
   var CAT_BASE_UNITS = 1000; // CATs in the ecosystem use 3 decimals (1 unit = 1000 base units)
 
+  // Every tip coin (recipient AND fee, XCH AND CAT) carries this memo as its SECOND memo element —
+  // memo[0] stays the receiver's own puzzle-hash hint (so the coin is discoverable by hint like any
+  // normal hinted send); memo[1] is this human-readable note. Change coins are NOT tips, so they carry
+  // no memo at all.
+  var TIP_MEMO = new TextEncoder().encode("Tipped via xchtip.app, Enjoy!");
+
   // Protocol fee: 0.1% of every tip is routed to the xchtip.app fee address (same asset as the tip).
   // The recipient receives the remainder. The fee is floor(baseUnits/1000); if a tip is too small to
   // carry a >=1-base-unit fee, NO fee coin is created (the recipient gets the whole tip).
@@ -791,8 +797,14 @@
       var signer = j === 0 ? lead : (readSenderKeyFromReveal(chia, clvm, prOf(e)) || lead);
       var conditions = [];
       if (j === 0) {
-        conditions.push(clvm.createCoin(chia.fromHex(recipient), split.net, clvm.nil()));
-        if (split.fee > 0n && feePh) conditions.push(clvm.createCoin(chia.fromHex(feePh), split.fee, clvm.nil()));
+        // Hint the receiver's own puzzle hash first (memo[0], standard hinted-send convention), then
+        // the tip note (memo[1]) — the recipient coin is still discoverable by hint like any plain send.
+        var recipientPhBytes = chia.fromHex(recipient);
+        conditions.push(clvm.createCoin(recipientPhBytes, split.net, clvm.list([clvm.atom(recipientPhBytes), clvm.atom(TIP_MEMO)])));
+        if (split.fee > 0n && feePh) {
+          var feePhBytes = chia.fromHex(feePh);
+          conditions.push(clvm.createCoin(feePhBytes, split.fee, clvm.list([clvm.atom(feePhBytes), clvm.atom(TIP_MEMO)])));
+        }
         if (change > 0n) conditions.push(clvm.createCoin(leadPhBytes, change, clvm.nil()));
       }
       var delegated = clvm.delegatedSpend(conditions);
@@ -915,14 +927,16 @@
       var conditions = [];
       if (j === 0) {
         var recipientPhBytes = chia.fromHex(recipient);
-        var memoProgram = clvm.list([clvm.atom(recipientPhBytes)]);
+        // memo[0] = the receiver's own puzzle hash (the CAT hint — REQUIRED for spendability/indexing,
+        // must stay first); memo[1] = the tip note.
+        var memoProgram = clvm.list([clvm.atom(recipientPhBytes), clvm.atom(TIP_MEMO)]);
         // 0.1% protocol fee → the fee address (a CAT coin of the same asset). Recipient gets the rest.
         var catSplit = splitFee(need);
         var catFeePh = addressToPuzzleHash(FEE_ADDRESS);
         conditions.push(clvm.createCoin(recipientPhBytes, catSplit.net, memoProgram));
         if (catSplit.fee > 0n && catFeePh) {
           var feePhBytes = chia.fromHex(catFeePh);
-          var feeMemo = clvm.list([clvm.atom(feePhBytes)]);
+          var feeMemo = clvm.list([clvm.atom(feePhBytes), clvm.atom(TIP_MEMO)]);
           conditions.push(clvm.createCoin(feePhBytes, catSplit.fee, feeMemo));
         }
         if (change > 0n) conditions.push(clvm.createCoin(chia.fromHex(leadKey.innerPh), change));
