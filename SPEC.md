@@ -623,8 +623,54 @@ chrome. Reports submit to `https://api.bugreport.dig.net` and file into the
 `role="dialog"`, live-region status) and anti-abuse contract — xchtip.app does not reimplement any
 of it. See `@dignetwork/components`' own `SPEC.md` for the normative wire contract.
 
-## 13. Internationalization (follow-up)
+## 13. Internationalization
 
-All user-facing copy is centralized in `src/lib/strings.ts` with stable keys. i18n (react-intl + the
-ecosystem's standard locale set) is a planned follow-up; the centralization is the seam for it. Brand
-and scheme literals ($DIG, XCH, `xch://`, hex colors) are preserved verbatim.
+The app ships full i18n via `react-intl`, covering the ecosystem's standard 14-locale set. Every
+piece of user-facing copy is retrieved through the catalog seam below — no hardcoded UI strings.
+
+### 13a. Locale registry
+
+`src/i18n/locales.ts` is the frozen locale contract: `SUPPORTED_LOCALES` is an ordered, self-describing
+table of the 14 shipped locales, each an exact BCP-47 code with its endonym (native display name) and
+English name —
+
+`en`, `zh-CN`, `zh-TW`, `ko`, `ja`, `ru`, `es`, `pt-BR`, `fr`, `de`, `tr`, `vi`, `id`, `hi`.
+
+`en` is `DEFAULT_LOCALE` — both the default locale and the base catalog every other locale falls back
+to per missing key. `resolveOne`/`resolveLocale` resolve an arbitrary BCP-47 tag to one of these codes
+in three steps: (1) an exact canonical match, (2) a region/script override (e.g. `zh-HK`/`zh-Hant` →
+`zh-TW`), (3) a primary-language fallback (e.g. `en-GB` → `en`, `pt-PT` → `pt-BR`); an unresolvable tag
+falls through to `DEFAULT_LOCALE`.
+
+### 13b. Message catalogs
+
+`src/i18n/messages/` holds one catalog module per locale (`en.ts` is the base; each other locale is a
+`Partial<Messages>` keyed by the same stable `MessageKey` union). `messagesFor(locale)` resolves the
+full message map for a locale by merging its catalog OVER the English base, so every key always
+resolves — an untranslated key silently falls back to English rather than rendering blank or a raw id.
+A conformance test (`src/i18n/messages/completeness.test.ts`) asserts every locale resolves a non-empty
+string for every key, uses only real keys, and preserves the English base's ICU placeholder names
+(`{name}`/`{asset}`/`{who}`, …) — a translation MUST NOT drop or rename a placeholder.
+
+### 13c. Retrieving copy
+
+Components retrieve copy via the `useT()` hook (`src/i18n/useT.ts`): `t("someKey", { values })` looks
+up `someKey` through `react-intl`'s `formatMessage`, with the English catalog entry supplied as the
+ICU `defaultMessage` (so a key missing from the active locale's catalog still renders sensible
+English). ICU value interpolation (`{name}` etc.) is passed as the second argument.
+
+### 13d. Detection, selection, and persistence
+
+`I18nProvider` (`src/i18n/I18nProvider.tsx`) wires `react-intl`'s `IntlProvider` with the resolved
+catalog for the active locale and exposes `{ locale, setLocale }` via a `useLocale()` context hook (the
+language selector's contract). The initial locale resolves in this order: (1) an explicit choice
+persisted in `localStorage` under the `xchtip.locale` key (`initialLocale()`/`persistLocale()` in
+`locales.ts`), (2) the browser's `navigator.languages` resolved through the registry
+(`detectBrowserLocale()`), (3) `DEFAULT_LOCALE`. Selecting a locale updates the active locale
+immediately AND persists the choice for subsequent visits. The provider keeps `<html lang>` in sync
+with the active locale for accessibility and SEO.
+
+### 13e. Brand and scheme literals
+
+Brand and scheme literals ($DIG, XCH, `xch://`, hex colors) are preserved verbatim in every locale
+catalog — translation covers surrounding prose only, never these tokens.
