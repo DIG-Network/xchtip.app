@@ -1,6 +1,6 @@
 {
   "name": "xchtip-app",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "description": "xchtip.app — embeddable Chia tip-widget builder (XCH or any CAT, incl. $DIG)",
